@@ -1,0 +1,74 @@
+<table>
+    <thead>
+        <tr>
+            <th>Student</th>
+            <th>Student ID</th>
+            <th>College</th>
+            <th>Program</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Counselor</th>
+            <th>Session Type</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for appointment in archived_appointments_page %}
+        <tr>
+            <td>{{ appointment.user.full_name }}</td>
+            <td>{{ appointment.user.student_id }}</td>
+            <td>{{ appointment.user.get_college_display }}</td>
+            <td>{{ appointment.user.program }}</td>
+            <td>{{ appointment.date }}</td>
+            <td>{{ appointment.time|time:"h:i A" }}</td>
+            <td>{{ appointment.counselor.name }}</td>
+            <td>
+                <span class="session-type-badge {{ appointment.session_type }}">
+                    {{ appointment.get_session_type_display }}
+                </span>
+            </td>
+            <td>
+                <span class="status-badge {{ appointment.status|get_status_class }}">
+                    {{ appointment.status|title }}
+                </span>
+            </td>
+            <td>
+                <button class="view-btn" onclick='showArchiveModal("appointments", {
+                    "student": "{{ appointment.user.full_name }}",
+                    "studentId": "{{ appointment.user.student_id }}",
+                    "date": "{{ appointment.date }}",
+                    "time": "{{ appointment.time|time:'h:i A' }}",
+                    "counselor": "{{ appointment.counselor.name }}",
+                    "status": "{{ appointment.status }}",
+                    "reason": "{{ appointment.reason|escapejs }}",
+                    "services": "{{ appointment.services|join:', '|escapejs }}",
+                    "phone": "{{ appointment.phone|escapejs }}",
+                    "courseSection": "{{ appointment.course_section|escapejs }}"
+                })'><i class='bx bx-show'></i> View</button>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9" class="no-data">No archived appointments found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="pagination">
+    <span class="step-links">
+        {% if archived_appointments_page.has_previous %}
+            <a href="?appointments_page=1">&laquo; first</a>
+            <a href="?appointments_page={{ archived_appointments_page.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ archived_appointments_page.number }} of {{ archived_appointments_page.paginator.num_pages }}
+        </span>
+
+        {% if archived_appointments_page.has_next %}
+            <a href="?appointments_page={{ archived_appointments_page.next_page_number }}">next</a>
+            <a href="?appointments_page={{ archived_appointments_page.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>

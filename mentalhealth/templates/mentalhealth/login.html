@@ -1,0 +1,884 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+    <title>Login | CalmConnect</title>
+    
+    <style>
+        .error-message {
+            color: #e74c3c;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .input-group.error input {
+            border-color: #e74c3c !important;
+        }
+
+        .input-group.error i {
+            color: #e74c3c !important;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(46, 204, 113, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(52, 152, 219, 0.1) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+
+        /* Header Styles - Matching index.html */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hdr-logo h2 {
+            color: #2ecc71;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .hdr-logo a {
+            text-decoration: none;
+        }
+
+        .hdr-btns {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        /* Main Content */
+        .login-main-bdy {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: calc(100vh - 80px);
+            padding: 0.5rem;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 25px;
+            padding: 0;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 350px;
+        }
+
+        /* Welcome Section */
+        .login-welcome {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-welcome::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            animation: welcomeFloat 15s ease-in-out infinite;
+        }
+
+        @keyframes welcomeFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(20px, -20px) rotate(180deg); }
+        }
+
+        .welcome-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .welcome-icon {
+            font-size: 5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .login-welcome h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-welcome p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            line-height: 1.6;
+            margin-bottom: 2.5rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            text-align: left;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .feature-list li i {
+            margin-right: 1rem;
+            font-size: 1.3rem;
+        }
+
+        /* Login Form Section */
+        .login-form-section {
+            padding: 3rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-form h2 {
+            color: #2c3e50;
+            font-size: 2.3rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            text-align: center;
+        }
+
+        .login-subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 1.2rem;
+            transition: color 0.3s ease;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 1.3rem 1.3rem 1.3rem 3.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .login-form input:focus {
+            outline: none;
+            border-color: #2ecc71;
+            box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.1);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .login-form input:focus + i {
+            color: #2ecc71;
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            font-size: 1rem;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            padding: 0;
+        }
+
+        .forgot-password {
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-password:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1.3rem;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .login-btn:hover::before {
+            left: 100%;
+        }
+
+        .login-btn:hover {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 2rem 0;
+            position: relative;
+            color: #999;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .divider span {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0 1.5rem;
+            position: relative;
+        }
+
+        .signup-link {
+            text-align: center;
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .signup-link a {
+            color: #2ecc71;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .signup-link a:hover {
+            color: #27ae60;
+            text-decoration: underline;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Success animation */
+        .success-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(46, 204, 113, 0.9);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .success-content {
+            text-align: center;
+            color: white;
+        }
+
+        .success-content i {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            animation: successPulse 0.6s ease;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .welcome-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 2rem;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .verification-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .verification-modal.show {
+            opacity: 1;
+            display: flex;
+        }
+
+        .verification-modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .verification-modal.show .verification-modal-content {
+            transform: translateY(0);
+        }
+
+        .verification-modal-header {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .verification-modal-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .verification-modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .verification-modal-close:hover {
+            transform: rotate(90deg);
+        }
+
+        .verification-modal-body {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .verification-icon {
+            font-size: 3rem;
+            color: #2ecc71;
+            margin-bottom: 1.5rem;
+        }
+
+        .verification-modal-body p {
+            margin-bottom: 1rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .verification-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .verification-resend,
+        .verification-continue {
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .verification-resend {
+            background: #3498db;
+            color: white;
+        }
+
+        .verification-resend:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .verification-continue {
+            background: #f1f1f1;
+            color: #333;
+        }
+
+        .verification-continue:hover {
+            background: #e0e0e0;
+        }
+
+        .verification-help {
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        .verification-help a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .verification-help a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .verification-modal-content {
+                width: 95%;
+            }
+            
+            .verification-modal-body {
+                padding: 1.5rem;
+            }
+            
+            .verification-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="hdr">
+            <div class="hdr-logo">
+                <a href="#"><h2>CalmConnect</h2></a>
+            </div>
+        </div>
+    </header>
+
+    <main class="login-main-bdy">
+        <div class="login-container">
+            <div class="login-welcome">
+                <div class="welcome-content">
+                    <img src="{% static 'img/osa-logo.jpg' %}" alt="Welcome Image" class="welcome-image">
+                    <h2>Welcome Back!</h2>
+                    <p>Ready to continue your mental wellness journey? Your path to better mental health starts here.</p>
+                    <ul class="feature-list">
+                        <li><i class="bx bx-check-circle"></i> Track your progress</li>
+                        <li><i class="bx bx-check-circle"></i> Access personalized resources</li>
+                        <li><i class="bx bx-check-circle"></i> Connect with support</li>
+                        <li><i class="bx bx-check-circle"></i> Monitor your wellness</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="login-form-section">
+                <form class="login-form" method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <h2>Sign In</h2>
+                    <p class="login-subtitle">Enter your credentials to access your account</p>
+                    
+                    {% if form.errors %}
+                    <div class="error-message" style="color: #e74c3c; margin-bottom: 1rem;">
+                        Invalid username or password. Please try again.
+                    </div>
+                    {% endif %}
+                    
+                    {% if error_message %}
+                        <div class="error-message" style="color: #e74c3c; margin-bottom: 1rem;">
+                            {{ error_message }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="input-group">
+                        <input type="text" name="username" id="username" placeholder="Username or Email" required>
+                        <i class="bx bx-user"></i>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="password" name="password" id="password" placeholder="Password" required>
+                        <i class="bx bx-lock-alt"></i>
+                    </div>
+                    
+                    <div class="remember-forgot">
+                        <label class="remember-me">
+                            <input type="checkbox" id="remember">
+                            Remember me
+                        </label>
+                        <a href="#" class="forgot-password">Forgot Password?</a>
+                    </div>
+                    
+                    <button type="submit" class="login-btn">
+                        <span class="btn-text">Sign In</span>
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </button>
+                    
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+                    
+                    <div class="signup-link">
+                        Don't have an account? <a href="{% url 'register' %}">Create one now</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Success Animation -->
+    <div class="success-animation" id="successAnimation">
+        <div class="success-content">
+            <i class="bx bx-check-circle"></i>
+            <h2>Welcome Back!</h2>
+            <p>Redirecting to your dashboard...</p>
+        </div>
+    </div>
+    
+    <!-- Verification Modal -->
+    <div class="verification-modal" id="verificationModal" style="display: none;">
+        <div class="verification-modal-content">
+            <div class="verification-modal-header">
+                <h3>Email Verification Required</h3>
+                <i class="bx bx-x verification-modal-close"></i>
+            </div>
+            <div class="verification-modal-body">
+                <div class="verification-icon">
+                    <i class="bx bx-envelope"></i>
+                </div>
+                <p>We've sent a verification link to your email address <strong id="userEmail"></strong>.</p>
+                <p>Please check your inbox and click the verification link to activate your account.</p>
+                <div class="verification-actions">
+                    <button class="verification-resend" id="resendVerification">Resend Verification Email</button>
+                    <button class="verification-continue" id="continueToLogin">Continue to Login</button>
+                </div>
+                <div class="verification-help">
+                    <p>Didn't receive the email? Check your spam folder or <a href="#" id="contactSupport">contact support</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.querySelector('.login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            // Don't prevent default - let the form submit normally
+            const btn = this.querySelector('.login-btn');
+            const btnText = this.querySelector('.btn-text');
+            const loading = this.querySelector('.loading');
+            
+            // Show loading state
+            if (btnText) btnText.style.opacity = '0';
+            if (loading) loading.style.display = 'block';
+            if (btn) btn.disabled = true;
+            
+            // Add remember_me value if checkbox is checked
+            const rememberMe = document.getElementById('remember')?.checked;
+            if (rememberMe) {
+                const rememberInput = document.createElement('input');
+                rememberInput.type = 'hidden';
+                rememberInput.name = 'remember_me';
+                rememberInput.value = 'true';
+                this.appendChild(rememberInput);
+            }
+            
+            // Let the form submit normally
+            return true;
+        });
+    }
+
+
+
+            // Input focus effects
+            const inputs = document.querySelectorAll('.login-form input');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    const icon = this.parentElement.querySelector('i');
+                    if (icon) icon.style.color = '#2ecc71';
+                });
+                
+                input.addEventListener('blur', function() {
+                    if (!this.value) {
+                        const icon = this.parentElement.querySelector('i');
+                        if (icon) icon.style.color = '#999';
+                    }
+                });
+            });
+
+            // Password visibility toggle
+            function togglePasswordVisibility() {
+                const passwordInput = document.getElementById('password');
+                if (!passwordInput) return;
+                
+                const icon = passwordInput.parentElement.querySelector('i');
+                if (!icon) return;
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.className = 'bx bx-show';
+                } else {
+                    passwordInput.type = 'password';
+                    icon.className = 'bx bx-lock-alt';
+                }
+            }
+
+            // Add click event to password icon for visibility toggle
+            const passwordIcon = document.querySelector('#password')?.parentElement.querySelector('i');
+            if (passwordIcon) {
+                passwordIcon.addEventListener('click', togglePasswordVisibility);
+                passwordIcon.style.cursor = 'pointer';
+            }
+
+            // Verification modal logic
+            const needsVerification = "{{ needs_verification }}" === "True";
+            const userEmail = "{{ user_email }}";
+
+            // Show verification modal if needed
+            if (needsVerification) {
+                const modal = document.getElementById('verificationModal');
+                const emailSpan = document.getElementById('userEmail');
+                
+                if (modal && emailSpan) {
+                    emailSpan.textContent = userEmail;
+                    modal.style.display = 'flex';
+                    setTimeout(() => {
+                        modal.classList.add('show');
+                    }, 10);
+                }
+            }
+
+            // Modal close button
+            document.querySelector('.verification-modal-close')?.addEventListener('click', () => {
+                const modal = document.getElementById('verificationModal');
+                if (modal) {
+                    modal.classList.remove('show');
+                    setTimeout(() => {
+                        modal.style.display = 'none';
+                    }, 300);
+                }
+            });
+
+            // Continue to login button
+            document.getElementById('continueToLogin')?.addEventListener('click', () => {
+                const modal = document.getElementById('verificationModal');
+                if (modal) {
+                    modal.classList.remove('show');
+                    setTimeout(() => {
+                        modal.style.display = 'none';
+                    }, 300);
+                }
+            });
+
+            // Resend verification email
+            document.getElementById('resendVerification')?.addEventListener('click', async () => {
+                const resendBtn = document.getElementById('resendVerification');
+                if (!resendBtn) return;
+                
+                const originalText = resendBtn.textContent;
+                
+                try {
+                    resendBtn.disabled = true;
+                    resendBtn.textContent = 'Sending...';
+                    
+                    const response = await fetch('/resend-verification/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
+                        },
+                        body: JSON.stringify({ email: userEmail })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('Verification email resent successfully!');
+                    } else {
+                        alert(data.error || 'Failed to resend verification email');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while resending the verification email');
+                } finally {
+                    resendBtn.disabled = false;
+                    resendBtn.textContent = originalText;
+                }
+            });
+
+            // Contact support link
+            document.getElementById('contactSupport')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert('Please email support@calmconnect.edu for assistance with account verification.');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1422 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Archive | CalmConnect</title>
+  <meta name="description" content="Archive for counselors to view past sessions and reports">
+  <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" />
+  <style>
+    :root {
+      --primary-color: #2ecc71;
+      --primary-dark: #27ae60;
+      --secondary-blue: #3498db;
+      --secondary-blue-dark: #2980b9;
+      --secondary-purple: #9b59b6;
+      --secondary-purple-dark: #8e44ad;
+      --secondary-orange: #e67e22;
+      --secondary-orange-dark: #d35400;
+      --secondary-red: #e74c3c;
+      --secondary-red-dark: #c0392b;
+      --text-dark: #2c3e50;
+      --text-medium: #666;
+      --text-light: #999;
+      --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      color: var(--text-dark);
+      line-height: 1.6;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    /* Header Styles */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hdr-logo h2 {
+      color: var(--primary-color);
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .hdr-btns {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .prfl-bell {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .prfl-bell i {
+      font-size: 1.3rem;
+      color: var(--text-medium);
+      transition: color 0.3s ease;
+    }
+
+    .prfl-bell:hover i {
+      color: var(--primary-color);
+    }
+
+    .prfl-name h4 {
+      color: #333;
+      font-weight: 600;
+    }
+
+    .prfl-container {
+      position: relative;
+    }
+
+    .prfl-container img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid var(--primary-color);
+      object-fit: cover;
+    }
+
+    /* Dropdown Styles */
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 1rem;
+      min-width: 200px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      display: none;
+      z-index: 1001;
+    }
+
+    .dropdown-menu a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.5rem 0;
+      color: var(--text-dark);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+    }
+
+    .dropdown-menu a:hover {
+      color: var(--primary-color);
+      transform: translateX(3px);
+    }
+
+    .dropdown-menu a i {
+      font-size: 1.1rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 0.5rem 0;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: var(--secondary-red);
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+
+    .notification-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 1rem;
+      min-width: 300px;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      display: none;
+      z-index: 1001;
+      margin-top: 0.5rem;
+    }
+
+    .notification-dropdown a {
+      display: block;
+      padding: 0.8rem 1rem;
+      color: var(--text-dark);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      margin-bottom: 0.5rem;
+    }
+
+    .notification-dropdown a:hover {
+      background: rgba(46, 204, 113, 0.1);
+      color: var(--primary-color);
+    }
+
+    .notification-dropdown a:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Dashboard Layout */
+    .counselor-dashboard {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 2rem;
+      padding: 2rem;
+      min-height: calc(100vh - 120px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+
+    .sidebar-logo h3 {
+      color: var(--primary-color);
+      font-size: 1.4rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--text-medium);
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      transform: translateX(5px);
+      box-shadow: 0 2px 10px rgba(46, 204, 113, 0.3);
+    }
+
+    .sidebar-nav a i {
+      font-size: 1.2rem;
+    }
+
+    /* Main Content */
+    .archive-main {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .archive-header {
+      margin-bottom: 2rem;
+    }
+
+    .archive-header h2 {
+      color: var(--text-dark);
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .archive-header p {
+      color: var(--text-medium);
+    }
+
+    /* Filter Controls */
+    .filter-controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filter-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .filter-group select,
+    .filter-group input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 2px solid #e1e8ed;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    .filter-group select:focus,
+    .filter-group input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+    }
+
+    /* Archive Tabs */
+    .archive-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      background: #f8f9fa;
+      padding: 0.5rem;
+      border-radius: 12px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-medium);
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .tab-btn.active {
+      background: white;
+      color: var(--primary-color);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Archive Content */
+    .archive-content {
+      display: none;
+    }
+
+    .archive-content.active {
+      display: block;
+    }
+
+    .archive-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* Archive Items */
+    .archive-item {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .archive-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--primary-color);
+      transform: scaleY(0);
+      transition: transform 0.3s ease;
+    }
+
+    .archive-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border-color: var(--primary-color);
+    }
+
+    .archive-item:hover::before {
+      transform: scaleY(1);
+    }
+
+    .archive-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .archive-item-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin: 0;
+    }
+
+    .archive-item-date {
+      background: var(--primary-color);
+      color: white;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .archive-item-meta {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .archive-item-meta span {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: #f8f9fa;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: var(--text-medium);
+      font-weight: 500;
+    }
+
+    .archive-item-meta i {
+      color: var(--primary-color);
+      font-size: 0.9rem;
+    }
+
+    .archive-item-summary {
+      color: var(--text-medium);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--text-medium);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: #ddd;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+      margin-bottom: 0.5rem;
+      color: var(--text-dark);
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e1e8ed;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .quick-action-btn {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .quick-action-btn {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .quick-action-btn.secondary {
+      background: #f8f9fa;
+      color: var(--text-dark);
+    }
+
+    .quick-action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 0;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 50%;
+      transition: background 0.3s ease;
+    }
+
+    .close-modal:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .modal-body {
+      padding: 2rem;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .modal-detail {
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-detail:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-detail h4 {
+      color: var(--text-dark);
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .modal-detail h4 i {
+      color: var(--primary-color);
+    }
+
+    .modal-detail p {
+      color: var(--text-medium);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .modal-detail .detail-value {
+      background: #f8f9fa;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary-color);
+      margin-top: 0.5rem;
+    }
+
+    .modal-actions {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid #e1e8ed;
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+
+    .modal-btn {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .modal-btn.primary {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .modal-btn.secondary {
+      background: #f8f9fa;
+      color: var(--text-dark);
+    }
+
+    .modal-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-completed {
+      background: rgba(46, 204, 113, 0.1);
+      color: var(--primary-color);
+    }
+
+    .status-archived {
+      background: rgba(52, 73, 94, 0.1);
+      color: #34495e;
+    }
+
+    .status-pending {
+      background: rgba(230, 126, 34, 0.1);
+      color: var(--secondary-orange);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .counselor-dashboard {
+        flex-direction: column;
+        padding: 1rem;
+      }
+
+      .sidebar {
+        width: 100%;
+        position: static;
+      }
+
+      .archive-main {
+        padding: 1.5rem;
+      }
+
+      .filter-controls {
+        flex-direction: column;
+      }
+
+      .archive-item-header {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .archive-item-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .modal-content {
+        width: 95%;
+        margin: 1rem;
+      }
+    }
+  </style>
+  {% csrf_token %}
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="hdr">
+      <div class="hdr-logo">
+        <h2>CalmConnect</h2>
+      </div>
+      <div class="hdr-btns">
+        <div class="prfl-bell" id="notif-bell">
+          <i class="bx bxs-bell" id="bell-icon"></i>
+          <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
+          <div class="notification-dropdown" id="notificationDropdown" style="display:none;"></div>
+        </div>
+        <div class="prfl-name"><h4>{{ counselor.name }}</h4></div>
+        <div class="prfl-container dropdown">
+          {% if counselor.image %}
+            <img src="{{ counselor.image.url }}" alt="Profile picture of {{ counselor.name }}" id="profileDropdownToggle" />
+          {% else %}
+                            <img src="{% static 'mentalhealth/img/default.jpg' %}" alt="Default profile picture" id="profileDropdownToggle" />
+          {% endif %}
+          <div class="dropdown-menu" id="profileDropdown">
+            <a href="{% url 'counselor_profile' %}"><i class="bx bxs-user-circle"></i> Profile</a>
+            <a href="{% url 'update_schedule' %}"><i class="bx bxs-time"></i> Schedule</a>
+            <div class="divider"></div>
+            <a href="{% url 'logout' %}" id="logoutLink"><i class="bx bx-log-out"></i> Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="counselor-dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <h3>Counselor Panel</h3>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="{% url 'counselor_dashboard' %}">
+          <i class="bx bxs-dashboard"></i>
+          Dashboard
+        </a>
+        <a href="{% url 'counselor_schedule' %}">
+          <i class="bx bxs-calendar"></i>
+          Schedule
+        </a>
+        <a href="{% url 'counselor_reports' %}">
+          <i class="bx bxs-report"></i>
+          Reports
+        </a>
+        <a href="{% url 'counselor_archive' %}" class="active">
+          <i class="bx bxs-archive"></i>
+          Archive
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Archive Content -->
+    <main class="archive-main">
+      <div class="archive-header">
+        <h2>Archive</h2>
+        <p>Review your past counseling sessions and reports</p>
+      </div>
+
+      <!-- Filter Controls -->
+      <div class="filter-controls">
+        <div class="filter-group">
+          <label for="timePeriod">Time Period</label>
+          <select id="timePeriod">
+            <option value="all">All Time</option>
+            <option value="month">Last Month</option>
+            <option value="quarter">Last Quarter</option>
+            <option value="year">Last Year</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="sessionType">Session Type</label>
+          <select id="sessionType">
+            <option value="all">All Types</option>
+            <option value="individual">Individual</option>
+            <option value="group">Group Session</option>
+            <option value="crisis">Crisis Intervention</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="search">Search</label>
+          <input type="text" id="search" placeholder="Search sessions...">
+        </div>
+      </div>
+
+      <!-- Archive Tabs -->
+      <div class="archive-tabs">
+        <button class="tab-btn active" data-tab="sessions">Sessions</button>
+        <button class="tab-btn" data-tab="reports">Reports</button>
+        <button class="tab-btn" data-tab="assessments">Assessments</button>
+      </div>
+
+      <!-- Sessions Tab -->
+      <div id="sessions-tab" class="archive-content active">
+        <div class="archive-list">
+          {% if completed_appointments %}
+            {% for appointment in completed_appointments %}
+              <div class="archive-item" data-type="session" data-id="{{ appointment.id }}" onclick="openSessionModal({{ appointment.id }})">
+                <div class="archive-item-header">
+                  <h3 class="archive-item-title">{{ appointment.user.full_name }} - {{ appointment.get_services_display|default:appointment.services.0|title }}</h3>
+                  <span class="archive-item-date">{{ appointment.date|date:'M d, Y' }}</span>
+                </div>
+                <div class="archive-item-meta">
+                  <span><i class="bx bxs-user"></i> {{ appointment.user.student_id }}</span>
+                  <span><i class="bx bxs-building"></i> {{ appointment.user.get_college_display }}</span>
+                  <span><i class="bx bxs-time"></i> {{ appointment.duration|default:'N/A' }}</span>
+                </div>
+                <p class="archive-item-summary">
+                  {{ appointment.reason|truncatechars:160 }}
+                </p>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <i class="bx bxs-archive"></i>
+              <h3>No completed sessions found.</h3>
+              <p>Completed sessions will appear here once available.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Reports Tab -->
+      <div id="reports-tab" class="archive-content">
+        <div class="archive-list">
+          {% if archived_reports %}
+            {% for report in archived_reports %}
+              <div class="archive-item" data-type="report" data-id="{{ report.id }}" onclick="openReportModal({{ report.id }})">
+                <div class="archive-item-header">
+                  <h3 class="archive-item-title">{{ report.title }}{% if report.user %} - {{ report.user.full_name }}{% endif %}</h3>
+                  <span class="archive-item-date">{{ report.created_at|date:'M d, Y' }}</span>
+                </div>
+                <div class="archive-item-meta">
+                  <span><i class="bx bxs-file-doc"></i> {{ report.get_report_type_display|default:report.report_type|title }}</span>
+                  <span class="status-badge status-{{ report.status }}"><i class="bx bxs-archive"></i> {{ report.get_status_display }}</span>
+                  {% if report.user %}<span><i class="bx bxs-user"></i> {{ report.user.student_id }}</span>{% endif %}
+                </div>
+                <p class="archive-item-summary">
+                  {{ report.description|truncatechars:160 }}
+                </p>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <i class="bx bxs-file-doc"></i>
+              <h3>No archived reports found.</h3>
+              <p>Archived reports will appear here once available.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Assessments Tab -->
+      <div id="assessments-tab" class="archive-content">
+        <div class="archive-list">
+          {% if assessments %}
+            {% for assessment in assessments %}
+              <div class="archive-item" data-type="assessment" data-id="{{ assessment.id }}" onclick="openAssessmentModal({{ assessment.id }})">
+                <div class="archive-item-header">
+                  <h3 class="archive-item-title">DASS21 Results{% if assessment.user %} - {{ assessment.user.full_name }}{% endif %}</h3>
+                  <span class="archive-item-date">{{ assessment.date_taken|date:'M d, Y' }}</span>
+                </div>
+                <div class="archive-item-meta">
+                  <span><i class="bx bxs-spreadsheet"></i> Depression: {{ assessment.depression_score }}, Anxiety: {{ assessment.anxiety_score }}, Stress: {{ assessment.stress_score }}</span>
+                  {% if assessment.user %}<span><i class="bx bxs-user"></i> {{ assessment.user.student_id }}</span>{% endif %}
+                </div>
+                <p class="archive-item-summary">
+                  Severity: Depression - {{ assessment.depression_severity }}, Anxiety - {{ assessment.anxiety_severity }}, Stress - {{ assessment.stress_severity }}
+                </p>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <i class="bx bxs-spreadsheet"></i>
+              <h3>No assessments found.</h3>
+              <p>Assessments will appear here once available.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <button class="quick-action-btn" id="exportDataBtn">
+          <i class="bx bxs-download"></i>
+          Export Data
+        </button>
+        <button class="quick-action-btn secondary" id="printArchiveBtn">
+          <i class="bx bxs-printer"></i>
+          Print Archive
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Session Detail Modal -->
+  <div id="sessionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="bx bxs-calendar-check"></i> Session Details</h2>
+        <button class="close-modal" onclick="closeModal('sessionModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="sessionModalBody">
+        <!-- Content will be loaded dynamically -->
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('sessionModal')">Close</button>
+        <button class="modal-btn primary" onclick="viewFullSession()">View Full Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Detail Modal -->
+  <div id="reportModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="bx bxs-file-doc"></i> Report Details</h2>
+        <button class="close-modal" onclick="closeModal('reportModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="reportModalBody">
+        <!-- Content will be loaded dynamically -->
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('reportModal')">Close</button>
+        <button class="modal-btn primary" onclick="viewFullReport()">View Full Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assessment Detail Modal -->
+  <div id="assessmentModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="bx bxs-spreadsheet"></i> Assessment Details</h2>
+        <button class="close-modal" onclick="closeModal('assessmentModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="assessmentModalBody">
+        <!-- Content will be loaded dynamically -->
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('assessmentModal')">Close</button>
+        <button class="modal-btn primary" onclick="viewFullAssessment()">View Full Assessment</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentItemId = null;
+    let currentItemType = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tab functionality
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.archive-content');
+      
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          // Remove active class from all buttons and contents
+          tabBtns.forEach(b => b.classList.remove('active'));
+          tabContents.forEach(c => c.classList.remove('active'));
+          
+          // Add active class to clicked button and corresponding content
+          this.classList.add('active');
+          const tabId = this.getAttribute('data-tab');
+          document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+      });
+
+      // Time period filter
+      const timePeriodSelect = document.getElementById('timePeriod');
+      const customDateRange = document.getElementById('customDateRange');
+      
+      timePeriodSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+          customDateRange.style.display = 'block';
+        } else {
+          customDateRange.style.display = 'none';
+        }
+        // In a real implementation, this would filter the archive items
+        console.log('Filtering by:', this.value);
+      });
+
+      // Quick action buttons
+      document.getElementById('exportDataBtn').addEventListener('click', function() {
+        alert('Export functionality would be implemented here');
+      });
+
+      document.getElementById('printArchiveBtn').addEventListener('click', function() {
+        window.print();
+      });
+
+      // Profile dropdown toggle
+      const profileToggle = document.getElementById('profileDropdownToggle');
+      const profileDropdown = document.getElementById('profileDropdown');
+      
+      if (profileToggle) {
+        profileToggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function() {
+        if (profileDropdown) {
+          profileDropdown.style.display = 'none';
+        }
+      });
+
+      // Logout confirmation
+      const logoutLink = document.getElementById('logoutLink');
+      if (logoutLink) {
+        logoutLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (confirm('Are you sure you want to log out?')) {
+            window.location.href = this.getAttribute('href');
+          }
+        });
+      }
+
+      // Unified notification dropdown logic
+      function showNotificationDropdown() {
+          const dropdown = document.getElementById('notificationDropdown');
+          dropdown.innerHTML = '<div style="text-align:center;padding:1.5rem 0;"><span class="ai-spinner" style="width:22px;height:22px;"></span> Loading...</div>';
+          dropdown.style.display = 'block';
+          
+          fetch('/notifications/', {
+              headers: {
+                  'X-Requested-With': 'XMLHttpRequest',
+                  'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+              },
+              credentials: 'same-origin'
+          })
+          .then(response => {
+              if (!response.ok) {
+                  if (response.status === 401) {
+                      // User not authenticated, redirect to login
+                      window.location.href = '/login/';
+                      return;
+                  }
+                  throw new Error(`HTTP ${response.status}`);
+              }
+              // Check if response is JSON
+              const contentType = response.headers.get('content-type');
+              if (!contentType || !contentType.includes('application/json')) {
+                  // Response is HTML (probably login page), redirect to login
+                  window.location.href = '/login/';
+                  return;
+              }
+              return response.json();
+          })
+          .then(data => {
+              dropdown.innerHTML = '';
+              if (data.success && data.notifications && data.notifications.length > 0) {
+                  data.notifications.forEach(notif => {
+                      const item = document.createElement('div');
+                      item.className = 'notification-item';
+                      item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
+                      
+                      const content = document.createElement('a');
+                      content.href = notif.url;
+                      content.style.cssText = 'flex:1;display:flex;align-items:center;gap:0.7rem;text-decoration:none;color:inherit;';
+                      content.innerHTML = `
+                          <i class='bx ${notif.type === 'appointment' ? 'bxs-calendar' : notif.type === 'report' ? 'bxs-report' : 'bxs-bell'}' style='color:#27ae60;font-size:1.2rem;'></i>
+                          <span>${notif.message}</span>
+                          <span style='margin-left:auto;font-size:0.85em;color:#888;'>${notif.time}</span>
+                      `;
+                      
+                      const clearBtn = document.createElement('button');
+                      clearBtn.innerHTML = '<i class="bx bx-x"></i>';
+                      clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
+                      clearBtn.title = 'Clear notification';
+                      clearBtn.onclick = function(e) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          clearNotification(notif.id);
+                      };
+                      
+                      item.appendChild(content);
+                      item.appendChild(clearBtn);
+                      dropdown.appendChild(item);
+                  });
+                  
+                  // Add clear all button
+                  const clearAllDiv = document.createElement('div');
+                  clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
+                  
+                  const clearAllBtn = document.createElement('button');
+                  clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
+                  clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
+                  clearAllBtn.onclick = function(e) {
+                      e.preventDefault();
+                      if (confirm('Clear all notifications?')) {
+                          clearAllNotifications();
+                      }
+                  };
+                  
+                  clearAllDiv.appendChild(clearAllBtn);
+                  dropdown.appendChild(clearAllDiv);
+              } else {
+                  dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#888;"><i class="bx bxs-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
+              }
+          })
+          .catch((error) => {
+              console.error('Notification error:', error);
+              dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
+          });
+      }
+      
+      const bellIcon = document.getElementById('bell-icon');
+      if (bellIcon) {
+        bellIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('notificationDropdown');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                showNotificationDropdown();
+            }
+        });
+      }
+      
+      document.addEventListener('click', function() {
+          const notificationDropdown = document.getElementById('notificationDropdown');
+          if (notificationDropdown) {
+            notificationDropdown.style.display = 'none';
+          }
+      });
+
+      // Function to clear individual notification
+      function clearNotification(notificationId) {
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+          
+          fetch(`/notifications/${notificationId}/clear/`, {
+              method: 'POST',
+              headers: {
+                  'X-Requested-With': 'XMLHttpRequest',
+                  'X-CSRFToken': csrfToken
+              },
+              credentials: 'same-origin'
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  // Refresh the notification dropdown
+                  showNotificationDropdown();
+                  // Update the badge
+                  updateNotificationBadge();
+              } else {
+                  console.error('Error clearing notification:', data.error);
+              }
+          })
+          .catch(error => {
+              console.error('Error clearing notification:', error);
+          });
+      }
+
+      // Function to clear all notifications
+      function clearAllNotifications() {
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+          
+          fetch('/notifications/clear-all/', {
+              method: 'POST',
+              headers: {
+                  'X-Requested-With': 'XMLHttpRequest',
+                  'X-CSRFToken': csrfToken
+              },
+              credentials: 'same-origin'
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  // Refresh the notification dropdown
+                  showNotificationDropdown();
+                  // Update the badge
+                  updateNotificationBadge();
+              } else {
+                  console.error('Error clearing all notifications:', data.error);
+              }
+          })
+          .catch(error => {
+              console.error('Error clearing all notifications:', error);
+          });
+      }
+
+      // Function to update notification badge
+      function updateNotificationBadge() {
+          fetch('/notifications/', {
+              headers: {
+                  'X-Requested-With': 'XMLHttpRequest',
+                  'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+              },
+              credentials: 'same-origin'
+          })
+          .then(response => {
+              if (!response.ok) {
+                  return;
+              }
+              const contentType = response.headers.get('content-type');
+              if (!contentType || !contentType.includes('application/json')) {
+                  return;
+              }
+              return response.json();
+          })
+          .then(data => {
+              const badge = document.getElementById('notificationBadge');
+              if (badge && data && data.count > 0) {
+                  badge.textContent = data.count;
+                  badge.style.display = 'flex';
+              } else if (badge) {
+                  badge.style.display = 'none';
+              }
+          })
+          .catch(error => {
+              console.error('Error updating notification badge:', error);
+          });
+      }
+
+      // Close modals when clicking outside
+      window.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal')) {
+          e.target.classList.remove('active');
+        }
+      });
+    });
+
+    // Modal functions
+    function openSessionModal(sessionId) {
+      currentItemId = sessionId;
+      currentItemType = 'session';
+      
+      // Fetch session details from backend
+      fetch(`/api/appointment-detail/${sessionId}/`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const session = data.appointment;
+            document.getElementById('sessionModalBody').innerHTML = `
+              <div class="modal-detail">
+                <h4><i class="bx bxs-user"></i> Student Information</h4>
+                <div class="detail-value">
+                  <strong>Name:</strong> ${session.user_name}<br>
+                  <strong>Student ID:</strong> ${session.student_id}<br>
+                  <strong>College:</strong> ${session.college}<br>
+                  <strong>Program:</strong> ${session.program}
+                </div>
+              </div>
+              <div class="modal-detail">
+                <h4><i class="bx bxs-calendar"></i> Session Details</h4>
+                <div class="detail-value">
+                  <strong>Date:</strong> ${session.date}<br>
+                  <strong>Time:</strong> ${session.time}<br>
+                  <strong>Services:</strong> ${session.services.join(', ')}<br>
+                  <strong>Status:</strong> <span class="status-badge status-${session.status}">${session.status}</span>
+                </div>
+              </div>
+              <div class="modal-detail">
+                <h4><i class="bx bxs-note"></i> Session Notes</h4>
+                <div class="detail-value">
+                  ${session.notes || 'No notes available'}
+                </div>
+              </div>
+              <div class="modal-detail">
+                <h4><i class="bx bxs-message"></i> Reason for Visit</h4>
+                <div class="detail-value">
+                  ${session.reason}
+                </div>
+              </div>
+            `;
+            document.getElementById('sessionModal').classList.add('active');
+          } else {
+            alert('Error loading session details: ' + data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error loading session details');
+        });
+    }
+
+    function openReportModal(reportId) {
+      currentItemId = reportId;
+      currentItemType = 'report';
+      
+      // Fetch report details from backend
+      fetch(`/api/reports/${reportId}/`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const report = data.report;
+            document.getElementById('reportModalBody').innerHTML = `
+              <div class="modal-detail">
+                <h4><i class="bx bxs-file-doc"></i> Report Information</h4>
+                <div class="detail-value">
+                  <strong>Title:</strong> ${report.title}<br>
+                  <strong>Type:</strong> ${report.report_type}<br>
+                  <strong>Status:</strong> <span class="status-badge status-${report.status}">${report.status}</span><br>
+                  <strong>Created:</strong> ${report.created_at}<br>
+                  <strong>Updated:</strong> ${report.updated_at}
+                </div>
+              </div>
+              <div class="modal-detail">
+                <h4><i class="bx bxs-user"></i> Student Information</h4>
+                <div class="detail-value">
+                  ${report.user_name ? `<strong>Student:</strong> ${report.user_name}` : 'No student associated'}
+                </div>
+              </div>
+              <div class="modal-detail">
+                <h4><i class="bx bxs-note"></i> Report Content</h4>
+                <div class="detail-value">
+                  ${report.description}
+                </div>
+              </div>
+            `;
+            document.getElementById('reportModal').classList.add('active');
+          } else {
+            alert('Error loading report details: ' + data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error loading report details');
+        });
+    }
+
+    function openAssessmentModal(assessmentId) {
+      currentItemId = assessmentId;
+      currentItemType = 'assessment';
+      
+      // For now, show a placeholder since we don't have assessment API
+      document.getElementById('assessmentModalBody').innerHTML = `
+        <div class="modal-detail">
+          <h4><i class="bx bxs-spreadsheet"></i> Assessment Information</h4>
+          <div class="detail-value">
+            <strong>Assessment ID:</strong> ${assessmentId}<br>
+            <strong>Type:</strong> DASS21 Assessment<br>
+            <strong>Date Taken:</strong> [Date will be loaded from backend]
+          </div>
+        </div>
+        <div class="modal-detail">
+          <h4><i class="bx bxs-user"></i> Student Information</h4>
+          <div class="detail-value">
+            [Student information will be loaded from backend]
+          </div>
+        </div>
+        <div class="modal-detail">
+          <h4><i class="bx bxs-chart"></i> Assessment Results</h4>
+          <div class="detail-value">
+            [Assessment scores and severity levels will be loaded from backend]
+          </div>
+        </div>
+      `;
+      document.getElementById('assessmentModal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function viewFullSession() {
+      if (currentItemId && currentItemType === 'session') {
+        window.location.href = `/reports/create/?appointment=${currentItemId}`;
+      }
+    }
+
+    function viewFullReport() {
+      if (currentItemId && currentItemType === 'report') {
+        window.open(`/reports/${currentItemId}/`, '_blank');
+      }
+    }
+
+    function viewFullAssessment() {
+      if (currentItemId && currentItemType === 'assessment') {
+        // For now, just close the modal since we don't have assessment detail pages
+        closeModal('assessmentModal');
+      }
+    }
+
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,1598 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Data | CalmConnect</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      min-height: 100vh;
+    }
+
+    /* Header Styles */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hdr-logo h2 {
+      color: #2ecc71;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .hdr-btns {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .prfl-bell {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .prfl-bell i {
+      font-size: 1.3rem;
+      color: #666;
+      transition: color 0.3s ease;
+    }
+
+    .prfl-bell:hover i {
+      color: #2ecc71;
+    }
+
+    /* Notification styles */
+    .notification-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      width: 350px;
+      max-height: 400px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      display: none;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+    }
+
+    .notification-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e0e0e0;
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+    }
+
+    .notification-header h4 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .notification-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .notification-item {
+      padding: 1rem;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.3s ease;
+    }
+
+    .notification-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .notification-item:last-child {
+      border-bottom: none;
+    }
+
+    .notification-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.3rem;
+      font-size: 0.9rem;
+    }
+
+    .notification-message {
+      color: #666;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    .notification-time {
+      color: #999;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #e74c3c;
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .no-notifications {
+      padding: 2rem;
+      text-align: center;
+      color: #666;
+    }
+
+    .prfl-name h4 {
+      color: #333;
+      font-weight: 600;
+    }
+
+    .prfl-container img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #2ecc71;
+    }
+
+    /* Dashboard Layout */
+    .admin-dashboard {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 2rem;
+      padding: 2rem;
+      min-height: calc(100vh - 120px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+
+    .sidebar-logo h3 {
+      color: #2ecc71;
+      font-size: 1.4rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #666;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .sidebar-nav a i {
+      font-size: 1.2rem;
+    }
+
+    /* Main Content */
+    .admin-options {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto 1fr;
+      gap: 2rem;
+      height: fit-content;
+    }
+
+    /* Welcome Section */
+    .dashboard-welcome {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      padding: 2.5rem;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(46, 204, 113, 0.3);
+    }
+
+    .dashboard-welcome h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .dashboard-welcome p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    /* Chart Sections */
+    .data-chart {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .data-chart::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #2ecc71, #27ae60);
+    }
+
+    .data-chart:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .data-chart h3 {
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    /* College Selector */
+    #collegeSelector {
+      padding: 0.8rem 1.2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      border: 2px solid #e0e0e0;
+      max-width: 350px;
+      width: 100%;
+      background: white;
+      transition: all 0.3s ease;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+
+    #collegeSelector:focus {
+      outline: none;
+      border-color: #2ecc71;
+      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+    }
+
+    label[for="collegeSelector"] {
+      display: block;
+      margin-bottom: 0.8rem;
+      color: #2c3e50;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    /* Canvas Charts */
+    #collegeChart,
+    #combinedCollegeChart {
+      background: rgba(248, 249, 250, 0.5);
+      border-radius: 12px;
+      padding: 1rem;
+      height: 300px !important;
+    }
+
+    /* Data Table Section */
+    .data-list {
+      grid-column: 1 / -1;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .data-list::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #3498db, #2980b9);
+    }
+
+    .data-list:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .data-list h3 {
+      color: #2c3e50;
+      margin-bottom: 2rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    /* Export Controls */
+    .export-controls {
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 0.8rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .export-controls button,
+    .export-chart-buttons button {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .export-chart-buttons button {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+    }
+
+    .export-controls button:hover {
+      background: linear-gradient(135deg, #2980b9, #21618c);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+    }
+
+    .export-chart-buttons button:hover {
+      background: linear-gradient(135deg, #27ae60, #1e8449);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
+    }
+
+    .export-chart-buttons {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 0.8rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    /* Enhanced Table Styles */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .data-table th, 
+    .data-table td {
+      padding: 1rem 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .data-table th {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 0.85rem;
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .data-table th.sortable:hover {
+      background: linear-gradient(135deg, #27ae60, #1e8449);
+    }
+
+    .data-table th.sortable::after {
+      content: '';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid white;
+      opacity: 0.5;
+      transition: all 0.3s ease;
+    }
+
+    .data-table th.sortable.asc::after {
+      border-top: none;
+      border-bottom: 5px solid white;
+      opacity: 1;
+    }
+
+    .data-table th.sortable.desc::after {
+      border-top: 5px solid white;
+      border-bottom: none;
+      opacity: 1;
+    }
+
+    .data-table tbody tr {
+      transition: all 0.3s ease;
+    }
+
+    .data-table tbody tr:hover {
+      background: rgba(46, 204, 113, 0.05);
+      transform: scale(1.01);
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Filter Controls */
+    .table-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .table-search {
+      flex: 1;
+      min-width: 250px;
+      max-width: 400px;
+    }
+
+    .table-search input {
+      width: 100%;
+      padding: 0.8rem 1.2rem;
+      border-radius: 12px;
+      border: 2px solid #e0e0e0;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .table-search input:focus {
+      outline: none;
+      border-color: #2ecc71;
+      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+    }
+
+    .table-filters {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .table-filters select {
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      border: 2px solid #e0e0e0;
+      font-size: 0.9rem;
+      background: white;
+      cursor: pointer;
+    }
+
+    .table-filters select:focus {
+      outline: none;
+      border-color: #2ecc71;
+    }
+
+    /* Status filter chips */
+    .filter-chips {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .filter-chip {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .filter-chip.active {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .filter-chip.normal {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+    }
+
+    .filter-chip.moderate {
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: white;
+    }
+
+    .filter-chip.severe {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+    }
+
+    /* Pagination */
+    .table-pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 1.5rem;
+      gap: 0.5rem;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      background: white;
+      border: 1px solid #e0e0e0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .pagination-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .pagination-btn.active {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      border-color: transparent;
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Tooltip for last updated */
+    .last-updated {
+      position: relative;
+      cursor: help;
+    }
+
+    .last-updated:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    /* Status indicators */
+    .status-normal {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-moderate {
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: white;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-severe {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .admin-dashboard {
+        flex-direction: column;
+        padding: 1rem;
+      }
+
+      .sidebar {
+        width: 100%;
+        position: static;
+      }
+
+      .admin-options {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hdr {
+        padding: 0 1rem;
+      }
+
+      .dashboard-welcome h1 {
+        font-size: 2rem;
+      }
+
+      .sidebar-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 1rem;
+      }
+
+      .sidebar-nav a {
+        white-space: nowrap;
+      }
+
+      .export-controls,
+      .export-chart-buttons {
+        justify-content: center;
+      }
+
+      #collegeChart,
+      #combinedCollegeChart {
+        height: 250px !important;
+      }
+
+      .table-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .table-search {
+        max-width: 100%;
+      }
+
+      .table-filters {
+        justify-content: space-between;
+        width: 100%;
+      }
+
+      .data-table th, 
+      .data-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hdr">
+      <div class="hdr-logo">
+        <h2>CalmConnect</h2>
+      </div>
+      <div class="hdr-btns">
+        <div class="prfl-bell" id="notif-bell" aria-label="Notifications">
+          <i class="bx bxs-bell"></i>
+          <div class="notification-badge" id="notification-badge" style="display: none;">0</div>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="no-notifications">
+                <i class="bx bx-bell" style="font-size:2.2rem;"></i><br>No notifications
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="prfl-name">
+          <h4>{{ request.user.username }}</h4>
+        </div>
+        <div class="prfl-container">
+                          <img src="{% static 'mentalhealth/img/default.jpg' %}" alt="Profile" />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-dashboard">
+    <aside class="sidebar">
+      <div class="sidebar-logo"><h3>Admin Panel</h3></div>
+<nav class="sidebar-nav">
+  <a href="{% url 'admin_dashboard' %}"><i class="bx bxs-dashboard"></i> Dashboard</a>
+  <a href="#" class="active"><i class='bx bxs-data'></i> Data</a>
+  <a href="{% url 'admin_appointments' %}"><i class='bx bxs-calendar'></i> Appointments</a>
+  <a href="{% url 'admin_archive' %}"><i class='bx bxs-user'></i> Archives</a>
+  <a href="{% url 'admin_personnel' %}"><i class='bx bxs-user-badge'></i> Personnel</a>
+  <a href="{% url 'logout' %}"><i class="bx bx-log-out"></i> Logout</a>
+</nav>
+    </aside>
+
+    <main class="admin-options">
+      <div class="dashboard-welcome">
+        <h1>College Mental Health Overview</h1>
+        <p>Aggregated DASS-21 data by college</p>
+      </div>
+
+      <!-- College-wise Chart -->
+      <section class="data-chart">
+        <h3>College-Based Mental Health Stats</h3>
+        <label for="collegeSelector">Filter by College:</label>
+        <select id="collegeSelector">
+          <option value="all">All Colleges</option>
+          {% for college in colleges %}
+          <option value="{{ college.code }}">{{ college.name }}</option>
+          {% endfor %}
+        </select>
+        <canvas id="collegeChart"></canvas>
+        <div class="export-chart-buttons">
+          <button onclick="exportChart('png')"><i class="bx bx-download"></i> PNG</button>
+          <button onclick="exportChart('pdf')"><i class="bx bx-file-pdf"></i> PDF</button>
+        </div>
+      </section>
+
+      <!-- Combined Overview -->
+      <section class="data-chart">
+        <h3>College Comparison</h3>
+        <canvas id="combinedCollegeChart"></canvas>
+        <div class="export-chart-buttons">
+          <button onclick="exportCombinedChart('png')"><i class="bx bx-download"></i> PNG</button>
+          <button onclick="exportCombinedChart('pdf')"><i class="bx bx-file-pdf"></i> PDF</button>
+        </div>
+      </section>
+
+      <!-- College Summary Table -->
+      <section class="data-list">
+        <h3>College Mental Health Summary</h3>
+        <div class="export-controls">
+          <button onclick="exportToCSV()"><i class="bx bx-spreadsheet"></i> CSV</button>
+          <button onclick="exportToExcel()"><i class="bx bx-file"></i> Excel</button>
+          <button onclick="printTable()"><i class="bx bx-printer"></i> Print</button>
+        </div>
+
+        <div class="table-controls">
+          <div class="table-search">
+            <input type="text" id="tableSearch" placeholder="Search colleges..." oninput="filterTable()">
+          </div>
+          <div class="table-filters">
+            <select id="studentsFilter" onchange="filterTable()">
+              <option value="all">All Students</option>
+              <option value="0-100">0-100</option>
+              <option value="101-500">101-500</option>
+              <option value="501+">501+</option>
+            </select>
+            <select id="scoreFilter" onchange="filterTable()">
+              <option value="all">All Scores</option>
+              <option value="0-10">0-10 (Normal)</option>
+              <option value="10-20">10-20 (Moderate)</option>
+              <option value="20+">20+ (Severe)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-chips">
+          <div class="filter-chip normal active" onclick="toggleFilter('normal')">Normal</div>
+          <div class="filter-chip moderate active" onclick="toggleFilter('moderate')">Moderate</div>
+          <div class="filter-chip severe active" onclick="toggleFilter('severe')">Severe</div>
+        </div>
+
+        <table class="data-table" id="dataTable">
+          <thead>
+            <tr>
+              <th>College</th>
+              <th class="sortable" onclick="sortTable(1)">Students</th>
+              <th>Avg Depression</th>
+              <th>Avg Anxiety</th>
+              <th>Avg Stress</th>
+              <th class="sortable" onclick="sortTable(5)">Overall Score</th>
+              <th>Status</th>
+              <th class="sortable" onclick="sortTable(7)">Last Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for college in colleges %}
+            <tr data-status="{{ college.severity }}" 
+                data-students="{{ college.student_count }}" 
+                data-score="{{ college.overall_avg }}">
+              <td>{{ college.name }}</td>
+              <td>{{ college.student_count }}</td>
+              <td>{{ college.depression_avg|floatformat:2 }}</td>
+              <td>{{ college.anxiety_avg|floatformat:2 }}</td>
+              <td>{{ college.stress_avg|floatformat:2 }}</td>
+              <td>{{ college.overall_avg|floatformat:2 }}</td>
+              <td>
+                {% if college.severity == 'normal' %}
+                  <span class="status-normal">Normal</span>
+                {% elif college.severity == 'moderate' %}
+                  <span class="status-moderate">Moderate</span>
+                {% else %}
+                  <span class="status-severe">Severe</span>
+                {% endif %}
+              </td>
+              <td class="last-updated" data-tooltip="Last data refresh: {{ college.last_updated|date:'M d, Y H:i' }}">
+                {{ college.last_updated|date:"Y-m-d" }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" style="text-align: center;">No college data available</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="table-pagination">
+          <button id="prevPage" onclick="changePage(-1)" disabled>&lt; Prev</button>
+          <div id="pageNumbers"></div>
+          <button id="nextPage" onclick="changePage(1)">Next &gt;</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+ {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Previous head content remains the same until the script section -->
+</head>
+<body>
+  <!-- Previous body content remains the same until the script section -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+    // College data from Django template
+    const collegeData = {
+        labels: [{% for college in colleges %}"{{ college.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        codes: [{% for college in colleges %}"{{ college.code }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        depression: [{% for college in colleges %}{{ college.depression_avg|floatformat:2 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+        anxiety: [{% for college in colleges %}{{ college.anxiety_avg|floatformat:2 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+        stress: [{% for college in colleges %}{{ college.stress_avg|floatformat:2 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+        studentCounts: [{% for college in colleges %}{{ college.student_count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+        overallScores: [{% for college in colleges %}{{ college.overall_avg|floatformat:2 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+        severities: [{% for college in colleges %}"{{ college.severity }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        lastUpdated: [{% for college in colleges %}"{{ college.last_updated|date:'Y-m-d H:i' }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        colors: [{% for college in colleges %}"{{ college.color_rgb }}"{% if not forloop.last %}, {% endif %}{% endfor %}]
+    };
+
+    // Initialize college chart
+    const collegeChartCtx = document.getElementById('collegeChart').getContext('2d');
+    const collegeChart = new Chart(collegeChartCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Depression', 'Anxiety', 'Stress'],
+            datasets: [{
+                label: collegeData.labels[0],
+                data: [
+                    collegeData.depression[0],
+                    collegeData.anxiety[0],
+                    collegeData.stress[0]
+                ],
+                backgroundColor: [
+                    `rgba(${collegeData.colors[0]}, 0.7)`,
+                    `rgba(${collegeData.colors[0]}, 0.7)`,
+                    `rgba(${collegeData.colors[0]}, 0.7)`
+                ],
+                borderColor: [
+                    `rgba(${collegeData.colors[0]}, 1)`,
+                    `rgba(${collegeData.colors[0]}, 1)`,
+                    `rgba(${collegeData.colors[0]}, 1)`
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 42,
+                    title: {
+                        display: true,
+                        text: 'DASS-21 Score'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'DASS-21 Scores by Category',
+                    font: {
+                        size: 16
+                    }
+                },
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Initialize combined college chart
+    const combinedChartCtx = document.getElementById('combinedCollegeChart').getContext('2d');
+    const combinedCollegeChart = new Chart(combinedChartCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Depression', 'Anxiety', 'Stress'],
+            datasets: collegeData.labels.map((label, index) => ({
+                label: label,
+                data: [
+                    collegeData.depression[index],
+                    collegeData.anxiety[index],
+                    collegeData.stress[index]
+                ],
+                backgroundColor: `rgba(${collegeData.colors[index]}, 0.2)`,
+                borderColor: `rgba(${collegeData.colors[index]}, 1)`,
+                borderWidth: 2,
+                pointBackgroundColor: `rgba(${collegeData.colors[index]}, 1)`,
+                pointRadius: 4
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: {
+                        display: true
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 25,
+                    ticks: {
+                        stepSize: 5
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'College Comparison of DASS-21 Scores',
+                    font: {
+                        size: 16
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // College selector functionality
+    document.getElementById('collegeSelector').addEventListener('change', function() {
+        const selectedCollege = this.value;
+        
+        if (selectedCollege === 'all') {
+            // Show all colleges in combined chart
+            combinedCollegeChart.data.datasets.forEach(dataset => {
+                dataset.hidden = false;
+            });
+            combinedCollegeChart.update();
+            
+            // Reset bar chart to default (first college)
+            updateCollegeChart(0);
+        } else {
+            // Find index of selected college
+            const collegeIndex = collegeData.codes.indexOf(selectedCollege);
+            
+            if (collegeIndex !== -1) {
+                // Hide all colleges except selected in combined chart
+                combinedCollegeChart.data.datasets.forEach((dataset, index) => {
+                    dataset.hidden = index !== collegeIndex;
+                });
+                combinedCollegeChart.update();
+                
+                // Update bar chart with selected college data
+                updateCollegeChart(collegeIndex);
+            }
+        }
+    });
+
+    function updateCollegeChart(index) {
+        collegeChart.data.datasets[0].data = [
+            collegeData.depression[index],
+            collegeData.anxiety[index],
+            collegeData.stress[index]
+        ];
+        collegeChart.data.datasets[0].label = collegeData.labels[index];
+        collegeChart.data.datasets[0].backgroundColor = [
+            `rgba(${collegeData.colors[index]}, 0.7)`,
+            `rgba(${collegeData.colors[index]}, 0.7)`,
+            `rgba(${collegeData.colors[index]}, 0.7)`
+        ];
+        collegeChart.data.datasets[0].borderColor = [
+            `rgba(${collegeData.colors[index]}, 1)`,
+            `rgba(${collegeData.colors[index]}, 1)`,
+            `rgba(${collegeData.colors[index]}, 1)`
+        ];
+        collegeChart.update();
+    }
+
+    // Table functionality
+    let currentSortColumn = 1; // Default sort by Students
+    let sortDirection = 'desc'; // Default sort direction
+    let currentPage = 1;
+    const rowsPerPage = 10;
+    let filteredRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+    let activeStatusFilters = ['normal', 'moderate', 'severe'];
+
+    // Initialize table
+    document.addEventListener('DOMContentLoaded', function() {
+        // Store original rows data for sorting
+        const rows = document.querySelectorAll('#dataTable tbody tr');
+        rows.forEach(row => {
+            row.dataset.students = parseInt(row.cells[1].textContent);
+            row.dataset.score = parseFloat(row.cells[5].textContent);
+            row.dataset.lastUpdated = new Date(row.cells[7].textContent).getTime();
+        });
+        
+        sortTable(currentSortColumn, true);
+        updatePagination();
+    });
+
+    // Sort table by column
+    function sortTable(columnIndex, initialLoad = false) {
+        const table = document.getElementById('dataTable');
+        const headers = table.querySelectorAll('th');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr:not([style*="display: none"])'));
+
+        // Update sort indicators
+        if (!initialLoad) {
+            headers.forEach((header, index) => {
+                header.classList.remove('asc', 'desc');
+                if (index === columnIndex) {
+                    if (currentSortColumn === columnIndex) {
+                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSortColumn = columnIndex;
+                        sortDirection = 'desc';
+                    }
+                    header.classList.add(sortDirection);
+                }
+            });
+        }
+
+        // Sort rows
+        rows.sort((a, b) => {
+            let aValue, bValue;
+
+            if (columnIndex === 1) { // Students column
+                aValue = parseInt(a.dataset.students);
+                bValue = parseInt(b.dataset.students);
+            } else if (columnIndex === 5) { // Overall Score column
+                aValue = parseFloat(a.dataset.score);
+                bValue = parseFloat(b.dataset.score);
+            } else if (columnIndex === 7) { // Last Updated column
+                aValue = parseInt(a.dataset.lastUpdated);
+                bValue = parseInt(b.dataset.lastUpdated);
+            }
+
+            if (sortDirection === 'asc') {
+                return aValue > bValue ? 1 : -1;
+            } else {
+                return aValue < bValue ? 1 : -1;
+            }
+        });
+
+        // Rebuild table
+        rows.forEach(row => tbody.appendChild(row));
+        updatePagination();
+    }
+
+    // Filter table based on search and filters
+    function filterTable() {
+        const searchTerm = document.getElementById('tableSearch').value.toLowerCase();
+        const studentsFilter = document.getElementById('studentsFilter').value;
+        const scoreFilter = document.getElementById('scoreFilter').value;
+
+        filteredRows = Array.from(document.querySelectorAll('#dataTable tbody tr')).filter(row => {
+            // Status filter
+            const status = row.getAttribute('data-status');
+            if (!activeStatusFilters.includes(status)) return false;
+
+            // Search term
+            const collegeName = row.cells[0].textContent.toLowerCase();
+            if (searchTerm && !collegeName.includes(searchTerm)) return false;
+
+            // Students filter
+            const students = parseInt(row.dataset.students);
+            if (studentsFilter === '0-100' && students > 100) return false;
+            if (studentsFilter === '101-500' && (students <= 100 || students > 500)) return false;
+            if (studentsFilter === '501+' && students <= 500) return false;
+
+            // Score filter
+            const score = parseFloat(row.dataset.score);
+            if (scoreFilter === '0-10' && score > 10) return false;
+            if (scoreFilter === '10-20' && (score <= 10 || score > 20)) return false;
+            if (scoreFilter === '20+' && score <= 20) return false;
+
+            return true;
+        });
+
+        currentPage = 1;
+        updatePagination();
+    }
+
+    // Toggle status filters
+    function toggleFilter(status) {
+        const chip = document.querySelector(`.filter-chip.${status}`);
+        chip.classList.toggle('active');
+
+        if (activeStatusFilters.includes(status)) {
+            activeStatusFilters = activeStatusFilters.filter(s => s !== status);
+        } else {
+            activeStatusFilters.push(status);
+        }
+
+        filterTable();
+    }
+
+    // Pagination functions
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+        const pageNumbers = document.getElementById('pageNumbers');
+        const prevBtn = document.getElementById('prevPage');
+        const nextBtn = document.getElementById('nextPage');
+
+        // Clear existing page numbers
+        pageNumbers.innerHTML = '';
+
+        // Update previous/next buttons
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+
+        // Add page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.textContent = i;
+            pageBtn.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+            pageBtn.onclick = () => goToPage(i);
+            pageNumbers.appendChild(pageBtn);
+        }
+
+        // Show current page rows
+        const startIdx = (currentPage - 1) * rowsPerPage;
+        const endIdx = startIdx + rowsPerPage;
+        const visibleRows = filteredRows.slice(startIdx, endIdx);
+
+        // Hide all rows first
+        document.querySelectorAll('#dataTable tbody tr').forEach(row => {
+            row.style.display = 'none';
+        });
+
+        // Show filtered rows
+        visibleRows.forEach(row => {
+            row.style.display = '';
+        });
+
+        // If no results, show message
+        if (filteredRows.length === 0) {
+            const tbody = document.querySelector('#dataTable tbody');
+            const noResultsRow = document.createElement('tr');
+            noResultsRow.innerHTML = '<td colspan="8" style="text-align: center;">No matching colleges found</td>';
+            tbody.appendChild(noResultsRow);
+        }
+    }
+
+    function changePage(delta) {
+        const newPage = currentPage + delta;
+        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+        
+        if (newPage > 0 && newPage <= totalPages) {
+            currentPage = newPage;
+            updatePagination();
+        }
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        updatePagination();
+    }
+
+    // Export functions
+    function exportToCSV() {
+        const rows = filteredRows.length > 0 ? filteredRows : Array.from(document.querySelectorAll('#dataTable tbody tr'));
+        let csvContent = "data:text/csv;charset=utf-8,";
+        
+        // Add headers
+        const headers = [];
+        document.querySelectorAll("#dataTable th").forEach(header => {
+            headers.push(`"${header.textContent}"`);
+        });
+        csvContent += headers.join(",") + "\r\n";
+        
+        // Add rows
+        rows.forEach(row => {
+            const rowData = [];
+            row.querySelectorAll("td").forEach(cell => {
+                // Remove status span and get just the text
+                if (cell.querySelector('.status-normal, .status-moderate, .status-severe')) {
+                    rowData.push(`"${cell.querySelector('span').textContent}"`);
+                } else {
+                    rowData.push(`"${cell.textContent}"`);
+                }
+            });
+            if (rowData.length > 0) {
+                csvContent += rowData.join(",") + "\r\n";
+            }
+        });
+        
+        // Download CSV file
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "college_mental_health_data.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    function exportToExcel() {
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Get data
+        const rows = filteredRows.length > 0 ? filteredRows : Array.from(document.querySelectorAll('#dataTable tbody tr'));
+        const data = [];
+        
+        // Add headers
+        const headers = [];
+        document.querySelectorAll("#dataTable th").forEach(header => {
+            headers.push(header.textContent);
+        });
+        data.push(headers);
+        
+        // Add rows
+        rows.forEach(row => {
+            const rowData = [];
+            row.querySelectorAll("td").forEach(cell => {
+                // Remove status span and get just the text
+                if (cell.querySelector('.status-normal, .status-moderate, .status-severe')) {
+                    rowData.push(cell.querySelector('span').textContent);
+                } else {
+                    rowData.push(cell.textContent);
+                }
+            });
+            if (rowData.length > 0) {
+                data.push(rowData);
+            }
+        });
+        
+        // Create worksheet
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(wb, ws, "College Data");
+        
+        // Export workbook
+        XLSX.writeFile(wb, "college_mental_health_data.xlsx");
+    }
+    
+    function printTable() {
+        const printWindow = window.open('', '', 'width=800,height=600');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>College Mental Health Summary</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { padding: 10px; text-align: center; border: 1px solid #ddd; }
+                        th { background-color: #2ecc71; color: white; }
+                        .status-normal { background: #2ecc71; color: white; padding: 3px 8px; border-radius: 10px; }
+                        .status-moderate { background: #f39c12; color: white; padding: 3px 8px; border-radius: 10px; }
+                        .status-severe { background: #e74c3c; color: white; padding: 3px 8px; border-radius: 10px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>College Mental Health Summary</h1>
+                    <p>Generated on ${new Date().toLocaleString()}</p>
+                    ${document.getElementById('dataTable').outerHTML}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => printWindow.print(), 500);
+    }
+
+    function exportChart(format) {
+        const canvas = document.getElementById('collegeChart');
+        const dataURL = canvas.toDataURL('image/png');
+        
+        if (format === 'png') {
+            const link = document.createElement('a');
+            link.download = 'college_mental_health_chart.png';
+            link.href = dataURL;
+            link.click();
+        } else if (format === 'pdf') {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            pdf.addImage(dataURL, 'PNG', 10, 10, 180, 100);
+            pdf.save('college_mental_health_chart.pdf');
+        }
+    }
+    
+    function exportCombinedChart(format) {
+        const canvas = document.getElementById('combinedCollegeChart');
+        const dataURL = canvas.toDataURL('image/png');
+        
+        if (format === 'png') {
+            const link = document.createElement('a');
+            link.download = 'college_comparison_chart.png';
+            link.href = dataURL;
+            link.click();
+        } else if (format === 'pdf') {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            pdf.addImage(dataURL, 'PNG', 10, 10, 180, 100);
+            pdf.save('college_comparison_chart.pdf');
+        }
+    }
+
+    // Notification functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const notifBell = document.getElementById('notif-bell');
+        const notificationDropdown = document.getElementById('notification-dropdown');
+        const notificationList = document.getElementById('notification-list');
+        const notificationBadge = document.getElementById('notification-badge');
+        
+        // Get CSRF token
+        function getCSRFToken() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') {
+                    return value;
+                }
+            }
+            return '';
+        }
+
+        // Toggle notification dropdown
+        notifBell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isVisible = notificationDropdown.style.display === 'block';
+            notificationDropdown.style.display = isVisible ? 'none' : 'block';
+            
+            if (!isVisible) {
+                loadNotifications();
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!notifBell.contains(e.target)) {
+                notificationDropdown.style.display = 'none';
+            }
+        });
+
+        // Load notifications
+        function loadNotifications() {
+            fetch('/notifications/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login/';
+                        return;
+                    }
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    notificationList.innerHTML = '';
+                    data.notifications.forEach(notif => {
+                        const notifItem = document.createElement('div');
+                        notifItem.className = 'notification-item';
+                        notifItem.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
+                        
+                        const content = document.createElement('div');
+                        content.style.cssText = 'flex:1;';
+                        content.innerHTML = `
+                            <div class="notification-title">${notif.message}</div>
+                            <div class="notification-time">${notif.time}</div>
+                        `;
+                        
+                        const clearBtn = document.createElement('button');
+                        clearBtn.innerHTML = '<i class="bx bx-x"></i>';
+                        clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
+                        clearBtn.title = 'Clear notification';
+                        clearBtn.onclick = function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            clearNotification(notif.id);
+                        };
+                        
+                        notifItem.appendChild(content);
+                        notifItem.appendChild(clearBtn);
+                        notificationList.appendChild(notifItem);
+                    });
+                    
+                    // Add clear all button
+                    const clearAllDiv = document.createElement('div');
+                    clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
+                    
+                    const clearAllBtn = document.createElement('button');
+                    clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
+                    clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
+                    clearAllBtn.onclick = function(e) {
+                        e.preventDefault();
+                        if (confirm('Clear all notifications?')) {
+                            clearAllNotifications();
+                        }
+                    };
+                    
+                    clearAllDiv.appendChild(clearAllBtn);
+                    notificationList.appendChild(clearAllDiv);
+                    
+                    // Update badge
+                    notificationBadge.textContent = data.notifications.length;
+                    notificationBadge.style.display = 'block';
+                } else {
+                    notificationList.innerHTML = '<div class="no-notifications"><i class="bx bx-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
+                    notificationBadge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+                notificationList.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
+            });
+        }
+
+        // Auto-refresh notifications every 30 seconds
+        setInterval(() => {
+            if (notificationDropdown.style.display === 'block') {
+                loadNotifications();
+            }
+        }, 30000);
+
+        // Function to clear individual notification
+        function clearNotification(notificationId) {
+            fetch(`/notifications/${notificationId}/clear/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh the notification dropdown
+                    loadNotifications();
+                } else {
+                    console.error('Error clearing notification:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing notification:', error);
+            });
+        }
+
+        // Function to clear all notifications
+        function clearAllNotifications() {
+            fetch('/notifications/clear-all/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh the notification dropdown
+                    loadNotifications();
+                } else {
+                    console.error('Error clearing all notifications:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing all notifications:', error);
+            });
+        }
+
+        // Initial load
+        loadNotifications();
+    });
+</script>
+</body>
+</html>

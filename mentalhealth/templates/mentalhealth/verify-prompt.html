@@ -1,0 +1,58 @@
+<style>
+    .verification-prompt {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.verification-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+</style>
+{% extends 'index.html' %}
+{% block content %}
+<div class="verification-container">
+    <h2>Email Verification</h2>
+    
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="verification-status">
+        {% if user.email_verified %}
+            <p class="verified">Your email is verified!</p>
+            <a href="{% url 'index' %}" class="btn btn-success">
+                Go to Dashboard
+            </a>
+        {% else %}
+            <p>We've sent a verification email to <strong>{{ user.email }}</strong>.</p>
+            <p class="pending">Please check your inbox and click the verification link.</p>
+            
+            <div class="verification-actions">
+                <form action="{% url 'resend_verification' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        Resend Verification Email
+                    </button>
+                </form>
+                <a href="{% url 'logout' %}" class="btn btn-secondary">
+                    Logout
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

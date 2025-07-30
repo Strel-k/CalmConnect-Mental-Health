@@ -1,0 +1,252 @@
+.scheduler-container {
+  max-width: 100%;
+  width: 100%;
+  margin: 2rem;
+}
+
+.scheduler-container h3 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #2ecc71;
+}
+.scheduler-container label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.scheduler-container input,
+.scheduler-container textarea {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+}
+.scheduler-container select {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+}
+.scheduler-container button {
+    background-color: #32a57c;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease;
+}
+
+.scheduler-container button:hover {
+    background-color: #2ecc71;
+}
+#calendar {
+  max-width: 100%;
+  margin: 2rem auto;
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.fc .fc-toolbar-title {
+  font-size: 1.1rem;
+}
+.fc .fc-button {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.fc .fc-col-header-cell-cushion,
+.fc .fc-timegrid-slot-label {
+  font-size: 0.75rem;
+}
+
+.fc-timegrid-event {
+  font-size: 0.75rem;
+  padding: 2px;
+}
+.counselor-selection {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 1.5rem auto;
+  max-width: 1000px;
+}
+
+
+.counselor-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 220px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+
+.counselor-card {
+  background: #f8f8f8;
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  width: 160px;
+}
+.counselor-card:hover,
+.counselor-card.active {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  border: 2px solid #2ecc71;
+}
+
+.counselor-card img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 0.8rem;
+}
+.counselor-details .name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+.counselor-details .unit,
+.counselor-details .rank {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+#fc-tooltip {
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+}
+.counselor-list {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+
+
+.counselor-card img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 0.5rem;
+}
+
+#available-slots {
+  text-align: center;
+}
+
+.slot-list {
+  list-style: none;
+  padding: 0;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.slot-item {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background: #f2f2f2;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.slot-item:hover {
+  background-color: #d1f0df;
+}
+.counselor-selection {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* center cards horizontally */
+  gap: 1.5rem;
+  margin: 1.5rem auto;
+  max-width: 1000px;
+}
+
+.counselor-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 220px; /* keep it manageable */
+  padding: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.counselor-card:hover,
+.counselor-card.active {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  border: 2px solid #2ecc71;
+}
+
+.counselor-card img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 0.8rem;
+}
+
+.counselor-details .name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.counselor-details .unit,
+.counselor-details .rank {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+
+@media (max-width: 768px) {
+ #calendar {
+    font-size: 0.8rem;
+    padding: 0.5rem;
+  }
+
+  .fc .fc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .fc .fc-button-group {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .fc .fc-button {
+    flex: 1 0 48%;
+    margin: 2px 0;
+  }
+}
+@media screen and (max-width: 600px) {
+  .counselor-card {
+    width: 100%;
+  }
+}

@@ -1,0 +1,18 @@
+Your Counseling Appointment Details
+
+Hello {{ user.username }},
+
+Your counseling session has been successfully booked with the following details:
+
+Counselor: {{ appointment.counselor.name }}
+Date: {{ appointment.date }}
+Time: {{ appointment.time }}
+Services: {{ appointment.services|join:", " }}
+Reason: {{ appointment.reason }}
+
+Please arrive 10 minutes before your scheduled time.
+
+If you need to reschedule or cancel, please contact us at support@calmconnect.com.
+
+Best regards,
+The CalmConnect Team

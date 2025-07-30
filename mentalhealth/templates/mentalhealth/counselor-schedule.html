@@ -1,0 +1,1676 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Counselor Schedule | CalmConnect</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <meta name="description" content="Personal schedule for counselors to manage their appointments and availability">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #2ecc71;
+      --primary-dark: #27ae60;
+      --secondary-blue: #3498db;
+      --secondary-blue-dark: #2980b9;
+      --secondary-purple: #9b59b6;
+      --secondary-purple-dark: #8e44ad;
+      --secondary-orange: #e67e22;
+      --secondary-orange-dark: #d35400;
+      --secondary-red: #e74c3c;
+      --secondary-red-dark: #c0392b;
+      --text-dark: #2c3e50;
+      --text-medium: #666;
+      --text-light: #999;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+      color: var(--text-dark);
+      line-height: 1.6;
+    }
+
+    /* Header Styles */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hdr-logo h2 {
+      color: var(--primary-color);
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .hdr-btns {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .prfl-bell {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .prfl-bell i {
+      font-size: 1.3rem;
+      color: var(--text-medium);
+      transition: color 0.3s ease;
+    }
+
+    .prfl-bell:hover i {
+      color: var(--primary-color);
+    }
+
+    .prfl-name h4 {
+      color: #333;
+      font-weight: 600;
+    }
+
+    .prfl-container img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid var(--primary-color);
+      object-fit: cover;
+    }
+
+    /* Dashboard Layout */
+    .counselor-dashboard {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 2rem;
+      padding: 2rem;
+      min-height: calc(100vh - 120px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+
+    .sidebar-logo h3 {
+      color: var(--primary-color);
+      font-size: 1.4rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--text-medium);
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      transform: translateX(5px);
+      box-shadow: 0 2px 10px rgba(46, 204, 113, 0.3);
+    }
+
+    .sidebar-nav a i {
+      font-size: 1.2rem;
+    }
+
+    /* Main Content */
+    .schedule-main {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .schedule-header {
+      margin-bottom: 2rem;
+    }
+
+    .schedule-header h2 {
+      color: var(--text-dark);
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .schedule-header p {
+      color: var(--text-medium);
+    }
+
+    .availability-panel {
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .availability-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-blue), var(--secondary-purple));
+      border-radius: 20px 20px 0 0;
+    }
+
+    .current-availability {
+      margin-bottom: 2rem;
+    }
+
+    .current-availability h3 {
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      color: var(--text-dark);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .current-availability h3::before {
+      content: '📅';
+      font-size: 1.2rem;
+    }
+
+    .availability-days {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .availability-day {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      border: 1px solid rgba(46, 204, 113, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .availability-day::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--primary-color);
+      border-radius: 0 12px 12px 0;
+    }
+
+    .availability-day:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(46, 204, 113, 0.15);
+      border-color: var(--primary-color);
+    }
+
+    /* Animation for availability days */
+    .availability-day {
+      animation: fadeInUp 0.6s ease forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .availability-day:nth-child(1) { animation-delay: 0.1s; }
+    .availability-day:nth-child(2) { animation-delay: 0.2s; }
+    .availability-day:nth-child(3) { animation-delay: 0.3s; }
+    .availability-day:nth-child(4) { animation-delay: 0.4s; }
+    .availability-day:nth-child(5) { animation-delay: 0.5s; }
+    .availability-day:nth-child(6) { animation-delay: 0.6s; }
+    .availability-day:nth-child(7) { animation-delay: 0.7s; }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Pulse animation for stats */
+    .stat-card {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.02);
+      }
+    }
+
+    /* Success animation for saved availability */
+    .availability-saved {
+      animation: successPulse 0.6s ease;
+    }
+
+    @keyframes successPulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOutRight {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
+    .availability-day i {
+      color: var(--primary-color);
+      font-size: 1.1rem;
+      background: rgba(46, 204, 113, 0.1);
+      padding: 0.5rem;
+      border-radius: 8px;
+    }
+
+    .availability-day span {
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+
+    .availability-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      padding: 1.2rem;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--text-medium);
+      font-weight: 500;
+    }
+
+    .quick-action-btn {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      border: none;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+    }
+
+    .quick-action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+    }
+
+    .quick-action-btn.secondary {
+      background: linear-gradient(135deg, #6c757d, #495057);
+      box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+    }
+
+    .quick-action-btn.secondary:hover {
+      box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+    }
+
+    .no-availability {
+      background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+      border: 1px solid #ffc107;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      color: #856404;
+    }
+
+    .no-availability i {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #ffc107;
+    }
+
+    /* Loading animation */
+    .loading-availability {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: var(--text-medium);
+    }
+
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .calendar-container {
+      margin-top: 2rem;
+    }
+
+    /* FullCalendar Customization */
+    .fc {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .fc-header-toolbar {
+      margin-bottom: 1.5rem !important;
+    }
+
+    .fc-button {
+      background: var(--primary-color) !important;
+      border: none !important;
+      color: white !important;
+      text-transform: capitalize !important;
+      border-radius: 8px !important;
+      padding: 0.5rem 1rem !important;
+      font-weight: 500 !important;
+      transition: all 0.3s ease !important;
+    }
+
+    .fc-button:hover {
+      background: var(--primary-dark) !important;
+      transform: translateY(-2px) !important;
+    }
+
+    .fc-event {
+      border: none !important;
+      cursor: pointer !important;
+    }
+
+    .fc-event-appointment {
+      background: var(--secondary-blue) !important;
+    }
+
+    .fc-event-availability {
+      background: rgba(46, 204, 113, 0.2) !important;
+      border: 1px dashed var(--primary-color) !important;
+    }
+
+    .fc-event-status-pending {
+      background: var(--secondary-orange) !important;
+    }
+
+    .fc-event-status-confirmed {
+      background: var(--secondary-blue) !important;
+    }
+
+    .fc-event-status-completed {
+      background: var(--secondary-purple) !important;
+    }
+
+    .fc-event-status-cancelled {
+      background: var(--secondary-red) !important;
+      text-decoration: line-through;
+    }
+
+    /* Day Checkboxes */
+    .day-checkboxes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .day-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 1rem;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .day-checkbox:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      border-color: var(--primary-color);
+    }
+
+    .day-checkbox input {
+      width: auto;
+      margin: 0;
+      transform: scale(1.2);
+      accent-color: var(--primary-color);
+    }
+
+    .day-checkbox input:checked + label {
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+
+    .day-checkbox label {
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .date-time-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .date-time-container input[type="time"] {
+      width: 100%;
+      padding: 0.8rem;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .date-time-container input[type="time"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+    }
+
+    /* Individual day schedule styles */
+    .day-schedule-item {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border: 1px solid #e9ecef;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .day-schedule-item:hover {
+      border-color: var(--primary-color);
+      box-shadow: 0 4px 15px rgba(46, 204, 113, 0.1);
+    }
+
+    .day-schedule-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .day-schedule-header i {
+      color: var(--primary-color);
+      font-size: 1.2rem;
+    }
+
+    .day-schedule-times {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .day-schedule-times input[type="time"] {
+      width: 100%;
+      padding: 0.8rem;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .day-schedule-times input[type="time"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+    }
+
+    .day-schedule-times label {
+      font-weight: 500;
+      color: var(--text-medium);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    /* Modals */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      background: white;
+      margin: 2% auto;
+      padding: 2.5rem;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      font-size: 1.5rem;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .close-btn:hover {
+      color: var(--secondary-red);
+    }
+
+    /* Modal Actions */
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    .modal-actions button {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .modal-actions .primary-btn {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .modal-actions .primary-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .modal-actions .secondary-btn {
+      background: #f8f9fa;
+      color: var(--text-dark);
+    }
+
+    .modal-actions .secondary-btn:hover {
+      background: #e9ecef;
+      transform: translateY(-2px);
+    }
+
+    .modal-actions .danger-btn {
+      background: var(--secondary-red);
+      color: white;
+    }
+
+    .modal-actions .danger-btn:hover {
+      background: var(--secondary-red-dark);
+      transform: translateY(-2px);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .counselor-dashboard {
+        flex-direction: column;
+        padding: 1rem;
+      }
+
+      .sidebar {
+        width: 100%;
+        position: static;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hdr {
+        padding: 0 1rem;
+      }
+
+      .sidebar-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 1rem;
+        padding-bottom: 0.5rem;
+      }
+
+      .sidebar-nav a {
+        white-space: nowrap;
+      }
+
+      .modal-content {
+        margin: 1rem auto;
+        padding: 1.5rem;
+        max-height: 95vh;
+        width: 95%;
+      }
+
+      .date-time-container {
+        grid-template-columns: 1fr;
+      }
+
+      .day-schedule-times {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .modal-actions button {
+        width: 100%;
+      }
+    }
+    .notification-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    padding: 1rem;
+    z-index: 1000;
+    min-width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-dropdown a {
+    display: block;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    text-decoration: none;
+    color: var(--text-dark);
+    transition: background 0.2s;
+}
+
+.notification-dropdown a:hover {
+    background: #f8f9fa;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--secondary-red);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+    /* --- Dropdown Styles from counselor-panel.html --- */
+    .dropdown {
+      position: relative;
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 1rem;
+      min-width: 200px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      display: none;
+      z-index: 1001;
+    }
+    .dropdown-menu a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.5rem 0;
+      color: var(--text-dark);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+    }
+    .dropdown-menu a:hover {
+      color: var(--primary-color);
+      transform: translateX(3px);
+    }
+    .dropdown-menu a i {
+      font-size: 1.1rem;
+      width: 20px;
+      text-align: center;
+    }
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hdr">
+      <div class="hdr-logo"><h2>CalmConnect</h2></div>
+      <div class="hdr-btns">
+        <div class="prfl-bell" id="notif-bell" aria-label="Notifications">
+          <i class="bx bxs-bell" id="bell-icon"></i>
+          <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
+          <div class="notification-dropdown" id="notificationDropdown" style="display:none;"></div>
+        </div>
+        <div class="prfl-name"><h4>{{ counselor.name }}</h4></div>
+        <div class="prfl-container dropdown">
+          {% if counselor.image %}
+            <img src="{{ counselor.image.url }}" alt="Profile picture of {{ counselor.name }}" id="profileDropdownToggle" />
+          {% else %}
+                            <img src="{% static 'mentalhealth/img/default.jpg' %}" alt="Default profile picture" id="profileDropdownToggle" />
+          {% endif %}
+          <div class="dropdown-menu" id="profileDropdown">
+            <a href="{% url 'counselor_profile' %}"><i class="bx bxs-user-circle"></i> Profile</a>
+            <a href="{% url 'update_schedule' %}"><i class="bx bxs-time"></i> Schedule</a>
+            <div class="divider"></div>
+            <a href="{% url 'logout' %}" id="logoutLink"><i class="bx bx-log-out"></i> Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="counselor-dashboard">
+    <aside class="sidebar" aria-label="Counselor navigation">
+      <div class="sidebar-logo"><h3>Counselor Panel</h3></div>
+      <nav class="sidebar-nav">
+        <a href="{% url 'counselor_dashboard' %}"><i class="bx bxs-dashboard"></i> Dashboard</a>
+        <a href="{% url 'counselor_schedule' %}" class="active" aria-current="page"><i class="bx bxs-calendar"></i> Schedule</a>
+        <a href="{% url 'counselor_reports' %}"><i class="bx bxs-report"></i> Reports</a>
+        <a href="{% url 'counselor_archive' %}"><i class="bx bxs-archive"></i> Archive</a>
+      </nav>
+    </aside>
+
+    <main class="schedule-main">
+      <div class="schedule-header">
+        <h2>My Counseling Schedule</h2>
+        <p>View and manage your weekly availability and appointments</p>
+      </div>
+
+      <div class="availability-panel">
+        <div class="current-availability">
+          <h3>Current Weekly Availability</h3>
+          <div id="currentAvailability">
+            <div class="loading-availability">
+              <div class="loading-spinner"></div>
+              <span>Loading availability...</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="availability-stats" id="availabilityStats" style="display: none;">
+          <div class="stat-card">
+            <div class="stat-number" id="totalDays">0</div>
+            <div class="stat-label">Available Days</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="totalHours">0</div>
+            <div class="stat-label">Hours Available</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="weeklySlots">0</div>
+            <div class="stat-label">Weekly Slots</div>
+          </div>
+        </div>
+        
+        <button class="quick-action-btn secondary" id="manageAvailabilityBtn">
+          <i class="bx bxs-time"></i> Update Availability
+        </button>
+      </div>
+
+      <div class="calendar-container" id="calendar"></div>
+    </main>
+  </div>
+
+  <!-- Appointment Details Modal -->
+  <div id="appointmentModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" id="closeModalBtn">&times;</span>
+      <h3>Appointment Details</h3>
+      
+      <div class="appointment-details">
+        <div class="detail-group">
+          <span class="detail-label">Student Name</span>
+          <div class="detail-value" id="modalStudentName">Loading...</div>
+        </div>
+        
+        <div class="detail-group">
+          <span class="detail-label">Student ID</span>
+          <div class="detail-value" id="modalStudentId">Loading...</div>
+        </div>
+        
+        <div class="detail-group">
+          <span class="detail-label">Date & Time</span>
+          <div class="detail-value" id="modalDateTime">Loading...</div>
+        </div>
+        
+        <div class="detail-group">
+          <span class="detail-label">College</span>
+          <div class="detail-value" id="modalCollege">Loading...</div>
+        </div>
+        
+        <div class="detail-group">
+          <span class="detail-label">Program</span>
+          <div class="detail-value" id="modalProgram">Loading...</div>
+        </div>
+        
+        <div class="detail-group">
+          <span class="detail-label">Session Type</span>
+          <div class="detail-value" id="modalSessionType">Loading...</div>
+        </div>
+        
+        <div class="detail-group">
+          <span class="detail-label">Status</span>
+          <div class="detail-value" id="modalStatus">Loading...</div>
+        </div>
+        
+        <div class="detail-group session-notes">
+          <span class="detail-label">Session Notes</span>
+          <div class="detail-value" id="modalSessionNotes">
+            Loading...
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="secondary-btn" id="cancelAppointmentBtn">
+          <i class="bx bxs-x-circle"></i> Cancel Appointment
+        </button>
+        <button class="primary-btn" id="startSessionBtn">
+          <i class="bx bxs-check-circle"></i> Start Session
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Availability Management Modal -->
+  <div id="availabilityModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" id="closeAvailabilityModalBtn">&times;</span>
+      <h3>Manage Weekly Availability</h3>
+      
+      <form id="availabilityForm">
+        <div class="form-group">
+          <label>Available Days</label>
+          <div class="day-checkboxes">
+            <div class="day-checkbox">
+              <input type="checkbox" id="monday" name="days" value="Monday">
+              <label for="monday">Monday</label>
+            </div>
+            <div class="day-checkbox">
+              <input type="checkbox" id="tuesday" name="days" value="Tuesday">
+              <label for="tuesday">Tuesday</label>
+            </div>
+            <div class="day-checkbox">
+              <input type="checkbox" id="wednesday" name="days" value="Wednesday">
+              <label for="wednesday">Wednesday</label>
+            </div>
+            <div class="day-checkbox">
+              <input type="checkbox" id="thursday" name="days" value="Thursday">
+              <label for="thursday">Thursday</label>
+            </div>
+            <div class="day-checkbox">
+              <input type="checkbox" id="friday" name="days" value="Friday">
+              <label for="friday">Friday</label>
+            </div>
+            <div class="day-checkbox">
+              <input type="checkbox" id="saturday" name="days" value="Saturday">
+              <label for="saturday">Saturday</label>
+            </div>
+            <div class="day-checkbox">
+              <input type="checkbox" id="sunday" name="days" value="Sunday">
+              <label for="sunday">Sunday</label>
+            </div>
+          </div>
+        </div>
+        
+        <div id="daySchedulesContainer" style="display: none;">
+          <h4 style="margin-bottom: 1rem; color: var(--text-dark);">Individual Day Schedules</h4>
+          <div id="daySchedules">
+            <!-- Day schedule inputs will be generated here -->
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="danger-btn" id="clearAvailabilityBtn">
+            <i class="bx bxs-trash"></i> Clear All
+          </button>
+          <button type="button" class="secondary-btn" id="cancelAvailabilityBtn">
+            Cancel
+          </button>
+          <button type="submit" class="primary-btn">
+            <i class="bx bxs-save"></i> Save Availability
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize calendar
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'timeGridWeek,dayGridMonth,listWeek'
+        },
+        slotMinTime: '07:00:00',
+        slotMaxTime: '21:00:00',
+        slotDuration: '00:30:00',
+        events: JSON.parse('{{ calendar_events|escapejs }}'),
+        eventClick: function(info) {
+          if (info.event.extendedProps.type === 'appointment') {
+            showAppointmentDetails(info.event);
+          }
+        }
+      });
+      calendar.render();
+
+      // Load current availability
+      function loadCurrentAvailability() {
+        fetch('/schedule/update/')
+          .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+          })
+          .then(data => {
+            const availabilityDiv = document.getElementById('currentAvailability');
+            const statsDiv = document.getElementById('availabilityStats');
+            
+            if (data.days && data.days.length > 0) {
+              // Calculate statistics from individual day schedules
+              let totalHours = 0;
+              let html = '<div class="availability-days">';
+              
+              data.days.forEach(day => {
+                const daySchedule = data.day_schedules[day] || {};
+                const startTime = daySchedule.start_time || data.start_time;
+                const endTime = daySchedule.end_time || data.end_time;
+                
+                if (startTime && endTime) {
+                  const start = new Date(`2000-01-01T${startTime}`);
+                  const end = new Date(`2000-01-01T${endTime}`);
+                  const hoursPerDay = (end - start) / (1000 * 60 * 60);
+                  totalHours += hoursPerDay;
+                  
+                  const dayIcon = getDayIcon(day);
+                  html += `
+                    <div class="availability-day">
+                      <i class='bx ${dayIcon}'></i>
+                      <span><strong>${day}</strong><br><small>${startTime} - ${endTime}</small></span>
+                    </div>
+                  `;
+                }
+              });
+              
+              html += '</div>';
+              availabilityDiv.innerHTML = html;
+              
+              // Update statistics
+              const weeklySlots = Math.floor(totalHours * 2); // Assuming 30-minute slots
+              document.getElementById('totalDays').textContent = data.days.length;
+              document.getElementById('totalHours').textContent = totalHours.toFixed(1);
+              document.getElementById('weeklySlots').textContent = weeklySlots;
+            } else {
+              availabilityDiv.innerHTML = '<p>No availability set.</p>';
+              document.getElementById('totalDays').textContent = '0';
+              document.getElementById('totalHours').textContent = '0';
+              document.getElementById('weeklySlots').textContent = '0';
+            }
+          })
+          .catch(error => {
+            const availabilityDiv = document.getElementById('currentAvailability');
+            availabilityDiv.innerHTML = '<p style="color: #e74c3c;">Failed to load availability. Please make sure you are logged in as a counselor and try again.</p>';
+            document.getElementById('totalDays').textContent = '0';
+            document.getElementById('totalHours').textContent = '0';
+            document.getElementById('weeklySlots').textContent = '0';
+            console.error('Error loading availability:', error);
+          });
+      }
+      
+      // Helper function to get appropriate icon for each day
+      function getDayIcon(day) {
+        const dayIcons = {
+          'Monday': 'bxs-calendar-check',
+          'Tuesday': 'bxs-calendar-check',
+          'Wednesday': 'bxs-calendar-check',
+          'Thursday': 'bxs-calendar-check',
+          'Friday': 'bxs-calendar-check',
+          'Saturday': 'bxs-calendar-check',
+          'Sunday': 'bxs-calendar-check'
+        };
+        return dayIcons[day] || 'bxs-calendar-check';
+      }
+      
+      loadCurrentAvailability();
+
+      // Appointment Modal
+      const appointmentModal = document.getElementById('appointmentModal');
+      document.getElementById('closeModalBtn').addEventListener('click', () => {
+        appointmentModal.style.display = 'none';
+      });
+
+      function showAppointmentDetails(event) {
+        const props = event.extendedProps;
+        const start = new Date(event.start);
+        
+        document.getElementById('modalStudentName').textContent = 
+          event.title.split(' - ')[0] || 'N/A';
+        document.getElementById('modalStudentId').textContent = 
+          props.studentId || 'N/A';
+        document.getElementById('modalDateTime').textContent = 
+          `${start.toLocaleDateString()} at ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        document.getElementById('modalCollege').textContent = 
+          props.college || 'N/A';
+        document.getElementById('modalProgram').textContent = 
+          props.program || 'N/A';
+        document.getElementById('modalSessionType').textContent = 
+          props.sessionType || 'N/A';
+        document.getElementById('modalStatus').textContent = 
+          props.status ? props.status.charAt(0).toUpperCase() + props.status.slice(1) : 'N/A';
+        document.getElementById('modalSessionNotes').textContent = 
+          props.notes || 'No notes available.';
+        
+        document.getElementById('appointmentModal').dataset.appointmentId = props.appointmentId;
+        appointmentModal.style.display = 'block';
+      }
+
+      // Availability Modal
+      const availabilityModal = document.getElementById('availabilityModal');
+      document.getElementById('manageAvailabilityBtn').addEventListener('click', () => {
+        fetch('/schedule/update/')
+          .then(response => response.json())
+          .then(data => {
+            // Reset checkboxes
+            document.querySelectorAll('input[name="days"]').forEach(checkbox => {
+              checkbox.checked = false;
+            });
+            
+            // Set current values
+            if (data.days) {
+              data.days.forEach(day => {
+                const checkbox = document.querySelector(`input[name="days"][value="${day}"]`);
+                if (checkbox) checkbox.checked = true;
+              });
+            }
+            
+            // Generate day schedule inputs
+            generateDaySchedules(data.days || [], data.day_schedules || {});
+            
+            availabilityModal.style.display = 'block';
+          });
+      });
+
+      // Function to generate day schedule inputs
+      function generateDaySchedules(selectedDays, daySchedules) {
+        const container = document.getElementById('daySchedules');
+        const containerDiv = document.getElementById('daySchedulesContainer');
+        
+        if (selectedDays.length === 0) {
+          containerDiv.style.display = 'none';
+          return;
+        }
+        
+        container.innerHTML = '';
+        containerDiv.style.display = 'block';
+        
+        selectedDays.forEach(day => {
+          const daySchedule = daySchedules[day] || {};
+          const startTime = daySchedule.start_time || '09:00';
+          const endTime = daySchedule.end_time || '17:00';
+          
+          const dayElement = document.createElement('div');
+          dayElement.className = 'day-schedule-item';
+          dayElement.innerHTML = `
+            <div class="day-schedule-header">
+              <i class='bx bxs-calendar-check'></i>
+              <span>${day}</span>
+            </div>
+            <div class="day-schedule-times">
+              <div>
+                <label for="start_${day.toLowerCase()}">Start Time</label>
+                <input type="time" id="start_${day.toLowerCase()}" 
+                       name="start_${day.toLowerCase()}" value="${startTime}" required>
+              </div>
+              <div>
+                <label for="end_${day.toLowerCase()}">End Time</label>
+                <input type="time" id="end_${day.toLowerCase()}" 
+                       name="end_${day.toLowerCase()}" value="${endTime}" required>
+              </div>
+            </div>
+          `;
+          container.appendChild(dayElement);
+        });
+      }
+
+      // Update day schedules when checkboxes change
+      document.querySelectorAll('input[name="days"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const selectedDays = Array.from(document.querySelectorAll('input[name="days"]:checked'))
+            .map(cb => cb.value);
+          generateDaySchedules(selectedDays, {});
+        });
+      });
+
+      document.getElementById('closeAvailabilityModalBtn').addEventListener('click', () => {
+        availabilityModal.style.display = 'none';
+      });
+
+      document.getElementById('cancelAvailabilityBtn').addEventListener('click', () => {
+        availabilityModal.style.display = 'none';
+      });
+
+      // Save availability
+      document.getElementById('availabilityForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const days = Array.from(document.querySelectorAll('input[name="days"]:checked')).map(cb => cb.value);
+        
+        if (days.length === 0) {
+          alert('Please select at least one day');
+          return;
+        }
+        
+        // Collect individual day schedules
+        const daySchedules = {};
+        let hasValidSchedule = false;
+        
+        days.forEach(day => {
+          const startInput = document.getElementById(`start_${day.toLowerCase()}`);
+          const endInput = document.getElementById(`end_${day.toLowerCase()}`);
+          
+          if (startInput && endInput) {
+            const startTime = startInput.value;
+            const endTime = endInput.value;
+            
+            if (startTime && endTime) {
+              if (startTime >= endTime) {
+                alert(`End time must be after start time for ${day}`);
+                return;
+              }
+              
+              daySchedules[day] = {
+                start_time: startTime,
+                end_time: endTime
+              };
+              hasValidSchedule = true;
+            }
+          }
+        });
+        
+        if (!hasValidSchedule) {
+          alert('Please set times for at least one selected day');
+          return;
+        }
+        
+        fetch('/schedule/update/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({
+            days: days,
+            day_schedules: daySchedules
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Show success feedback
+            const availabilityPanel = document.querySelector('.availability-panel');
+            availabilityPanel.classList.add('availability-saved');
+            setTimeout(() => {
+              availabilityPanel.classList.remove('availability-saved');
+            }, 600);
+            
+            // Show success message
+            const successMessage = document.createElement('div');
+            successMessage.style.cssText = `
+              position: fixed;
+              top: 20px;
+              right: 20px;
+              background: var(--primary-color);
+              color: white;
+              padding: 1rem 1.5rem;
+              border-radius: 8px;
+              box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+              z-index: 3000;
+              animation: slideInRight 0.3s ease;
+            `;
+            successMessage.innerHTML = '<i class="bx bxs-check-circle"></i> Availability saved successfully!';
+            document.body.appendChild(successMessage);
+            
+            setTimeout(() => {
+              successMessage.style.animation = 'slideOutRight 0.3s ease';
+              setTimeout(() => successMessage.remove(), 300);
+            }, 2000);
+            
+            availabilityModal.style.display = 'none';
+            loadCurrentAvailability();
+            calendar.refetchEvents();
+          } else {
+            alert('Error: ' + (data.error || 'Failed to save availability'));
+          }
+        })
+        .catch(error => {
+          alert('Error: ' + error);
+        });
+      });
+
+      // Clear availability
+      document.getElementById('clearAvailabilityBtn').addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear all your availability?')) {
+          fetch('/schedule/update/', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert('Availability cleared successfully');
+              availabilityModal.style.display = 'none';
+              loadCurrentAvailability();
+              calendar.refetchEvents();
+            } else {
+              alert('Error: ' + (data.error || 'Failed to clear availability'));
+            }
+          });
+        }
+      });
+
+      // Close modals when clicking outside
+      window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+          appointmentModal.style.display = 'none';
+          availabilityModal.style.display = 'none';
+        }
+      };
+
+      // Appointment actions
+      document.getElementById('cancelAppointmentBtn').addEventListener('click', function() {
+        const appointmentId = document.getElementById('appointmentModal').dataset.appointmentId;
+        if (confirm('Are you sure you want to cancel this appointment?')) {
+          fetch(`/api/appointments/${appointmentId}/`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+              status: 'cancelled'
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.id) {
+              alert('Appointment cancelled successfully');
+              appointmentModal.style.display = 'none';
+              calendar.refetchEvents();
+            } else {
+              alert('Failed to cancel appointment');
+            }
+          });
+        }
+      });
+
+      document.getElementById('startSessionBtn').addEventListener('click', function() {
+        const appointmentId = document.getElementById('appointmentModal').dataset.appointmentId;
+        window.location.href = `/reports/create/?appointment=${appointmentId}`;
+      });
+    });
+    // Unified notification dropdown logic
+    function showNotificationDropdown() {
+        const dropdown = document.getElementById('notificationDropdown');
+        dropdown.innerHTML = '<div style="text-align:center;padding:1.5rem 0;"><span class="ai-spinner" style="width:22px;height:22px;"></span> Loading...</div>';
+        dropdown.style.display = 'block';
+        
+        fetch('/notifications/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/login/';
+                    return;
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                window.location.href = '/login/';
+                return;
+            }
+            return response.json();
+        })
+        .then(data => {
+            dropdown.innerHTML = '';
+            if (data.success && data.notifications && data.notifications.length > 0) {
+                data.notifications.forEach(notif => {
+                    const item = document.createElement('div');
+                    item.className = 'notification-item';
+                    item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
+                    
+                    const content = document.createElement('a');
+                    content.href = notif.url;
+                    content.style.cssText = 'flex:1;display:flex;align-items:center;gap:0.7rem;text-decoration:none;color:inherit;';
+                    content.innerHTML = `
+                        <i class='bx ${notif.type === 'appointment' ? 'bxs-calendar' : notif.type === 'report' ? 'bxs-report' : 'bxs-bell'}' style='color:#27ae60;font-size:1.2rem;'></i>
+                        <span>${notif.message}</span>
+                        <span style='margin-left:auto;font-size:0.85em;color:#888;'>${notif.time}</span>
+                    `;
+                    
+                    const clearBtn = document.createElement('button');
+                    clearBtn.innerHTML = '<i class="bx bx-x"></i>';
+                    clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
+                    clearBtn.title = 'Clear notification';
+                    clearBtn.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        clearNotification(notif.id);
+                    };
+                    
+                    item.appendChild(content);
+                    item.appendChild(clearBtn);
+                    dropdown.appendChild(item);
+                });
+                
+                // Add clear all button
+                const clearAllDiv = document.createElement('div');
+                clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
+                
+                const clearAllBtn = document.createElement('button');
+                clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
+                clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
+                clearAllBtn.onclick = function(e) {
+                    e.preventDefault();
+                    if (confirm('Clear all notifications?')) {
+                        clearAllNotifications();
+                    }
+                };
+                
+                clearAllDiv.appendChild(clearAllBtn);
+                dropdown.appendChild(clearAllDiv);
+            } else {
+                dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#888;"><i class="bx bxs-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
+            }
+        })
+        .catch((error) => {
+            console.error('Notification error:', error);
+            dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
+        });
+    }
+    
+    const bellIcon = document.getElementById('bell-icon');
+    if (bellIcon) {
+        bellIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('notificationDropdown');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                showNotificationDropdown();
+            }
+        });
+    }
+    
+    document.addEventListener('click', function() {
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        if (notificationDropdown) {
+            notificationDropdown.style.display = 'none';
+        }
+    });
+
+    // Function to clear individual notification
+    function clearNotification(notificationId) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+        
+        fetch(`/notifications/${notificationId}/clear/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Refresh the notification dropdown
+                showNotificationDropdown();
+                // Update the badge
+                updateNotificationBadge();
+            } else {
+                console.error('Error clearing notification:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing notification:', error);
+        });
+    }
+
+    // Function to clear all notifications
+    function clearAllNotifications() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+        
+        fetch('/notifications/clear-all/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Refresh the notification dropdown
+                showNotificationDropdown();
+                // Update the badge
+                updateNotificationBadge();
+            } else {
+                console.error('Error clearing all notifications:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing all notifications:', error);
+        });
+    }
+
+    // Function to update notification badge
+    function updateNotificationBadge() {
+        fetch('/notifications/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                return;
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return;
+            }
+            return response.json();
+        })
+        .then(data => {
+            const badge = document.getElementById('notificationBadge');
+            if (badge && data && data.count > 0) {
+                badge.textContent = data.count;
+                badge.style.display = 'flex';
+            } else if (badge) {
+                badge.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error updating notification badge:', error);
+        });
+    }
+  </script>
+  <!-- Place this at the very end of the body -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var profileToggle = document.getElementById('profileDropdownToggle');
+      var profileDropdown = document.getElementById('profileDropdown');
+      if (profileToggle && profileDropdown) {
+        profileToggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', function() {
+          profileDropdown.style.display = 'none';
+        });
+      }
+    });
+  </script>
+</body>
+</html>

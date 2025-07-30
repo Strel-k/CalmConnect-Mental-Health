@@ -1,0 +1,1072 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Counselor Panel | CalmConnect</title>
+  <meta name="description" content="Dashboard for counselors to manage appointments, reports, and student sessions">
+  <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary-color: #2ecc71;
+      --primary-dark: #27ae60;
+      --secondary-blue: #3498db;
+      --secondary-blue-dark: #2980b9;
+      --secondary-purple: #9b59b6;
+      --secondary-purple-dark: #8e44ad;
+      --secondary-orange: #e67e22;
+      --secondary-orange-dark: #d35400;
+      --secondary-red: #e74c3c;
+      --secondary-red-dark: #c0392b;
+      --text-dark: #2c3e50;
+      --text-medium: #666;
+      --text-light: #999;
+      --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      color: var(--text-dark);
+      line-height: 1.6;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    /* Header Styles */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hdr-logo h2 {
+      color: var(--primary-color);
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .hdr-btns {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .prfl-bell {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .prfl-bell i {
+      font-size: 1.3rem;
+      color: var(--text-medium);
+      transition: color 0.3s ease;
+    }
+
+    .prfl-bell:hover i {
+      color: var(--primary-color);
+    }
+
+    .prfl-name h4 {
+      color: #333;
+      font-weight: 600;
+    }
+
+    .prfl-container {
+      position: relative;
+    }
+
+    .prfl-container img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid var(--primary-color);
+      object-fit: cover;
+    }
+
+    /* Dropdown Styles */
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 1rem;
+      min-width: 200px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      display: none;
+      z-index: 1001;
+    }
+
+    .dropdown-menu a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.5rem 0;
+      color: var(--text-dark);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+    }
+
+    .dropdown-menu a:hover {
+      color: var(--primary-color);
+      transform: translateX(3px);
+    }
+
+    .dropdown-menu a i {
+      font-size: 1.1rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 0.5rem 0;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: var(--secondary-red);
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+
+    /* Dashboard Layout */
+    .counselor-dashboard {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 2rem;
+      padding: 2rem;
+      min-height: calc(100vh - 120px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+
+    .sidebar-logo h3 {
+      color: var(--primary-color);
+      font-size: 1.4rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--text-medium);
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      transform: translateX(5px);
+      box-shadow: 0 2px 10px rgba(46, 204, 113, 0.3);
+    }
+
+    .sidebar-nav a i {
+      font-size: 1.2rem;
+    }
+
+    /* Main Content */
+    .counselor-content {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto 1fr;
+      gap: 2rem;
+      height: fit-content;
+    }
+
+    /* Welcome Section */
+    .dashboard-welcome {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, var(--secondary-blue), var(--secondary-blue-dark));
+      color: white;
+      padding: 2.5rem;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(52, 152, 219, 0.3);
+    }
+
+    .dashboard-welcome h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .dashboard-welcome p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    /* Summary Cards */
+    .summary-cards {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .summary-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 2rem;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+
+    .summary-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .summary-card.blue::before {
+      background: linear-gradient(90deg, var(--secondary-blue), var(--secondary-blue-dark));
+    }
+
+    .summary-card.purple::before {
+      background: linear-gradient(90deg, var(--secondary-purple), var(--secondary-purple-dark));
+    }
+
+    .summary-card.orange::before {
+      background: linear-gradient(90deg, var(--secondary-orange), var(--secondary-orange-dark));
+    }
+
+    .summary-card .card-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.8;
+    }
+
+    .summary-card.blue .card-icon { color: var(--secondary-blue); }
+    .summary-card.purple .card-icon { color: var(--secondary-purple); }
+    .summary-card.orange .card-icon { color: var(--secondary-orange); }
+
+    .summary-card h3 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-medium);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .summary-card p {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    /* Today's Appointments */
+    .appointments-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .appointments-container h3 {
+      color: var(--text-dark);
+      margin-bottom: 2rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .appointment-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border-left: 4px solid var(--secondary-blue);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .appointment-item:hover {
+      background: #e3f2fd;
+      transform: translateX(5px);
+    }
+
+    .appointment-time {
+      background: var(--secondary-blue);
+      color: white;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      min-width: 90px;
+      text-align: center;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .appointment-date {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.9);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .appointment-time-only {
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    .appointment-details {
+      flex: 1;
+    }
+
+    .appointment-details h4 {
+      color: var(--text-dark);
+      margin-bottom: 0.3rem;
+      font-size: 1rem;
+    }
+
+    .appointment-details p {
+      color: var(--text-medium);
+      font-size: 0.9rem;
+    }
+
+    .appointment-status {
+      padding: 0.3rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .status-pending {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .status-confirmed {
+      background: #fff3e0;
+      color: #f57c00;
+    }
+
+    .status-completed {
+      background: #e8f5e8;
+      color: #388e3c;
+    }
+
+    .status-cancelled {
+      background: #ffebee;
+      color: #d32f2f;
+    }
+
+    /* Recent Reports */
+    .reports-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .reports-container h3 {
+      color: var(--text-dark);
+      margin-bottom: 2rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .report-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid #eee;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .report-item:last-child {
+      border-bottom: none;
+    }
+
+    .report-item:hover {
+      background: rgba(52, 152, 219, 0.05);
+      border-radius: 8px;
+      margin: 0 -1rem;
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+
+    .report-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .report-icon.assessment { 
+      background: linear-gradient(135deg, var(--secondary-blue), var(--secondary-blue-dark)); 
+    }
+
+    .report-icon.session { 
+      background: linear-gradient(135deg, var(--secondary-purple), var(--secondary-purple-dark)); 
+    }
+
+    .report-icon.urgent { 
+      background: linear-gradient(135deg, var(--secondary-red), var(--secondary-red-dark)); 
+    }
+
+    .report-content {
+      flex: 1;
+    }
+
+    .report-content h4 {
+      color: var(--text-dark);
+      font-size: 0.95rem;
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+    }
+
+    .report-content p {
+      color: var(--text-medium);
+      font-size: 0.85rem;
+      margin: 0;
+    }
+
+    .report-date {
+      color: var(--text-light);
+      font-size: 0.8rem;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .quick-action-btn {
+      flex: 1;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 1rem 1.5rem;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .quick-action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
+    }
+
+    .quick-action-btn.secondary {
+      background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    }
+
+    .quick-action-btn.secondary:hover {
+      box-shadow: 0 8px 20px rgba(149, 165, 166, 0.3);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .counselor-dashboard {
+        flex-direction: column;
+        padding: 1rem;
+      }
+
+      .sidebar {
+        width: 100%;
+        position: static;
+      }
+
+      .counselor-content {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hdr {
+        padding: 0 1rem;
+      }
+
+      .dashboard-welcome h1 {
+        font-size: 2rem;
+      }
+
+      .sidebar-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 1rem;
+        padding-bottom: 0.5rem;
+      }
+
+      .sidebar-nav a {
+        white-space: nowrap;
+      }
+
+      .quick-actions {
+        flex-direction: column;
+      }
+
+      .appointment-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+      
+      .appointment-status {
+        align-self: flex-end;
+      }
+    }
+    .notification-dropdown {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(46,204,113,0.13), 0 1.5px 6px rgba(46,204,113,0.08);
+        padding: 1.1rem 0.7rem 0.7rem 0.7rem;
+        min-width: 320px;
+        max-width: 360px;
+        max-height: 420px;
+        overflow-y: auto;
+        z-index: 2000;
+        border: 1.5px solid #e9f7ef;
+        animation: fadeIn 0.3s cubic-bezier(.4,0,.2,1);
+    }
+    .notification-item {
+        display: block;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 0.7rem;
+        padding: 0.85rem 1rem;
+        color: #229954;
+        text-decoration: none;
+        transition: background 0.18s, box-shadow 0.18s;
+        box-shadow: 0 1px 3px rgba(46,204,113,0.03);
+    }
+    .notification-item:hover {
+        background: #e8f5e9;
+        box-shadow: 0 2px 8px rgba(46,204,113,0.08);
+    }
+    .notification-badge {
+        position: absolute;
+        top: -7px;
+        right: -7px;
+        background: #e74c3c;
+        color: #fff;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+        box-shadow: 0 2px 6px rgba(231,76,60,0.13);
+        border: 2px solid #fff;
+    }
+    .ai-spinner {
+        width: 22px;
+        height: 22px;
+        border: 3px solid #e5e5e5;
+        border-top: 3px solid #27ae60;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+  {% csrf_token %}
+</head>
+<body>
+  <header>
+    <div class="hdr">
+      <div class="hdr-logo"><h2>CalmConnect</h2></div>
+      <div class="hdr-btns">
+        <div class="prfl-bell" id="notif-bell">
+            <i class="bx bxs-bell" id="bell-icon"></i>
+            <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
+            <div class="notification-dropdown" id="notificationDropdown" style="display:none;"></div>
+        </div>
+        <div class="prfl-name"><h4>{{ counselor.name }}</h4></div>
+        <div class="prfl-container dropdown">
+          {% if counselor.image %}
+            <img src="{{ counselor.image.url }}" alt="Profile picture of {{ counselor.name }}" id="profileDropdownToggle" />
+          {% else %}
+                            <img src="{% static 'mentalhealth/img/default.jpg' %}" alt="Default profile picture" id="profileDropdownToggle" />
+          {% endif %}
+          <div class="dropdown-menu" id="profileDropdown">
+            <a href="{% url 'counselor_profile' %}"><i class="bx bxs-user-circle"></i> Profile</a>
+            <a href="{% url 'update_schedule' %}"><i class="bx bxs-time"></i> Schedule</a>
+            <div class="divider"></div>
+            <a href="{% url 'logout' %}" id="logoutLink"><i class="bx bx-log-out"></i> Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="counselor-dashboard">
+    <aside class="sidebar" aria-label="Counselor navigation">
+      <div class="sidebar-logo"><h3>Counselor Panel</h3></div>
+      <nav class="sidebar-nav">
+        <a href="{% url 'counselor_dashboard' %}" class="active" aria-current="page"><i class="bx bxs-dashboard"></i> Dashboard</a>
+        <a href="{% url 'counselor_schedule' %}"><i class="bx bxs-calendar"></i> Schedule</a>
+        <a href="{% url 'counselor_reports' %}"><i class="bx bxs-report"></i> Reports</a>
+        <a href="{% url 'counselor_archive' %}"><i class="bx bxs-archive"></i> Archive</a>
+      </nav>
+    </aside>
+
+    <main class="counselor-content">
+      <section class="dashboard-welcome" aria-labelledby="welcome-heading">
+        <h1 id="welcome-heading">Welcome Back, {{ counselor.name }}!</h1>
+        <p>Ready to make a difference in students' lives today</p>
+      </section>
+
+      <section class="summary-cards" aria-label="Counseling statistics">
+        <div class="summary-card blue">
+          <div class="card-icon">
+            <i class="bx bxs-calendar-check"></i>
+          </div>
+          <h3>This Week's Appointments</h3>
+          <p>{{ today_appointments|length }}</p>
+        </div>
+        <div class="summary-card purple">
+          <div class="card-icon">
+            <i class="bx bxs-file-doc"></i>
+          </div>
+          <h3>Pending Reports</h3>
+          <p>{{ pending_reports_count }}</p>
+        </div>
+        <div class="summary-card orange">
+          <div class="card-icon">
+            <i class="bx bxs-user-voice"></i>
+          </div>
+          <h3>This Week's Sessions</h3>
+          <p>{{ weekly_sessions_count }}</p>
+        </div>
+      </section>
+
+      <section class="appointments-container" aria-labelledby="appointments-heading">
+        <h3 id="appointments-heading"><i class="bx bxs-time"></i> This Week's Appointments</h3>
+        
+        {% for appointment in today_appointments %}
+        <div class="appointment-item" tabindex="0" onclick="window.location='{% url 'appointment_detail' appointment.id %}'">
+          <div class="appointment-time">
+            <div class="appointment-date">{{ appointment.date|date:"M d" }}</div>
+            <div class="appointment-time-only">{{ appointment.time|time:"g:i A" }}</div>
+          </div>
+          <div class="appointment-details">
+            <h4>
+              {% if appointment.dass_result %}
+                {{ appointment.user.full_name }} ({{ appointment.dass_result.depression_severity }}/{{ appointment.dass_result.anxiety_severity }})
+              {% else %}
+                {{ appointment.user.full_name }}
+              {% endif %}
+            </h4>
+            <p>{{ appointment.reason|truncatechars:50 }}</p>
+          </div>
+          <div class="appointment-status status-{{ appointment.status }}">
+            {{ appointment.status|title }}
+          </div>
+        </div>
+        {% empty %}
+        <div class="appointment-item">
+          <div class="appointment-details">
+            <h4>No appointments scheduled for this week</h4>
+          </div>
+        </div>
+        {% endfor %}
+      </section>
+
+      <section class="reports-container" aria-labelledby="reports-heading">
+        <h3 id="reports-heading"><i class="bx bxs-report"></i> Recent Reports</h3>
+        
+        {% for report in pending_reports %}
+        <div class="report-item" tabindex="0" onclick="window.location='{% url 'report_detail' report.id %}'">
+          <div class="report-icon {{ report.report_type }}">
+            <i class="bx 
+              {% if report.report_type == 'assessment' %}bxs-file-plus
+              {% elif report.report_type == 'session' %}bxs-conversation
+              {% else %}bxs-error-alt{% endif %}"></i>
+          </div>
+          <div class="report-content">
+            <h4>{{ report.title }}</h4>
+            <p>{{ report.description|truncatechars:60 }}</p>
+          </div>
+          <div class="report-date">{{ report.created_at|timesince }} ago</div>
+        </div>
+        {% empty %}
+        <div class="report-item">
+          <div class="report-content">
+            <h4>No pending reports</h4>
+          </div>
+        </div>
+        {% endfor %}
+      </section>
+
+      <div class="quick-actions">
+        <button class="quick-action-btn" onclick="window.location='{% url 'create_appointment' %}'">
+          <i class="bx bxs-plus"></i>
+          New Appointment
+        </button>
+        <button class="quick-action-btn secondary" onclick="window.location='{% url 'create_report' %}'">
+          <i class="bx bxs-file"></i>
+          Create Report
+        </button>
+        <button class="quick-action-btn secondary" onclick="window.location='{% url 'update_schedule' %}'">
+          <i class="bx bxs-time"></i>
+          Update Schedule
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Profile dropdown toggle
+    const profileToggle = document.getElementById('profileDropdownToggle');
+    const profileDropdown = document.getElementById('profileDropdown');
+    
+    profileToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function() {
+      profileDropdown.style.display = 'none';
+    });
+
+    // Logout confirmation
+    document.getElementById('logoutLink').addEventListener('click', function(e) {
+      e.preventDefault();
+      if (confirm('Are you sure you want to log out?')) {
+        window.location.href = this.getAttribute('href');
+      }
+    });
+
+    // Unified notification dropdown logic
+    function showNotificationDropdown() {
+        const dropdown = document.getElementById('notificationDropdown');
+        dropdown.innerHTML = '<div style="text-align:center;padding:1.5rem 0;"><span class="ai-spinner" style="width:22px;height:22px;"></span> Loading...</div>';
+        dropdown.style.display = 'block';
+        
+        fetch('/notifications/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/login/';
+                    return;
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                window.location.href = '/login/';
+                return;
+            }
+            return response.json();
+        })
+        .then(data => {
+            dropdown.innerHTML = '';
+            if (data.success && data.notifications && data.notifications.length > 0) {
+                data.notifications.forEach(notif => {
+                    const item = document.createElement('div');
+                    item.className = 'notification-item';
+                    item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
+                    
+                    const content = document.createElement('a');
+                    content.href = notif.url;
+                    content.style.cssText = 'flex:1;display:flex;align-items:center;gap:0.7rem;text-decoration:none;color:inherit;';
+                    content.innerHTML = `
+                        <i class='bx ${notif.type === 'appointment' ? 'bxs-calendar' : notif.type === 'report' ? 'bxs-report' : 'bxs-bell'}' style='color:#27ae60;font-size:1.2rem;'></i>
+                        <span>${notif.message}</span>
+                        <span style='margin-left:auto;font-size:0.85em;color:#888;'>${notif.time}</span>
+                    `;
+                    
+                    const clearBtn = document.createElement('button');
+                    clearBtn.innerHTML = '<i class="bx bx-x"></i>';
+                    clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
+                    clearBtn.title = 'Clear notification';
+                    clearBtn.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        clearNotification(notif.id);
+                    };
+                    
+                    item.appendChild(content);
+                    item.appendChild(clearBtn);
+                    dropdown.appendChild(item);
+                });
+                
+                // Add clear all button
+                const clearAllDiv = document.createElement('div');
+                clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
+                
+                const clearAllBtn = document.createElement('button');
+                clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
+                clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
+                clearAllBtn.onclick = function(e) {
+                    e.preventDefault();
+                    if (confirm('Clear all notifications?')) {
+                        clearAllNotifications();
+                    }
+                };
+                
+                clearAllDiv.appendChild(clearAllBtn);
+                dropdown.appendChild(clearAllDiv);
+            } else {
+                dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#888;"><i class="bx bxs-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
+            }
+        })
+        .catch((error) => {
+            console.error('Notification error:', error);
+            dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
+        });
+    }
+    document.getElementById('bell-icon').addEventListener('click', function(e) {
+        e.stopPropagation();
+        const dropdown = document.getElementById('notificationDropdown');
+        if (dropdown.style.display === 'block') {
+            dropdown.style.display = 'none';
+        } else {
+            showNotificationDropdown();
+        }
+    });
+    document.addEventListener('click', function() {
+        document.getElementById('notificationDropdown').style.display = 'none';
+    });
+
+    // Function to clear individual notification
+    function clearNotification(notificationId) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        
+        fetch(`/notifications/${notificationId}/clear/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Refresh the notification dropdown
+                showNotificationDropdown();
+                // Update the badge
+                updateNotificationBadge();
+            } else {
+                console.error('Error clearing notification:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing notification:', error);
+        });
+    }
+
+    // Function to clear all notifications
+    function clearAllNotifications() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        
+        fetch('/notifications/clear-all/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Refresh the notification dropdown
+                showNotificationDropdown();
+                // Update the badge
+                updateNotificationBadge();
+            } else {
+                console.error('Error clearing all notifications:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing all notifications:', error);
+        });
+    }
+
+    // Badge update
+    function updateNotificationBadge() {
+        fetch('/notifications/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                return;
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return;
+            }
+            return response.json();
+        })
+        .then(data => {
+            const badge = document.getElementById('notificationBadge');
+            if (badge && data && data.count > 0) {
+                badge.textContent = data.count;
+                badge.style.display = 'flex';
+            } else if (badge) {
+                badge.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error updating notification badge:', error);
+        });
+    }
+    updateNotificationBadge();
+    setInterval(updateNotificationBadge, 300000);
+
+    // Add keyboard accessibility for appointment items
+    document.querySelectorAll('.appointment-item').forEach(item => {
+      item.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.click();
+        }
+      });
+    });
+
+    // Add keyboard accessibility for report items
+    document.querySelectorAll('.report-item').forEach(item => {
+      item.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.click();
+        }
+      });
+    });
+
+    // Auto-refresh every 5 minutes
+    setTimeout(function() {
+      window.location.reload();
+    }, 300000);
+  </script>
+</body>
+</html>

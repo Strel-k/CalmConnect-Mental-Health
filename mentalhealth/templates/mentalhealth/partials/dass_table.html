@@ -1,0 +1,65 @@
+<table>
+    <thead>
+        <tr>
+            <th>Student ID</th>
+            <th>Student Name</th>
+            <th>Date Completed</th>
+            <th>Depression Score</th>
+            <th>Anxiety Score</th>
+            <th>Stress Score</th>
+            <th>Risk Level</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for result in dass_results_page %}
+        <tr>
+            <td>{{ result.user.student_id }}</td>
+            <td>{{ result.user.full_name }}</td>
+            <td>{{ result.date_taken|date:"Y-m-d" }}</td>
+            <td>{{ result.depression_score }}</td>
+            <td>{{ result.anxiety_score }}</td>
+            <td>{{ result.stress_score }}</td>
+            <td>
+                <span style="font-weight: bold; color: {{ result|get_risk_level|last }};">
+                    {{ result|get_risk_level|first }}
+                </span>
+            </td>
+            <td>
+                <button class="view-btn" onclick='showArchiveModal("dass21", {
+                    "studentId": "{{ result.user.student_id }}",
+                    "studentName": "{{ result.user.full_name|escapejs }}",
+                    "date": "{{ result.date_taken|date:'Y-m-d' }}",
+                    "depression": {{ result.depression_score }},
+                    "depressionSeverity": "{{ result.depression_severity|escapejs }}",
+                    "anxiety": {{ result.anxiety_score }},
+                    "anxietySeverity": "{{ result.anxiety_severity|escapejs }}",
+                    "stress": {{ result.stress_score }},
+                    "stressSeverity": "{{ result.stress_severity|escapejs }}"
+                })'><i class='bx bx-show'></i> View</button>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="no-data">No DASS21 results found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="pagination">
+    <span class="step-links">
+        {% if dass_results_page.has_previous %}
+            <a href="?dass_page=1">&laquo; first</a>
+            <a href="?dass_page={{ dass_results_page.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ dass_results_page.number }} of {{ dass_results_page.paginator.num_pages }}
+        </span>
+
+        {% if dass_results_page.has_next %}
+            <a href="?dass_page={{ dass_results_page.next_page_number }}">next</a>
+            <a href="?dass_page={{ dass_results_page.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>

@@ -1,0 +1,96 @@
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  background: white;
+  min-width: 200px;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu p {
+  padding: 0.75rem 1rem;
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.dropdown-menu a {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: #333;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.dropdown-menu a:hover {
+  background: #f8f9fa;
+  color: #2ecc71;
+}
+
+/* Bell Notification Styles */
+.prfl-bell .dropdown-menu {
+  width: 300px;
+  right: -20px;
+}
+
+.prfl-container .dropdown-menu {
+  right: 0;
+}
+
+/* Profile Image Styles */
+.prfl-container img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #2ecc71;
+  transition: all 0.3s ease;
+}
+
+.prfl-container:hover img {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+}
+
+/* Notification Bell Styles */
+.prfl-bell i {
+  font-size: 1.3rem;
+  color: #666;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.prfl-bell:hover i {
+  color: #2ecc71;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}

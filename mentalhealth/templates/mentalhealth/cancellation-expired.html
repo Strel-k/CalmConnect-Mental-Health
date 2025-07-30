@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cancellation Expired | CalmConnect</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #d32f2f;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 0 0 5px 5px;
+            text-align: center;
+        }
+        .warning-icon {
+            font-size: 50px;
+            color: #f39c12;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #777;
+        }
+        .home-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .home-link:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Cancellation Period Expired</h1>
+        </div>
+        <div class="content">
+            <div class="warning-icon">⚠</div>
+            <h2>The 24-hour cancellation period has passed</h2>
+            <p>If you still need to cancel, please contact the counseling office directly.</p>
+            <a href="/" class="home-link">Return to Home</a>
+            
+            <div class="footer">
+                <p>For urgent matters, call: (123) 456-7890</p>
+                <p>The CalmConnect Team</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

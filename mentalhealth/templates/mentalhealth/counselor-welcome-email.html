@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Counselor Welcome Email | CalmConnect</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { color: #2c3e50; font-size: 24px; margin-bottom: 20px; }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer { margin-top: 30px; font-size: 12px; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Welcome to CalmConnect!</div>
+        
+        <p>Hello {{ user.full_name }},</p>
+        
+        <p>Your counselor account has been created successfully.</p>
+        
+        {% if temporary_password %}
+        <p>Your temporary password is: <strong>{{ temporary_password }}</strong></p>
+        {% endif %}
+        
+        <p>Please <a href="{{ login_url }}" class="button">Log In</a> and change your password immediately.</p>
+        
+        <div class="footer">
+            <p>Thank you,<br>The CalmConnect Team</p>
+        </div>
+    </div>
+</body>
+</html>

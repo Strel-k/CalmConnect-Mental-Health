@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Counselor Activation | CalmConnect</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+</head>
+<body>
+    <h2>Welcome to CalmConnect, {{ counselor.name }}!</h2>
+    
+    <p>Your counselor account has been created with these details:</p>
+    
+    <ul>
+        <li><strong>Email:</strong> {{ user.email }}</li>
+        <li><strong>Temporary Password:</strong> {{ temp_password }}</li>
+    </ul>
+    
+    <p>Please verify your email by clicking the button below:</p>
+    
+    <a href="{{ verification_link }}" style="
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+    ">Verify Email</a>
+    
+    <p>After verification, you can login here: <a href="{{ login_url }}">{{ login_url }}</a></p>
+    
+    <p><strong>Note:</strong> You'll be required to change your password on first login.</p>
+    
+    <p>Best regards,<br>The CalmConnect Team</p>
+</body>
+</html>

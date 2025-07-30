@@ -1,0 +1,253 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Session Confirmation | CalmConnect</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2ecc71;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #2c3e50;
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #2ecc71;
+        }
+        .section-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .appointment-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .detail-item {
+            padding: 8px 0;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #7f8c8d;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .detail-value {
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .video-call-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 25px 0;
+        }
+        .video-call-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .video-call-link {
+            display: inline-block;
+            background: #fff;
+            color: #667eea;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+        }
+        .video-call-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .instructions {
+            background: #e8f5e8;
+            border: 1px solid #2ecc71;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        .requirements {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .requirements ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .requirements li {
+            margin-bottom: 5px;
+            color: #856404;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+        .cancellation-info {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 12px;
+            color: #721c24;
+        }
+        @media (max-width: 600px) {
+            .appointment-details {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">CalmConnect</div>
+            <div class="title">Remote Session Confirmation</div>
+            <div class="subtitle">Your video counseling session is confirmed</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Appointment Details</div>
+            <div class="appointment-details">
+                <div class="detail-item">
+                    <div class="detail-label">Counselor</div>
+                    <div class="detail-value">{{ appointment.counselor.name }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Date</div>
+                    <div class="detail-value">{{ appointment.date }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Time</div>
+                    <div class="detail-value">{{ appointment.time|time:"h:i A" }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Session Type</div>
+                    <div class="detail-value">{{ appointment.get_session_type_display }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Services</div>
+                    <div class="detail-value">{{ appointment.services|join:", " }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Reason</div>
+                    <div class="detail-value">{{ appointment.reason }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="video-call-section">
+            <div class="video-call-title">🎥 Join Your Video Session</div>
+            <p>Your secure video call link is ready. Click below to join your session 5-10 minutes before your scheduled time.</p>
+            <a href="{{ video_call_url }}" class="video-call-link">Join Video Call</a>
+            <p style="font-size: 12px; margin-top: 10px; opacity: 0.9;">
+                If the button doesn't work, copy and paste this link:<br>
+                <span style="word-break: break-all;">{{ video_call_url }}</span>
+            </p>
+        </div>
+
+        <div class="instructions">
+            <div class="section-title">How to Join Your Session</div>
+            <ol>
+                <li>Click the video call link above 5-10 minutes before your session</li>
+                <li>Allow camera and microphone access when prompted by your browser</li>
+                <li>Wait in the virtual waiting room until your counselor joins</li>
+                <li>Your session will begin automatically when both parties are ready</li>
+                <li>Ensure you're in a private, quiet location for your session</li>
+            </ol>
+        </div>
+
+        <div class="requirements">
+            <div class="section-title">Technical Requirements</div>
+            <ul>
+                <li>Stable internet connection (minimum 1 Mbps)</li>
+                <li>Webcam and microphone</li>
+                <li>Modern web browser (Chrome, Firefox, Safari, Edge)</li>
+                <li>Private, quiet location for your session</li>
+                <li>Headphones recommended for better audio quality</li>
+            </ul>
+        </div>
+
+        <div class="cancellation-info">
+            <h3 style="color: #ff9800; margin-top: 0;">Need to cancel?</h3>
+            <p>You can cancel this appointment until {{ deadline }} if needed.</p>
+            <a href="{{ cancellation_url }}" 
+               style="display: inline-block; padding: 10px 20px; background-color: #ff5722; color: white; text-decoration: none; border-radius: 4px; margin-top: 10px;">
+                Cancel Appointment
+            </a>
+            <p style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                This link will expire on {{ deadline }}
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>Thank you for choosing CalmConnect for your mental health support.</p>
+            <p>If you have any questions, please contact our support team.</p>
+            <p>&copy; 2024 CalmConnect. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html> 

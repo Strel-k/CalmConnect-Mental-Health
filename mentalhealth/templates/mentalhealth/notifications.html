@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications | CalmConnect</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .notifications-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .notifications-header {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+        }
+        .notifications-header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        .notifications-list {
+            padding: 2rem;
+        }
+        .notification-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #2ecc71;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+        .notification-content {
+            flex: 1;
+        }
+        .notification-message {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+        .notification-time {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .no-notifications {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #666;
+        }
+        .no-notifications i {
+            font-size: 3rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+        .clear-all-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+        .clear-all-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        .notifications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="notifications-container">
+        <div class="notifications-header">
+            <h1><i class="bx bxs-bell"></i> Notifications</h1>
+            {% if notifications %}
+                <button id="clear-all-btn" class="clear-all-btn">
+                    <i class="bx bxs-trash"></i> Clear All
+                </button>
+            {% endif %}
+        </div>
+        <div class="notifications-list">
+            {% if notifications %}
+                {% for notification in notifications %}
+                    <div class="notification-item" data-notification-id="{{ notification.id }}">
+                        <div class="notification-icon">
+                            <i class="bx bxs-info-circle"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-message">{{ notification.message }}</div>
+                            <div class="notification-time">{{ notification.time }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-notifications">
+                    <i class="bx bxs-bell"></i>
+                    <h3>No Notifications</h3>
+                    <p>You're all caught up! No new notifications at this time.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const clearAllBtn = document.getElementById('clear-all-btn');
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to clear all notifications?')) {
+                        fetch('/notifications/clear-all/', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            credentials: 'same-origin'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Hide all notification items
+                                document.querySelectorAll('.notification-item').forEach(item => {
+                                    item.style.display = 'none';
+                                });
+                                // Show no notifications message
+                                const noNotifications = document.querySelector('.no-notifications');
+                                if (noNotifications) {
+                                    noNotifications.style.display = 'block';
+                                }
+                                // Hide the clear all button
+                                clearAllBtn.style.display = 'none';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error clearing notifications:', error);
+                            alert('Error clearing notifications. Please try again.');
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

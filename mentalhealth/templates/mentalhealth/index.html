@@ -1,0 +1,2888 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+
+<link rel="stylesheet" href="{% static '/css/dass21-test.css' %}">
+    
+ <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        min-height: 100vh;
+    }
+
+    /* Header Styles - Matching Admin Panel */
+    header {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 1rem 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    .hdr {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .hdr-logo h2 {
+        color: #2ecc71;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .hdr-logo a {
+        text-decoration: none;
+    }
+
+    .hdr-btns {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .prfl-bell {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .prfl-bell i {
+        font-size: 1.3rem;
+        color: #666;
+        transition: color 0.3s ease;
+    }
+
+    .prfl-bell:hover i {
+        color: #2ecc71;
+    }
+
+    .prfl-name h4 {
+        color: #333;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .prfl-container img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid #2ecc71;
+    }
+
+    /* Dropdown Styles */
+    .dropdown {
+        position: relative;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 1rem;
+        min-width: 150px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        display: none;
+        z-index: 1001;
+    }
+
+    .dropdown-menu a {
+        display: block;
+        padding: 0.5rem 0;
+        color: #333;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .dropdown-menu a:hover {
+        color: #2ecc71;
+    }
+
+    /* Main Content */
+    .main-bdy {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* Hero Section */
+    .bdy-upper {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+        color: white;
+        text-align: center;
+        padding: 3rem 2rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        box-shadow: 0 15px 35px rgba(46, 204, 113, 0.3);
+    }
+
+    .upper-txt h2 {
+        font-size: 2.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+    }
+
+    .upper-txt p {
+        font-size: 1.2rem;
+        font-weight: 400;
+        opacity: 0.9;
+    }
+
+    /* Information Cards */
+    .bdy-information {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .bdy-information > div {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 2.5rem;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .bdy-information > div::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #2ecc71, #27ae60);
+    }
+
+    .bdy-information > div:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .bdy-information h4 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #2c3e50;
+    }
+
+    .bdy-information img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin-bottom: 1.5rem;
+        object-fit: cover;
+    }
+
+    .bdy-information p {
+        color: #666;
+        line-height: 1.6;
+        font-size: 1rem;
+    }
+
+    /* Test Section */
+    .dass21-test {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 3rem 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .test-title h2 {
+        text-align: center;
+        text-transform: uppercase;
+        color: #2c3e50;
+        font-size: 2rem;
+        margin-bottom: 2rem;
+        font-weight: 600;
+    }
+
+   .question-container {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 3rem 2rem;
+        border-radius: 20px;
+        max-width: 700px;
+        margin: 0 auto;
+        box-shadow: 0 10px 30px rgba(46, 204, 113, 0.1);
+        border: 1px solid rgba(46, 204, 113, 0.2);
+    }
+
+       #question-text {
+        font-size: 1.5rem;
+        margin-bottom: 2.5rem;
+        color: #2c3e50;
+        line-height: 1.6;
+        position: relative;
+        padding-left: 2.5rem;
+    }
+    #question-text::before {
+        content: "Q" counter(question-counter);
+        counter-increment: question-counter;
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: #2ecc71;
+        font-weight: 700;
+        font-size: 1.8rem;
+    }
+       .scale-options {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 2.5rem;
+    }
+
+     .scale-btn {
+        background: white;
+        color: #2c3e50;
+        border: 2px solid #e9ecef;
+        padding: 1.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 80px;
+    }
+
+     .scale-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(46, 204, 113, 0.15);
+        border-color: #2ecc71;
+    }
+
+    .scale-btn:active {
+        transform: translateY(0);
+    }
+     .scale-btn.selected {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+        color: white;
+        border-color: #27ae60;
+        box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+    }
+
+    .scale-btn .emoji {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .scale-btn .label {
+        font-size: 0.9rem;
+        margin-top: 0.3rem;
+        opacity: 0.8;
+    }
+    .progress-container {
+        background: rgba(46, 204, 113, 0.1);
+        height: 12px;
+        border-radius: 6px;
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg, #2ecc71, #27ae60);
+        height: 100%;
+        border-radius: 6px;
+        transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .progress-bar.pulse {
+        animation: pulse 0.3s ease;
+    }
+
+    @keyframes pulse {
+        0% { transform: scaleX(1); }
+        50% { transform: scaleX(1.02); }
+        100% { transform: scaleX(1); }
+    }
+
+    .mini-progress {
+        display: flex;
+        justify-content: center;
+        margin-top: 1rem;
+        gap: 5px;
+    }
+
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s ease;
+    }
+
+    .dot.active {
+        background-color: #2ecc71;
+    }
+
+    .question-progress {
+        margin-top: 1rem;
+    }
+
+    .question-progress p {
+        font-size: 1rem;
+        color: #666;
+        font-weight: 500;
+    }
+
+    /* Expert Validation Section */
+    .expert-validation {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin: 2rem 0;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .validation-title {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .validation-title h3 {
+        color: #2c3e50;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .validation-title .icon {
+        font-size: 2rem;
+        color: #2ecc71;
+        margin-bottom: 0.5rem;
+    }
+
+    .validation-content {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .validation-card {
+        background: rgba(233, 249, 241, 0.7);
+        border-left: 4px solid #2ecc71;
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+
+    .validation-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .validation-card h4 {
+        color: #27ae60;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .validation-card i {
+        color: #2ecc71;
+    }
+
+    .validation-card p {
+        color: #2c3e50;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+
+    .expert-endorsement {
+        background: rgba(52, 152, 219, 0.1);
+        border-left: 4px solid #3498db;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-top: 1.5rem;
+    }
+
+    .expert-endorsement h4 {
+        color: #2980b9;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+    }
+
+    .expert-endorsement p {
+        color: #2c3e50;
+        font-style: italic;
+        line-height: 1.6;
+    }
+
+    .disclaimer {
+        background: rgba(241, 196, 15, 0.1);
+        border-left: 4px solid #f39c12;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+
+    .disclaimer p {
+        color: #d68910;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    /* Enhanced Results Section */
+    .results-container {
+        display: none;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 20px;
+        padding: 2.5rem;
+        max-width: 1000px;
+        margin: 2rem auto;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .results-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+        position: relative;
+    }
+
+    .results-header h2 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        font-size: 2.2rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        position: relative;
+        display: inline-block;
+    }
+
+    .results-header h2::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, #2ecc71, #27ae60);
+        border-radius: 3px;
+    }
+
+    .results-header p {
+        color: #7f8c8d;
+        font-size: 1.1rem;
+        max-width: 700px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    .encouragement-msg {
+        background: rgba(233, 249, 241, 0.9);
+        border-left: 4px solid #2ecc71;
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin: 2rem auto;
+        font-style: italic;
+        color: #2c3e50;
+        font-size: 1rem;
+        max-width: 700px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Score Cards - Enhanced */
+    .scores-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .score-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.8rem 1.5rem;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .score-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, var(--card-color), var(--card-color-dark));
+    }
+
+    .score-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+    }
+
+    .score-card h3 {
+        color: #2c3e50;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: relative;
+        padding-bottom: 0.8rem;
+    }
+
+    .score-card h3::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 2px;
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .score-card.depression {
+        --card-color: #e74c3c;
+        --card-color-dark: #c0392b;
+    }
+
+    .score-card.anxiety {
+        --card-color: #f39c12;
+        --card-color-dark: #e67e22;
+    }
+
+    .score-card.stress {
+        --card-color: #9b59b6;
+        --card-color-dark: #8e44ad;
+    }
+
+    /* Circular Progress - Enhanced */
+    .circular-progress {
+        position: relative;
+        width: 130px;
+        height: 130px;
+        margin: 0 auto 1.2rem;
+    }
+
+    .circular-progress svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .progress-ring {
+        fill: none;
+        stroke: rgba(0, 0, 0, 0.08);
+        stroke-width: 8;
+    }
+
+    .progress-ring-fill {
+        fill: none;
+        stroke-width: 8;
+        stroke-linecap: round;
+        stroke-dasharray: 314;
+        stroke-dashoffset: 314;
+        transition: stroke-dashoffset 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .depression .progress-ring-fill {
+        stroke: url(#depressionGradient);
+    }
+
+    .anxiety .progress-ring-fill {
+        stroke: url(#anxietyGradient);
+    }
+
+    .stress .progress-ring-fill {
+        stroke: url(#stressGradient);
+    }
+
+    .score-display {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+
+    .score-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        line-height: 1;
+    }
+
+    .score-max {
+        font-size: 0.85rem;
+        color: #95a5a6;
+        font-weight: 500;
+        margin-top: 0.2rem;
+    }
+
+    .score-interpretation {
+        font-size: 0.9rem;
+        color: white;
+        background: var(--card-color);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        display: inline-block;
+        margin: 0.8rem 0;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        min-width: 120px;
+    }
+
+    .severity-indicator {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .severity-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .severity-dot.active {
+        background: var(--card-color);
+        transform: scale(1.4);
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Advice Card - Enhanced */
+    .result-advice-card {
+        background: rgba(46, 204, 113, 0.1);
+        border-left: 4px solid #2ecc71;
+        padding: 1.8rem;
+        margin: 2.5rem auto;
+        border-radius: 16px;
+        font-size: 1.05rem;
+        color: #2c3e50;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+        line-height: 1.7;
+        transition: all 0.3s ease;
+        max-width: 800px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .result-advice-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(to bottom, #2ecc71, #27ae60);
+    }
+
+    .result-advice-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+        background: rgba(46, 204, 113, 0.15);
+    }
+
+    .result-advice-card strong {
+        color: #27ae60;
+        display: block;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* Resources Section - Enhanced */
+    .resources-section {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .resources-section h3 {
+        color: #2c3e50;
+        font-size: 1.5rem;
+        margin-bottom: 2.5rem;
+        text-align: center;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+    }
+
+    .resources-section h3::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, #2ecc71, #27ae60);
+        border-radius: 3px;
+    }
+
+    .resources-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.8rem;
+        margin-bottom: 2rem;
+    }
+
+    .resource-card {
+        background: white;
+        padding: 2rem 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .resource-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #2ecc71, #27ae60);
+    }
+
+    .resource-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+    }
+
+    .resource-card h4 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1.2rem;
+        color: #2c3e50;
+    }
+
+    .resource-card img {
+        width: 120px;
+        height: 100px;
+        margin-bottom: 1.5rem;
+        object-fit: contain;
+        filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.1));
+    }
+
+    .resource-card p {
+        color: #666;
+        margin-bottom: 1.5rem;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .resource-card a {
+        display: inline-block;
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+    }
+
+    .resource-card a:hover {
+        background: linear-gradient(135deg, #27ae60, #229954);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(46, 204, 113, 0.4);
+    }
+
+    /* Action Buttons - Enhanced */
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 3rem;
+    }
+
+    .retake-btn, .save-btn {
+        padding: 1rem 2.2rem;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .retake-btn {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+    }
+
+    .save-btn {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+        color: white;
+    }
+
+    .retake-btn:hover, .save-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+    /* Exercises Modal Styles */
+.exercises-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+.exercise-card {
+    display: flex;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.exercise-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+}
+
+.exercise-image {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+}
+
+.exercise-info {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.exercise-info h3 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    font-size: 1.3rem;
+}
+
+.exercise-info p {
+    color: #666;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    flex-grow: 1;
+}
+
+.exercise-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+}
+
+.start-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.start-btn:hover {
+    background: linear-gradient(135deg, #27ae60, #229954);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+}
+
+.duration {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.duration i {
+    font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .exercise-card {
+        flex-direction: column;
+    }
+    
+    .exercise-image {
+        width: 100%;
+        height: 150px;
+    }
+}
+    /* Responsive Adjustments */
+    @media (max-width: 900px) {
+        .scores-grid, .resources-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        .score-card {
+            padding: 1.8rem 1.5rem;
+        }
+        
+        .result-advice-card {
+            margin: 2rem 0;
+            padding: 1.5rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .retake-btn, .save-btn {
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+    }
+
+    @media (max-width: 500px) {
+        .results-header h2 {
+            font-size: 1.8rem;
+        }
+        
+        .results-header p {
+            font-size: 1rem;
+        }
+        
+        .circular-progress {
+            width: 110px;
+            height: 110px;
+        }
+        
+        .score-value {
+            font-size: 1.8rem;
+        }
+        
+        .resource-card {
+            padding: 1.5rem 1.2rem;
+        }
+    }
+      /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 800px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+            position: relative;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-modal:hover {
+            color: #e74c3c;
+        }
+
+        .modal-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #2c3e50;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .support-groups-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .support-group-card {
+            display: flex;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .support-group-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+
+        .group-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .group-info {
+            padding: 1.5rem;
+            flex: 1;
+        }
+
+        .group-info h3 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+
+        .group-info p {
+            color: #666;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .group-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        .group-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .group-meta i {
+            font-size: 1rem;
+        }
+
+        .join-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .join-btn:hover {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                margin: 10% auto;
+                width: 90%;
+            }
+            
+            .support-group-card {
+                flex-direction: column;
+            }
+            
+            .group-image {
+                width: 100%;
+                height: 150px;
+            }
+        }
+        /* Breathing Exercise Styles */
+.breathing-container {
+    width: 100%;
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.breathing-circle {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 4s ease-in-out;
+    box-shadow: 0 10px 30px rgba(46, 204, 113, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.breathing-text {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 600;
+    z-index: 1;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.breathing-instructions {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    min-height: 3rem;
+}
+
+.breathing-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.pause-btn {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    padding: 0.7rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.pause-btn:hover {
+    background: linear-gradient(135deg, #e67e22, #d35400);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(230, 126, 34, 0.3);
+}
+
+.breathing-progress {
+    width: 100%;
+    height: 8px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.breathing-progress .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+    transition: width 0.1s linear;
+}
+
+/* Breathing animation */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.breathing-circle.breathing-in {
+    animation: pulse 4s ease-in-out infinite;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.breathing-circle.breathing-out {
+    animation: pulse 6s ease-in-out infinite;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+/* EFT Tapping Styles */
+.eft-container {
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+.eft-visual {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.eft-points {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 40%;
+}
+
+.eft-point {
+    padding: 0.8rem;
+    background: rgba(46, 204, 113, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 3px solid #2ecc71;
+    font-size: 0.95rem;
+}
+
+.eft-point.active {
+    background: rgba(46, 204, 113, 0.3);
+    font-weight: 600;
+    transform: translateX(5px);
+}
+
+.eft-human {
+    position: relative;
+    width: 60%;
+    height: 300px;
+}
+
+.eft-human img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.eft-highlight {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(231, 76, 60, 0.5);
+    border: 2px solid #e74c3c;
+    display: none;
+    z-index: 10;
+}
+
+.eft-instructions {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    min-height: 3rem;
+    text-align: center;
+}
+
+.eft-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.eft-progress {
+    width: 100%;
+    height: 8px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.eft-progress .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+    transition: width 0.1s linear;
+}
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.2); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .eft-visual {
+        flex-direction: column;
+    }
+    
+    .eft-points, .eft-human {
+        width: 100%;
+    }
+    
+    .eft-human {
+        height: 200px;
+    }
+}
+.ai-feedback-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    color: #229954;
+    font-weight: 500;
+    font-size: 1.08em;
+}
+.ai-spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid #e5e5e5;
+    border-top: 3px solid #27ae60;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.notification-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(46,204,113,0.13), 0 1.5px 6px rgba(46,204,113,0.08);
+    padding: 1.1rem 0.7rem 0.7rem 0.7rem;
+    min-width: 320px;
+    max-width: 360px;
+    max-height: 420px;
+    overflow-y: auto;
+    z-index: 2000;
+    border: 1.5px solid #e9f7ef;
+    animation: fadeIn 0.3s cubic-bezier(.4,0,.2,1);
+}
+.notification-item {
+    display: block;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 0.7rem;
+    padding: 0.85rem 1rem;
+    color: #229954;
+    text-decoration: none;
+    transition: background 0.18s, box-shadow 0.18s;
+    box-shadow: 0 1px 3px rgba(46,204,113,0.03);
+}
+.notification-item:hover {
+    background: #e8f5e9;
+    box-shadow: 0 2px 8px rgba(46,204,113,0.08);
+}
+.notification-badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    box-shadow: 0 2px 6px rgba(231,76,60,0.13);
+    border: 2px solid #fff;
+}
+.ai-spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid #e5e5e5;
+    border-top: 3px solid #27ae60;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+  </style>
+  {% csrf_token %}
+</head>
+<body>
+    <!-- ML Consent Modal -->
+    <div id="mlConsentModal" style="display:flex;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:3000;">
+      <div style="background:#fff;padding:2rem;border-radius:12px;max-width:500px;box-shadow:0 8px 32px rgba(0,0,0,0.2);text-align:left;position:relative;border-left:4px solid #f39c12;">
+       <button id="mlConsentCloseBtn" style="position:absolute;top:10px;right:15px;background:none;border:none;font-size:20px;cursor:pointer;color:#999;">&times;</button>
+        <div style="display:flex;align-items:center;margin-bottom:1rem;">
+          <i style="font-size:24px;color:#f39c12;margin-right:10px;">⚠️</i>
+          <h3 style="color:#2c3e50;margin:0;font-size:1.3rem;">Important Disclaimer</h3>
+        </div>
+        <p style="font-size:1rem;margin-bottom:1rem;color:#555;line-height:1.5;">
+          <strong>AI-Powered Feedback:</strong> This assessment uses OpenAI technology to provide personalized mental health insights. Your DASS21 results will be processed by OpenAI's servers to generate supportive, tailored advice.
+        </p>
+        <p style="font-size:1rem;margin-bottom:1rem;color:#555;line-height:1.5;">
+          <strong>Privacy & Security:</strong> Your data is protected and will not be shared outside CalmConnect and OpenAI. All processing is done securely and confidentially.
+        </p>
+        <p style="font-size:1rem;margin-bottom:1.5rem;color:#555;line-height:1.5;">
+          <strong>Medical Disclaimer:</strong> This tool is for informational purposes only and does not replace professional medical advice, diagnosis, or treatment.
+        </p>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="mlConsentCloseBtn2" style="background:#95a5a6;color:#fff;padding:0.6rem 1.2rem;border:none;border-radius:6px;font-size:0.9rem;cursor:pointer;">Dismiss</button>
+          <button id="mlConsentContinueBtn" style="background:linear-gradient(135deg,#2ecc71,#27ae60);color:#fff;padding:0.6rem 1.2rem;border:none;border-radius:6px;font-size:0.9rem;cursor:pointer;">I Understand</button>
+        </div>
+      </div>
+    </div>
+    <header>
+        <div class="hdr">
+            <div class="hdr-logo"><a href="#"><h2>CalmConnect</h2></a></div>
+            <div class="hdr-btns">
+                <div class="prfl-bell" id="notif-bell">
+                    <i class="bx bxs-bell" id="bell-icon"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
+                    <div class="notification-dropdown" id="notificationDropdown" style="display:none;"></div>
+                </div>
+                <div class="prfl-name">
+    <h4>{{ username }}</h4>
+</div>
+<div class="prfl-container dropdown">
+                        <img src="{% if profile_picture %}{{ profile_picture }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}" 
+     alt="Profile Picture" 
+     id="profile-img">    <div class="dropdown-menu" id="profile-dropdown">
+        <a href="#">Settings</a>
+        <a href="{% url 'logout' %}">Logout</a>
+<a href="{% url 'user-profile' %}">{{ username }}</a>
+    </div>
+</div>
+            </div>
+        </div>
+    </header>
+
+    {% csrf_token %}
+    <main class="main-bdy">
+        <div class="bdy-upper">
+            <div class="upper-txt">
+                <h2>DASS21 Test</h2>
+                <p>DASS-21 Based Anxiety & Stress Checker</p>
+            </div>
+        </div>
+
+        <div class="bdy-information">
+            <div class="info1">
+                <h4>Understand yourself</h4>
+                <img src="{% static '/img/info1.jpg' %}" alt="info1">
+                <p>Learn how anxiety and stress affect your daily life.</p>
+            </div>
+            <div class="info2">
+                <h4>View Results</h4>
+                <img src="{% static '/img/info3.png' %}" alt="info1">
+                <p>Learn how anxious you are and how to manage stress.</p>
+            </div>
+            <div class="info3">
+                <h4>Get Support</h4>
+                <img src="{% static '/img/info2.png' %}" alt="info1">
+                <p>Find resources tailored to your emotional health needs.</p>
+            </div>
+        </div>
+
+       <section class="dass21-test">
+    <div class="test-title">
+        <h2>How Have You Been Feeling?</h2>
+    </div>
+    
+    <div class="question-container">
+        <h3 id="question-text"></h3>
+        
+        <div class="motivation-message" id="motivationMessage">
+            Your answers help us understand how to best support you.
+        </div>
+        
+        <div class="scale-options">
+            <button class="scale-btn" data-value="0">
+                <span class="emoji">😐</span>
+                <span>Never</span>
+                <span class="label">0 - Did not apply</span>
+            </button>
+            <button class="scale-btn" data-value="1">
+                <span class="emoji">🙂</span>
+                <span>Sometimes</span>
+                <span class="label">1 - Applied somewhat</span>
+            </button>
+            <button class="scale-btn" data-value="2">
+                <span class="emoji">😕</span>
+                <span>Often</span>
+                <span class="label">2 - Applied a good degree</span>
+            </button>
+            <button class="scale-btn" data-value="3">
+                <span class="emoji">😟</span>
+                <span>Always</span>
+                <span class="label">3 - Applied very much</span>
+            </button>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar" style="width: 0%;"></div>
+        </div>
+        
+        <div class="mini-progress" id="mini-progress"></div>
+        
+        <div class="question-navigation">
+            
+            <div class="question-progress">
+                <p id="progress"></p>
+            </div>
+           
+        </div>
+    </div>
+</section>
+
+        <section class="expert-validation">
+            <div class="validation-title">
+                <i class="bx bxs-shield-check icon"></i>
+                <h3>Why Take the DASS-21?</h3>
+                <p>Trusted by mental health professionals worldwide</p>
+            </div>
+            
+            <div class="validation-content">
+                <div class="validation-card">
+                    <h4><i class="bx bxs-user-check"></i> Clinically Validated</h4>
+                    <p>The DASS-21 is a scientifically validated psychological assessment tool used by mental health professionals to measure depression, anxiety, and stress levels with high accuracy.</p>
+                </div>
+                
+                <div class="validation-card">
+                    <h4><i class="bx bxs-brain"></i> Evidence-Based</h4>
+                    <p>Developed through extensive research and validated across diverse populations, the DASS-21 provides reliable insights into your emotional well-being and mental health status.</p>
+                </div>
+                
+                <div class="validation-card">
+                    <h4><i class="bx bxs-heart"></i> Self-Awareness</h4>
+                    <p>Understanding your current mental state is the first step toward better mental health. This assessment helps you identify areas where you might benefit from support or intervention.</p>
+                </div>
+            </div>
+            
+            <div class="expert-endorsement">
+                <h4>Endorsed by Mental Health Professionals</h4>
+                <p>"The DASS-21 is one of the most reliable and widely used screening tools in clinical psychology. It provides valuable insights that can guide individuals toward appropriate mental health resources and support."</p>
+            </div>
+            
+            <div class="disclaimer">
+                <p><strong>Important:</strong> This assessment is for informational purposes only and does not replace professional medical advice, diagnosis, or treatment. Always consult with qualified healthcare providers for personalized guidance.</p>
+            </div>
+        </section>
+
+        <!-- Results Section with Circular Progress -->
+        <div class="results-container" id="resultsContainer">
+            <!-- SVG Gradients -->
+            <svg width="0" height="0">
+                <defs>
+                    <linearGradient id="depressionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#e74c3c;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#c0392b;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="anxietyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#f39c12;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#e67e22;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="stressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#9b59b6;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#8e44ad;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+
+            <div class="results-header">
+                <h2>Your DASS-21 Results</h2>
+                <div class="encouragement-msg">
+                    Thank you for completing the assessment. These results are a snapshot of how you're feeling right now.
+                </div>
+                <div class="save-status" id="saveStatus" style="display: none; background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-top: 10px; text-align: center;">
+                    <i class="bx bx-check-circle"></i> Results saved successfully! You can now book a session.
+                </div>
+            </div>
+            
+            <div class="scores-grid">
+                <div class="score-card depression">
+                    <h3>Depression</h3>
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="progress-ring" cx="50" cy="50" r="40" />
+                            <circle class="progress-ring-fill" cx="50" cy="50" r="40" />
+                        </svg>
+                        <div class="score-display">
+                            <div class="score-value" id="depressionScore">0</div>
+                            <div class="score-max">/ 42</div>
+                        </div>
+                    </div>
+                    <div class="score-interpretation" id="depressionInterpretation"></div>
+                    <div class="severity-indicator">
+                        <div class="severity-dot" data-level="0"></div>
+                        <div class="severity-dot" data-level="1"></div>
+                        <div class="severity-dot" data-level="2"></div>
+                        <div class="severity-dot" data-level="3"></div>
+                        <div class="severity-dot" data-level="4"></div>
+                    </div>
+                </div>
+                
+                <div class="score-card anxiety">
+                    <h3>Anxiety</h3>
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="progress-ring" cx="50" cy="50" r="40" />
+                            <circle class="progress-ring-fill" cx="50" cy="50" r="40" />
+                        </svg>
+                        <div class="score-display">
+                            <div class="score-value" id="anxietyScore">0</div>
+                            <div class="score-max">/ 42</div>
+                        </div>
+                    </div>
+                    <div class="score-interpretation" id="anxietyInterpretation"></div>
+                    <div class="severity-indicator">
+                        <div class="severity-dot" data-level="0"></div>
+                        <div class="severity-dot" data-level="1"></div>
+                        <div class="severity-dot" data-level="2"></div>
+                        <div class="severity-dot" data-level="3"></div>
+                        <div class="severity-dot" data-level="4"></div>
+                    </div>
+                </div>
+                
+                <div class="score-card stress">
+                    <h3>Stress</h3>
+                    <div class="circular-progress">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="progress-ring" cx="50" cy="50" r="40" />
+                            <circle class="progress-ring-fill" cx="50" cy="50" r="40" />
+                        </svg>
+                        <div class="score-display">
+                            <div class="score-value" id="stressScore">0</div>
+                            <div class="score-max">/ 42</div>
+                        </div>
+                    </div>
+                    <div class="score-interpretation" id="stressInterpretation"></div>
+                    <div class="severity-indicator">
+                        <div class="severity-dot" data-level="0"></div>
+                        <div class="severity-dot" data-level="1"></div>
+                        <div class="severity-dot" data-level="2"></div>
+                        <div class="severity-dot" data-level="3"></div>
+                        <div class="severity-dot" data-level="4"></div>
+                    </div>
+                </div>
+            </div>
+            
+         <div class="resources-section">
+        <h3>Recommended Resources</h3>
+        <div class="resources-grid">
+<div class="resource-card">
+    <h4>Counseling Services</h4>
+    <img src="{% static '/img/counseling.png' %}" alt="Counseling">
+    <p>Connect with licensed professionals for personalized support and guidance.</p>
+<a href="{% url 'scheduler' %}?depression={{ scores.depression }}&anxiety={{ scores.anxiety }}&stress={{ scores.stress }}" 
+   id="bookSessionBtn">Book Session</a>
+</div>
+         <div class="resource-card">
+    <h4>Mindful Exercises</h4>
+    <img src="{% static '/img/mindfulness.png' %}" alt="Mindfulness">
+    <p>Practice guided meditations and breathing techniques to find calm.</p>
+    <a href="#" id="startExercisesBtn">Start Exercises</a>
+</div>
+            <div class="resource-card">
+                <h4>Support Groups</h4>
+                <img src="{% static '/img/support-group.png' %}" alt="Support Group">
+                <p>Join communities of people who understand what you're going through.</p>
+                <a href="#" id="findGroupsBtn">Find Groups</a>
+            </div>
+        </div>
+    </div>
+            
+            <div class="action-buttons">
+                <button class="retake-btn" id="retakeBtn">Retake Test</button>
+                <button class="save-btn" id="saveBtn">Saving Results...</button>
+            </div>
+        </div>
+        <div class="modal" id="supportGroupsModal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 class="modal-title">Available Support Groups</h2>
+        
+        <div class="support-groups-container">
+            <div class="support-group-card">
+                <img src="{% static '/img/peer-facilitators.jpg' %}" alt="Support Group 1" class="group-image">
+                <div class="group-info">
+                    <h3>CLSU Peer Facilitators Group</h3>
+                 
+                    <p>A supportive community for CLSU students to share experiences and receive peer support for mental health challenges.</p>
+                    <a href="https://www.facebook.com/profile.php?id=100090505880569" class="join-btn" target="_blank">View Group</a>
+                </div>
+            </div>
+            
+            <div class="support-group-card">
+                <img src="{% static '/img/paro-parong-bukid.jpg' %}" alt="Support Group 2" class="group-image">
+                <div class="group-info">
+                    <h3>CLSU Paruparong Bukid</h3>
+               
+                    <p>An inclusive community promoting mental wellness through creative expression and peer support at CLSU.</p>
+                    <a href="https://www.facebook.com/clsuparuparongbukid" class="join-btn" target="_blank">View Page</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal" id="exercisesModal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 class="modal-title">Interactive Mindfulness Exercises</h2>
+        
+        <div class="exercises-container">
+          <div class="exercise-card" id="breathingExercise">
+    <div class="exercise-info">
+        <h3>Deep Breathing Exercise</h3>
+        <p>Follow this 5-minute guided breathing exercise to reduce stress and anxiety.</p>
+        
+        <div class="breathing-container" id="breathingContainer">
+            <div class="breathing-circle" id="breathingCircle">
+                <div class="breathing-text" id="breathingText">Ready</div>
+            </div>
+            <div class="breathing-instructions" id="breathingInstructions">
+                <p>Breathe in through your nose, out through your mouth</p>
+            </div>
+            <div class="breathing-controls">
+                <button class="start-btn" id="startBreathingBtn">Start Exercise</button>
+                <button class="pause-btn" id="pauseBreathingBtn" style="display:none;">Pause</button>
+                <div class="duration">5 min</div>
+            </div>
+            <div class="breathing-progress">
+                <div class="progress-bar" id="breathingProgress"></div>
+            </div>
+        </div>
+    </div>
+</div>
+            
+         <div class="exercise-card" id="eftExercise">
+   <div class="exercise-card" id="eftExercise">
+    <div class="exercise-info">
+        <h3>Emotional Freedom Tapping (EFT)</h3>
+        <p>Follow this guided tapping sequence to reduce stress and anxiety.</p>
+        
+        <div class="eft-container" id="eftContainer">
+            <div class="eft-visual">
+                <div class="eft-points">
+                    <div class="eft-point" data-point="karate-chop">Karate Chop</div>
+                    <div class="eft-point" data-point="eyebrow">Eyebrow</div>
+                    <div class="eft-point" data-point="side-of-eye">Side of Eye</div>
+                    <div class="eft-point" data-point="under-eye">Under Eye</div>
+                    <div class="eft-point" data-point="under-nose">Under Nose</div>
+                    <div class="eft-point" data-point="chin">Chin</div>
+                    <div class="eft-point" data-point="collarbone">Collarbone</div>
+                    <div class="eft-point" data-point="under-arm">Under Arm</div>
+                    <div class="eft-point" data-point="top-of-head">Top of Head</div>
+                </div>
+                <div class="eft-human">
+                    <img src="../../static/mentalhealth/img/human-outline.png" alt="Human outline" id="eftHuman">
+                    <div class="eft-highlight" id="eftHighlight"></div>
+                </div>
+            </div>
+            <div class="eft-instructions" id="eftInstructions">
+                <p>Tap each point while repeating an affirmation about your issue.</p>
+            </div>
+            <div class="eft-controls">
+                <button class="start-btn" id="startEftBtn">Start Exercise</button>
+                <button class="pause-btn" id="pauseEftBtn" style="display:none;">Pause</button>
+                <div class="duration">10 min</div>
+            </div>
+            <div class="eft-progress">
+                <div class="progress-bar" id="eftProgress"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+            
+            <div class="exercise-card">
+                <img src="../../static/mentalhealth/img/muscle-relaxation.png" alt="Grounding Exercise" class="exercise-image">
+                <div class="exercise-info">
+                    <h3>Progressive Muscle Relaxation</h3>
+                    <p>Progressive Muscle Relaxation (PMR) is a calming technique that involves tensing and then slowly releasing different muscle groups in the body. This helps you become more aware of physical tension and encourages full-body relaxation. PMR is especially helpful for easing stress, reducing anxiety, and improving sleep.</p>
+                    <div class="exercise-controls">
+                        <button class="start-btn" id="startPmrBtn">Start Exercise</button>
+                        <div class="duration">3 min</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </main>
+
+    <!-- Place all script tags here, just before </body> -->
+    <script src="{% static '/js/eft-exercise.js' %}"></script>
+    <script src="{% static 'mentalhealth/js/breathing-exercise.js' %}"></script>
+    <script>
+    // Ensure all inline JS runs after DOM and external scripts
+    document.addEventListener('DOMContentLoaded', function() {
+        // DASS Test Variables
+        const questions = [
+            "I found it hard to wind down",
+            "I was aware of dryness of my mouth",
+            "I couldn't seem to experience any positive feeling at all",
+            "I experienced breathing difficulty (e.g., excessively rapid breathing, breathlessness in the absence of physical exertion)",
+            "I found it difficult to work up the initiative to do things",
+            "I tended to over-react to situations",
+            "I experienced trembling (e.g., in the hands)",
+            "I felt that I was using a lot of nervous energy",
+            "I was worried about situations in which I might panic and make a fool of myself",
+            "I felt that I had nothing to look forward to",
+            "I found myself getting agitated",
+            "I found it difficult to relax",
+            "I felt down-hearted and blue",
+            "I was intolerant of anything that kept me from getting on with what I was doing",
+            "I felt I was close to panic",
+            "I was unable to become enthusiastic about anything",
+            "I felt I wasn't worth much as a person",
+            "I felt that I was rather touchy",
+            "I was aware of the action of my heart in the absence of physical exertion (e.g., sense of heart rate increase, heart missing a beat)",
+            "I felt scared without any good reason",
+            "I felt that life was meaningless"
+        ];
+
+        let currentQuestion = 0;
+        let answers = [];
+        let scores = { depression: 0, anxiety: 0, stress: 0 };
+
+        // DASS Scoring
+        const depressionQuestions = [3, 5, 10, 13, 16, 17, 21];
+        const anxietyQuestions = [2, 4, 7, 9, 15, 19, 20];
+        const stressQuestions = [1, 6, 8, 11, 12, 14, 18];
+
+        // Elements
+        const questionText = document.getElementById('question-text');
+        const progressBar = document.getElementById('progress-bar');
+        const progress = document.getElementById('progress');
+        const scaleBtns = document.querySelectorAll('.scale-btn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const dassTest = document.querySelector('.dass21-test');
+
+        // Initialize
+        function initTest() {
+            currentQuestion = 0;
+            answers = [];
+            scores = { depression: 0, anxiety: 0, stress: 0 };
+            showQuestion();
+            if (dassTest) dassTest.style.display = 'block';
+            if (resultsContainer) resultsContainer.style.display = 'none';
+        }
+
+        function showQuestion() {
+            if (currentQuestion < questions.length) {
+                questionText.textContent = questions[currentQuestion];
+                progressBar.style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+                progress.textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
+            } else {
+                showResults();
+            }
+        }
+
+        function handleAnswer(value) {
+            console.log('handleAnswer called with value:', value, 'currentQuestion:', currentQuestion);
+            answers.push(value);
+            currentQuestion++;
+            showQuestion();
+        }
+
+        function calculateScores() {
+            scores.depression = answers.filter((answer, index) => 
+                depressionQuestions.includes(index + 1)).reduce((sum, answer) => sum + answer, 0) * 2;
+            scores.anxiety = answers.filter((answer, index) => 
+                anxietyQuestions.includes(index + 1)).reduce((sum, answer) => sum + answer, 0) * 2;
+            scores.stress = answers.filter((answer, index) => 
+                stressQuestions.includes(index + 1)).reduce((sum, answer) => sum + answer, 0) * 2;
+        }
+
+        function showResults() {
+            console.log('showResults function called');
+            calculateScores();
+            console.log('Scores calculated:', scores);
+            if (dassTest) dassTest.style.display = 'none';
+            if (resultsContainer) resultsContainer.style.display = 'block';
+            
+            // Update scores
+            document.getElementById('depressionScore').textContent = scores.depression;
+            document.getElementById('anxietyScore').textContent = scores.anxiety;
+            document.getElementById('stressScore').textContent = scores.stress;
+            
+            // Update interpretations
+            updateInterpretation('depression', scores.depression);
+            updateInterpretation('anxiety', scores.anxiety);
+            updateInterpretation('stress', scores.stress);
+            
+            // Update severity indicators
+            updateSeverityIndicators('depression', scores.depression);
+            updateSeverityIndicators('anxiety', scores.anxiety);
+            updateSeverityIndicators('stress', scores.stress);
+            
+            // Auto-save results after a short delay
+            console.log('Setting up auto-save timer...');
+            setTimeout(() => {
+                console.log('Auto-save timer triggered');
+                autoSaveResults();
+            }, 1000);
+        }
+
+        function updateInterpretation(type, score) {
+            const interpretation = document.getElementById(`${type}Interpretation`);
+            let text = '';
+            let severity = '';
+            
+            if (type === 'depression') {
+                if (score <= 9) { text = 'Normal'; severity = 'normal'; }
+                else if (score <= 13) { text = 'Mild'; severity = 'mild'; }
+                else if (score <= 20) { text = 'Moderate'; severity = 'moderate'; }
+                else if (score <= 27) { text = 'Severe'; severity = 'severe'; }
+                else { text = 'Extremely Severe'; severity = 'extremely-severe'; }
+            } else if (type === 'anxiety') {
+                if (score <= 7) { text = 'Normal'; severity = 'normal'; }
+                else if (score <= 9) { text = 'Mild'; severity = 'mild'; }
+                else if (score <= 14) { text = 'Moderate'; severity = 'moderate'; }
+                else if (score <= 19) { text = 'Severe'; severity = 'severe'; }
+                else { text = 'Extremely Severe'; severity = 'extremely-severe'; }
+            } else if (type === 'stress') {
+                if (score <= 14) { text = 'Normal'; severity = 'normal'; }
+                else if (score <= 18) { text = 'Mild'; severity = 'mild'; }
+                else if (score <= 25) { text = 'Moderate'; severity = 'moderate'; }
+                else if (score <= 33) { text = 'Severe'; severity = 'severe'; }
+                else { text = 'Extremely Severe'; severity = 'extremely-severe'; }
+            }
+            
+            if (interpretation) {
+                interpretation.textContent = text;
+                interpretation.className = `score-interpretation ${severity}`;
+            }
+        }
+
+        function updateSeverityIndicators(type, score) {
+            const indicators = document.querySelectorAll(`.${type} .severity-dot`);
+            let level = 0;
+            
+            if (type === 'depression') {
+                if (score > 27) level = 4;
+                else if (score > 20) level = 3;
+                else if (score > 13) level = 2;
+                else if (score > 9) level = 1;
+            } else if (type === 'anxiety') {
+                if (score > 19) level = 4;
+                else if (score > 14) level = 3;
+                else if (score > 9) level = 2;
+                else if (score > 7) level = 1;
+            } else if (type === 'stress') {
+                if (score > 33) level = 4;
+                else if (score > 25) level = 3;
+                else if (score > 18) level = 2;
+                else if (score > 14) level = 1;
+            }
+            
+            indicators.forEach((dot, index) => {
+                dot.classList.toggle('active', index <= level);
+            });
+        }
+
+        // Event Listeners
+        scaleBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const value = parseInt(this.dataset.value);
+                handleAnswer(value);
+            });
+        });
+
+        // Notification functionality
+        const bellIcon = document.getElementById('bell-icon');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationBadge = document.getElementById('notificationBadge');
+
+        if (bellIcon && notificationDropdown) {
+            bellIcon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (notificationDropdown.style.display === 'block') {
+                    notificationDropdown.style.display = 'none';
+                } else {
+                    showNotificationDropdown();
+                }
+            });
+        }
+
+        function showNotificationDropdown() {
+            if (!notificationDropdown) return;
+            
+            notificationDropdown.innerHTML = '<div style="text-align:center;padding:1.5rem 0;"><span class="ai-spinner" style="width:22px;height:22px;"></span> Loading...</div>';
+            notificationDropdown.style.display = 'block';
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            
+            fetch('/notifications/', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                notificationDropdown.innerHTML = '';
+                if (data.notifications && data.notifications.length > 0) {
+                    data.notifications.forEach(notif => {
+                        const item = document.createElement('div');
+                        item.className = 'notification-item';
+                        item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
+                        
+                        const content = document.createElement('a');
+                        content.href = notif.url;
+                        content.style.cssText = 'flex:1;display:flex;align-items:center;gap:0.7rem;text-decoration:none;color:inherit;';
+                        content.innerHTML = `
+                            <i class='bx ${notif.type === 'appointment' ? 'bxs-calendar' : notif.type === 'report' ? 'bxs-report' : 'bxs-bell'}' style='color:#27ae60;font-size:1.2rem;'></i>
+                            <span>${notif.message}</span>
+                            <span style='margin-left:auto;font-size:0.85em;color:#888;'>${notif.time}</span>
+                        `;
+                        
+                        const clearBtn = document.createElement('button');
+                        clearBtn.innerHTML = '<i class="bx bx-x"></i>';
+                        clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
+                        clearBtn.title = 'Clear notification';
+                        clearBtn.onclick = function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            clearNotification(notif.id);
+                        };
+                        
+                        item.appendChild(content);
+                        item.appendChild(clearBtn);
+                        notificationDropdown.appendChild(item);
+                    });
+                    
+                    // Add clear all button
+                    const clearAllDiv = document.createElement('div');
+                    clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
+                    
+                    const clearAllBtn = document.createElement('button');
+                    clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
+                    clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
+                    clearAllBtn.onclick = function(e) {
+                        e.preventDefault();
+                        clearAllNotifications();
+                    };
+                    
+                    clearAllDiv.appendChild(clearAllBtn);
+                    notificationDropdown.appendChild(clearAllDiv);
+                } else {
+                    notificationDropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#888;"><i class="bx bxs-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
+                }
+            })
+            .catch((error) => {
+                console.error('Notification error:', error);
+                notificationDropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
+            });
+        }
+
+        // Close notification dropdown when clicking outside
+        document.addEventListener('click', function() {
+            if (notificationDropdown) {
+                notificationDropdown.style.display = 'none';
+            }
+        });
+
+        // Update notification badge
+        function updateNotificationBadge() {
+            if (!notificationBadge) return;
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            
+            fetch('/notifications/', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.count > 0) {
+                    notificationBadge.textContent = data.count;
+                    notificationBadge.style.display = 'flex';
+                } else {
+                    notificationBadge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error updating notification badge:', error);
+            });
+        }
+
+        // Initialize notification badge
+        updateNotificationBadge();
+        setInterval(updateNotificationBadge, 300000); // Update every 5 minutes
+
+        // Function to clear individual notification
+        function clearNotification(notificationId) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            
+            fetch(`/notifications/${notificationId}/clear/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh the notification dropdown
+                    showNotificationDropdown();
+                    // Update the badge
+                    updateNotificationBadge();
+                } else {
+                    console.error('Error clearing notification:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing notification:', error);
+            });
+        }
+
+        // Function to clear all notifications
+        function clearAllNotifications() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            
+            fetch('/notifications/clear-all/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh the notification dropdown
+                    showNotificationDropdown();
+                    // Update the badge
+                    updateNotificationBadge();
+                } else {
+                    console.error('Error clearing all notifications:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing all notifications:', error);
+            });
+        }
+
+        // Profile dropdown functionality
+        const profileImg = document.getElementById('profile-img');
+        const profileDropdown = document.getElementById('profile-dropdown');
+
+        console.log('Profile elements:', { profileImg, profileDropdown });
+
+        if (profileImg && profileDropdown) {
+            profileImg.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('Profile image clicked');
+                const currentDisplay = profileDropdown.style.display;
+                const newDisplay = currentDisplay === 'block' ? 'none' : 'block';
+                profileDropdown.style.display = newDisplay;
+                console.log('Dropdown display changed to:', newDisplay);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function() {
+                profileDropdown.style.display = 'none';
+            });
+        } else {
+            console.error('Profile dropdown elements not found:', { profileImg, profileDropdown });
+        }
+
+        // Modal functionality
+        const supportGroupsModal = document.getElementById('supportGroupsModal');
+        const findGroupsBtn = document.getElementById('findGroupsBtn');
+        const closeSupportGroupsModal = supportGroupsModal ? supportGroupsModal.querySelector('.close-modal') : null;
+
+        if (findGroupsBtn && supportGroupsModal) {
+            findGroupsBtn.addEventListener('click', function() {
+                supportGroupsModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        if (closeSupportGroupsModal && supportGroupsModal) {
+            closeSupportGroupsModal.addEventListener('click', function() {
+                supportGroupsModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+        }
+
+        // Exercises Modal
+        const exercisesModal = document.getElementById('exercisesModal');
+        const startExercisesBtn = document.getElementById('startExercisesBtn');
+        const closeExercisesModal = exercisesModal ? exercisesModal.querySelector('.close-modal') : null;
+
+        if (startExercisesBtn && exercisesModal) {
+            startExercisesBtn.addEventListener('click', function() {
+                exercisesModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        if (closeExercisesModal && exercisesModal) {
+            closeExercisesModal.addEventListener('click', function() {
+                exercisesModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+            
+            // Close when clicking outside the modal
+            window.addEventListener('click', function(e) {
+                if (e.target === exercisesModal) {
+                    exercisesModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+
+        // Support Groups Modal - add click outside functionality
+        if (supportGroupsModal) {
+            window.addEventListener('click', function(e) {
+                if (e.target === supportGroupsModal) {
+                    supportGroupsModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+
+        // PMR Exercise
+        const startPmrBtn = document.getElementById('startPmrBtn');
+        if (startPmrBtn) {
+            startPmrBtn.addEventListener('click', function() {
+                showPmrModal();
+            });
+        }
+
+        function showPmrModal() {
+            const pmrSteps = [
+                "Sit or lie down in a comfortable position. Take a deep breath and let it out slowly.",
+                "Focus on your feet. Tense the muscles in your feet as tightly as you can. Hold for 5 seconds... then relax.",
+                "Now, tense your calf muscles. Hold for 5 seconds... then relax.",
+                "Tense your thigh muscles. Hold for 5 seconds... then relax.",
+                "Tense your glutes (buttocks). Hold for 5 seconds... then relax.",
+                "Tense your stomach muscles. Hold for 5 seconds... then relax.",
+                "Tense your hands into fists. Hold for 5 seconds... then relax.",
+                "Tense your forearms. Hold for 5 seconds... then relax.",
+                "Tense your upper arms. Hold for 5 seconds... then relax.",
+                "Tense your shoulders. Hold for 5 seconds... then relax.",
+                "Tense your neck muscles. Hold for 5 seconds... then relax.",
+                "Tense your facial muscles. Hold for 5 seconds... then relax.",
+                "Now scan your entire body. Notice how relaxed you feel. Take a few deep breaths and enjoy the feeling of relaxation."
+            ];
+
+            let currentStep = 0;
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;';
+            
+            const content = document.createElement('div');
+            content.style.cssText = 'background:white;padding:2rem;border-radius:12px;max-width:500px;text-align:center;position:relative;';
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.cssText = 'position:absolute;top:10px;right:15px;background:none;border:none;font-size:24px;cursor:pointer;';
+            closeBtn.onclick = () => document.body.removeChild(modal);
+            
+            const stepText = document.createElement('p');
+            stepText.style.cssText = 'font-size:1.1rem;margin:1rem 0;line-height:1.6;';
+            stepText.textContent = pmrSteps[currentStep];
+            
+            const progress = document.createElement('div');
+            progress.style.cssText = 'margin:1rem 0;font-size:0.9rem;color:#666;';
+            progress.textContent = `Step ${currentStep + 1} of ${pmrSteps.length}`;
+            
+            const controls = document.createElement('div');
+            controls.style.cssText = 'display:flex;gap:10px;justify-content:center;margin-top:1rem;';
+            
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = 'Previous';
+            prevBtn.style.cssText = 'padding:0.5rem 1rem;border:none;border-radius:6px;background:#95a5a6;color:white;cursor:pointer;';
+            prevBtn.disabled = true;
+            
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'Next';
+            nextBtn.style.cssText = 'padding:0.5rem 1rem;border:none;border-radius:6px;background:#2ecc71;color:white;cursor:pointer;';
+            
+            function updateStep() {
+                stepText.textContent = pmrSteps[currentStep];
+                progress.textContent = `Step ${currentStep + 1} of ${pmrSteps.length}`;
+                prevBtn.disabled = currentStep === 0;
+                nextBtn.textContent = currentStep === pmrSteps.length - 1 ? 'Finish' : 'Next';
+            }
+            
+            prevBtn.onclick = () => {
+                if (currentStep > 0) {
+                    currentStep--;
+                    updateStep();
+                }
+            };
+            
+            nextBtn.onclick = () => {
+                if (currentStep < pmrSteps.length - 1) {
+                    currentStep++;
+                    updateStep();
+                } else {
+                    document.body.removeChild(modal);
+                }
+            };
+            
+            controls.appendChild(prevBtn);
+            controls.appendChild(nextBtn);
+            content.appendChild(closeBtn);
+            content.appendChild(stepText);
+            content.appendChild(progress);
+            content.appendChild(controls);
+            modal.appendChild(content);
+            document.body.appendChild(modal);
+        }
+
+        // Action buttons
+        const retakeBtn = document.getElementById('retakeBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        
+        if (retakeBtn) {
+            retakeBtn.addEventListener('click', initTest);
+        }
+        
+        // Auto-save function
+        async function autoSaveResults() {
+            console.log('Auto-save function called with scores:', scores);
+            try {
+                // Calculate severity levels
+                const depressionSeverity = scores.depression <= 9 ? 'Normal' : 
+                                        scores.depression <= 13 ? 'Mild' : 
+                                        scores.depression <= 20 ? 'Moderate' : 
+                                        scores.depression <= 27 ? 'Severe' : 'Extremely Severe';
+                
+                const anxietySeverity = scores.anxiety <= 7 ? 'Normal' : 
+                                      scores.anxiety <= 9 ? 'Mild' : 
+                                      scores.anxiety <= 14 ? 'Moderate' : 
+                                      scores.anxiety <= 19 ? 'Severe' : 'Extremely Severe';
+                
+                const stressSeverity = scores.stress <= 14 ? 'Normal' : 
+                                     scores.stress <= 18 ? 'Mild' : 
+                                     scores.stress <= 25 ? 'Moderate' : 
+                                     scores.stress <= 33 ? 'Severe' : 'Extremely Severe';
+                
+                console.log('Sending data to server:', {
+                    depression: scores.depression,
+                    anxiety: scores.anxiety,
+                    stress: scores.stress,
+                    depression_severity: depressionSeverity,
+                    anxiety_severity: anxietySeverity,
+                    stress_severity: stressSeverity,
+                    answers: answers
+                });
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+                console.log('CSRF Token:', csrfToken ? 'Present' : 'Missing');
+                
+                const response = await fetch('/save-dass-results/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        depression: scores.depression,
+                        anxiety: scores.anxiety,
+                        stress: scores.stress,
+                        depression_severity: depressionSeverity,
+                        anxiety_severity: anxietySeverity,
+                        stress_severity: stressSeverity,
+                        answers: answers
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (data.status === 'success') {
+                    console.log('Results auto-saved successfully!');
+                    // Update the scheduler link with the new scores
+                    const bookSessionBtn = document.getElementById('bookSessionBtn');
+                    if (bookSessionBtn) {
+                        bookSessionBtn.href = `/scheduler/?depression=${scores.depression}&anxiety=${scores.anxiety}&stress=${scores.stress}`;
+                    }
+                    // Update save button to show saved status
+                    if (saveBtn) {
+                        saveBtn.textContent = '✓ Results Saved';
+                        saveBtn.style.background = '#27ae60';
+                        saveBtn.disabled = true;
+                    }
+                    // Show success message
+                    const saveStatus = document.getElementById('saveStatus');
+                    if (saveStatus) {
+                        saveStatus.style.display = 'block';
+                    }
+                } else {
+                    console.error('Error auto-saving results:', data.message);
+                    // Update save button to show error
+                    if (saveBtn) {
+                        saveBtn.textContent = 'Save Results';
+                        saveBtn.style.background = '#e74c3c';
+                    }
+                }
+            } catch (error) {
+                console.error('Error auto-saving results:', error);
+            }
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async function() {
+                try {
+                    // Calculate severity levels
+                    const depressionSeverity = scores.depression <= 9 ? 'Normal' : 
+                                            scores.depression <= 13 ? 'Mild' : 
+                                            scores.depression <= 20 ? 'Moderate' : 
+                                            scores.depression <= 27 ? 'Severe' : 'Extremely Severe';
+                    
+                    const anxietySeverity = scores.anxiety <= 7 ? 'Normal' : 
+                                          scores.anxiety <= 9 ? 'Mild' : 
+                                          scores.anxiety <= 14 ? 'Moderate' : 
+                                          scores.anxiety <= 19 ? 'Severe' : 'Extremely Severe';
+                    
+                    const stressSeverity = scores.stress <= 14 ? 'Normal' : 
+                                         scores.stress <= 18 ? 'Mild' : 
+                                         scores.stress <= 25 ? 'Moderate' : 
+                                         scores.stress <= 33 ? 'Severe' : 'Extremely Severe';
+                    
+                    const response = await fetch('/save-dass-results/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: JSON.stringify({
+                            depression: scores.depression,
+                            anxiety: scores.anxiety,
+                            stress: scores.stress,
+                            depression_severity: depressionSeverity,
+                            anxiety_severity: anxietySeverity,
+                            stress_severity: stressSeverity,
+                            answers: answers
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        alert('Results saved successfully!');
+                        // Update the scheduler link with the new scores
+                        const bookSessionBtn = document.getElementById('bookSessionBtn');
+                        if (bookSessionBtn) {
+                            bookSessionBtn.href = `/scheduler/?depression=${scores.depression}&anxiety=${scores.anxiety}&stress=${scores.stress}`;
+                        }
+                        // Update save button to show saved status
+                        saveBtn.textContent = '✓ Results Saved';
+                        saveBtn.style.background = '#27ae60';
+                        saveBtn.disabled = true;
+                        // Show success message
+                        const saveStatus = document.getElementById('saveStatus');
+                        if (saveStatus) {
+                            saveStatus.style.display = 'block';
+                        }
+                    } else {
+                        alert('Error saving results: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Error saving results:', error);
+                    alert('Error saving results. Please try again.');
+                }
+            });
+        }
+
+        // ML Consent Modal close functionality
+        const mlConsentModal = document.getElementById('mlConsentModal');
+        const mlConsentCloseBtn = document.getElementById('mlConsentCloseBtn');
+        const mlConsentCloseBtn2 = document.getElementById('mlConsentCloseBtn2');
+        const mlConsentContinueBtn = document.getElementById('mlConsentContinueBtn');
+        
+        if (mlConsentModal) {
+            // Close button (X) functionality
+            if (mlConsentCloseBtn) {
+                mlConsentCloseBtn.addEventListener('click', function() {
+                    mlConsentModal.style.display = 'none';
+                });
+            }
+            
+            // Dismiss button functionality
+            if (mlConsentCloseBtn2) {
+                mlConsentCloseBtn2.addEventListener('click', function() {
+                    mlConsentModal.style.display = 'none';
+                });
+            }
+            
+            // Continue button functionality
+            if (mlConsentContinueBtn) {
+                mlConsentContinueBtn.addEventListener('click', function() {
+                    mlConsentModal.style.display = 'none';
+                });
+            }
+            
+            // Close when clicking outside the modal
+            mlConsentModal.addEventListener('click', function(e) {
+                if (e.target === mlConsentModal) {
+                    mlConsentModal.style.display = 'none';
+                }
+            });
+        }
+
+        // Initialize the test
+        initTest();
+        
+        // AI Feedback functionality
+        let userConsentedToAI = false;
+        
+        // Track if user consented to AI feedback
+        if (mlConsentContinueBtn) {
+            mlConsentContinueBtn.addEventListener('click', function() {
+                userConsentedToAI = true;
+            });
+        }
+        
+        async function fetchAIFeedback(depressionScore, anxietyScore, stressScore) {
+            console.log('Fetching AI feedback for scores:', { depressionScore, anxietyScore, stressScore });
+            try {
+                // Collect all DASS21 answers for more specific feedback
+                const dassAnswers = {};
+                let answersCollected = 0;
+                
+                for (let i = 1; i <= 21; i++) {
+                    const questionElement = document.querySelector(`input[name="question${i}"]:checked`);
+                    if (questionElement) {
+                        dassAnswers[`q${i}`] = parseInt(questionElement.value);
+                        answersCollected++;
+                    }
+                }
+                
+                console.log('DASS21 answers collected:', dassAnswers);
+                console.log('Total answers collected:', answersCollected);
+                
+                // Check if we have enough answers to analyze
+                if (answersCollected < 21) {
+                    console.warn('Not all DASS21 questions answered. Collected:', answersCollected);
+                }
+                
+                const requestBody = {
+                    depression: depressionScore,
+                    anxiety: anxietyScore,
+                    stress: stressScore,
+                    answers: dassAnswers  // Include individual question responses
+                };
+                
+                console.log('Sending request body:', requestBody);
+                
+                const response = await fetch('/api/ai-feedback/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('AI feedback response:', data);
+                
+                if (data.success) {
+                    console.log('DASS analysis in response:', data.dass_analysis);
+                    if (data.dass_analysis) {
+                        console.log('Primary concerns:', data.dass_analysis.primary_concerns);
+                        console.log('Coping patterns:', data.dass_analysis.coping_patterns);
+                        console.log('Specific triggers:', data.dass_analysis.specific_triggers);
+                    }
+                    
+                    return {
+                        feedback: data.feedback,
+                        source: data.source,
+                        personalization_level: data.personalization_level,
+                        dass_analysis: data.dass_analysis || {},
+                        context_used: data.context_used || {}
+                    };
+                } else {
+                    console.error('AI feedback error:', data.error);
+                    return null;
+                }
+            } catch (error) {
+                console.error('Error fetching AI feedback:', error);
+                return null;
+            }
+        }
+        
+        function showAIFeedback(feedback) {
+            console.log('Showing AI feedback:', feedback);
+            console.log('Feedback dass_analysis:', feedback.dass_analysis);
+            
+            if (feedback.dass_analysis) {
+                console.log('Primary concerns count:', feedback.dass_analysis.primary_concerns ? feedback.dass_analysis.primary_concerns.length : 0);
+                console.log('Coping patterns count:', feedback.dass_analysis.coping_patterns ? feedback.dass_analysis.coping_patterns.length : 0);
+                console.log('Specific triggers count:', feedback.dass_analysis.specific_triggers ? feedback.dass_analysis.specific_triggers.length : 0);
+                
+                if (feedback.dass_analysis.primary_concerns) {
+                    console.log('Primary concerns:', feedback.dass_analysis.primary_concerns);
+                }
+            }
+            
+            const currentAdviceCard = document.createElement('div');
+            currentAdviceCard.className = 'resource-card ai-feedback-card';
+            currentAdviceCard.style.cssText = `
+                background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+                border-left: 4px solid #4caf50;
+                margin-top: 1rem;
+                padding: 1.5rem;
+                border-radius: 12px;
+                box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+                position: relative;
+                overflow: hidden;
+            `;
+            
+            // Build the HTML content
+            let htmlContent = `
+                <div style="position: absolute; top: 0; left: -100%; width: 100%; height: 100%; 
+                     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                     animation: shimmer 2s infinite;"></div>
+                <div style="position: relative; z-index: 1;">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <div style="background: #4caf50; color: white; border-radius: 50%; width: 40px; height: 40px; 
+                             display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <i class="fas fa-brain" style="font-size: 18px;"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: #2e7d32; font-weight: 600;">Personalized AI Feedback</h4>
+                            <p style="margin: 0; font-size: 0.9em; color: #666;">Based on your DASS21 responses</p>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem; padding: 12px; background: rgba(255,255,255,0.7); 
+                         border-radius: 8px; border-left: 3px solid #4caf50;">
+                        ${feedback.feedback}
+                    </div>
+            `;
+            
+            // Add Key Concerns section if available
+            if (feedback.dass_analysis && feedback.dass_analysis.primary_concerns && feedback.dass_analysis.primary_concerns.length > 0) {
+                console.log('Adding Key Concerns section with', feedback.dass_analysis.primary_concerns.length, 'concerns');
+                htmlContent += `
+                    <div style="margin-top: 1rem; padding: 12px; background: rgba(255,255,255,0.5); 
+                         border-radius: 8px; border-left: 3px solid #ff9800;">
+                        <h5 style="margin: 0 0 8px 0; color: #e65100; font-size: 0.9em;">
+                            <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>
+                            Key Concerns Identified
+                        </h5>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
+                `;
+                
+                feedback.dass_analysis.primary_concerns.slice(0, 3).forEach(concern => {
+                    htmlContent += `<li style="margin-bottom: 4px;">${concern.question} (${concern.severity})</li>`;
+                });
+                
+                htmlContent += `
+                        </ul>
+                    </div>
+                `;
+            } else {
+                console.log('No primary concerns to display, showing fallback concerns');
+                // Fallback: Show general concerns based on scores
+                const concerns = [];
+                if (scores.depression > 13) concerns.push('Depression symptoms (moderate to severe)');
+                if (scores.anxiety > 9) concerns.push('Anxiety symptoms (moderate to severe)');
+                if (scores.stress > 18) concerns.push('Stress symptoms (moderate to severe)');
+                
+                if (concerns.length > 0) {
+                    htmlContent += `
+                        <div style="margin-top: 1rem; padding: 12px; background: rgba(255,255,255,0.5); 
+                             border-radius: 8px; border-left: 3px solid #ff9800;">
+                            <h5 style="margin: 0 0 8px 0; color: #e65100; font-size: 0.9em;">
+                                <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>
+                                Key Concerns Identified
+                            </h5>
+                            <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
+                    `;
+                    
+                    concerns.forEach(concern => {
+                        htmlContent += `<li style="margin-bottom: 4px;">${concern}</li>`;
+                    });
+                    
+                    htmlContent += `
+                            </ul>
+                        </div>
+            `;
+                }
+            }
+            
+            // Add Coping Patterns section if available
+            if (feedback.dass_analysis && feedback.dass_analysis.coping_patterns && feedback.dass_analysis.coping_patterns.length > 0) {
+                console.log('Adding Coping Patterns section with', feedback.dass_analysis.coping_patterns.length, 'patterns');
+                htmlContent += `
+                    <div style="margin-top: 1rem; padding: 12px; background: rgba(255,255,255,0.5); 
+                         border-radius: 8px; border-left: 3px solid #2196f3;">
+                        <h5 style="margin: 0 0 8px 0; color: #1565c0; font-size: 0.9em;">
+                            <i class="fas fa-lightbulb" style="margin-right: 6px;"></i>
+                            Coping Patterns
+                        </h5>
+                        <p style="margin: 0; font-size: 0.85em; color: #666;">
+                            ${feedback.dass_analysis.coping_patterns.join(', ')}
+                        </p>
+                    </div>
+                `;
+            } else {
+                console.log('No coping patterns to display');
+            }
+            
+            // Close the main div
+            htmlContent += `
+                    <div style="margin-top: 1rem; padding: 8px; background: rgba(255,255,255,0.3); 
+                         border-radius: 6px; font-size: 0.8em; color: #666; text-align: center;">
+                        <i class="fas fa-shield-alt" style="margin-right: 4px;"></i>
+                        Personalized using your academic context, test history, and specific DASS21 responses
+                    </div>
+                </div>
+            `;
+            
+            currentAdviceCard.innerHTML = htmlContent;
+            
+            // Add CSS animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes shimmer {
+                    0% { left: -100%; }
+                    100% { left: 100%; }
+                }
+                .ai-feedback-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+                    transition: all 0.3s ease;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Remove any existing AI feedback card
+            const existingCard = document.querySelector('.ai-feedback-card');
+            if (existingCard) {
+                existingCard.remove();
+            }
+            
+            // Add the new card to the results container
+            const resultsContainer = document.getElementById('resultsContainer');
+            if (resultsContainer) {
+                resultsContainer.appendChild(currentAdviceCard);
+                
+                // Smooth scroll to the feedback
+                currentAdviceCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                console.error('Results container not found');
+            }
+        }
+        
+        // Update showResults function to include AI feedback
+        const originalShowResults = showResults;
+        showResults = async function() {
+            console.log('showResults called');
+            originalShowResults();
+            
+            // Show AI feedback if user consented or show for all users (you can change this logic)
+            if (userConsentedToAI || true) { // Set to true to show for all users
+                console.log('Attempting to fetch AI feedback');
+                try {
+                    const feedbackData = await fetchAIFeedback(scores.depression, scores.anxiety, scores.stress);
+                    console.log('Feedback received:', feedbackData);
+                    if (feedbackData && feedbackData.feedback) {
+                        showAIFeedback(feedbackData);
+                        
+                        // Log personalization details
+                        if (feedbackData.context_used) {
+                            console.log('Personalization context used:', feedbackData.context_used);
+                        }
+                        if (feedbackData.error) {
+                            console.warn('AI feedback error:', feedbackData.error);
+                        }
+                } else {
+                    console.log('No feedback received');
+                    }
+                } catch (error) {
+                    console.error('Error fetching AI feedback:', error);
+                    // Show a basic fallback message
+                    const fallbackData = {
+                        feedback: "Thank you for completing the assessment. <b>Remember that your mental health is important, and it's okay to seek support when needed.</b>",
+                        source: 'fallback',
+                        personalization_level: 'basic'
+                    };
+                    showAIFeedback(fallbackData);
+                }
+            } else {
+                console.log('User did not consent to AI feedback');
+            }
+        };
+    });
+    </script>
+</body>
+</html>

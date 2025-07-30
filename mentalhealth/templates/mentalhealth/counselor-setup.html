@@ -1,0 +1,311 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counselor Setup | CalmConnect</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .setup-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .setup-card {
+            background: white;
+            padding: 3.5rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        .setup-card h2 {
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 2.2rem;
+        }
+        
+        .setup-card p {
+            margin-bottom: 2rem;
+            text-align: center;
+            color: #555;
+            font-size: 1.1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 2rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            color: #444;
+            font-size: 1.1rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 1.2rem;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 1.2rem;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(135deg, #2980b9, #1f5f8b);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+        }
+        
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+        }
+        
+        .text-muted {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: block;
+        }
+        
+        /* Password Requirements Display Styles */
+        .password-requirements-display {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+
+        .requirements-title {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .requirements-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .requirements-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.8rem;
+            color: #666;
+            transition: color 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .req-icon {
+            font-size: 1rem;
+            color: #ccc;
+            transition: color 0.3s ease;
+        }
+
+        .requirements-list li.valid {
+            color: #28a745;
+        }
+
+        .requirements-list li.valid .req-icon {
+            color: #28a745;
+        }
+
+        .requirements-list li.invalid {
+            color: #dc3545;
+        }
+
+        .requirements-list li.invalid .req-icon {
+            color: #dc3545;
+        }
+
+        @media (max-width: 576px) {
+            .setup-card {
+                padding: 1.5rem;
+            }
+            
+            .setup-card h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-card">
+            <h2>Complete Your Counselor Account Setup</h2>
+            
+            <p>Welcome, {{ user.full_name }}! Please set your new password below.</p>
+            
+            {% if form.errors %}
+            <div class="alert-danger">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="id_old_password">Temporary Password</label>
+                    <input type="password" name="old_password" id="id_old_password" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_new_password1">New Password</label>
+                    <input type="password" name="new_password1" id="id_new_password1" class="form-control" required>
+                    
+                    <!-- Password Requirements Display -->
+                    <div class="password-requirements-display">
+                        <div class="requirements-title">
+                            <strong>Password Requirements:</strong>
+                        </div>
+                        <ul class="requirements-list">
+                            <li id="req-length" data-requirement="length">
+                                <span class="req-icon">○</span>
+                                At least 8 characters long
+                            </li>
+                            <li id="req-username" data-requirement="username">
+                                <span class="req-icon">○</span>
+                                Cannot be too similar to your username
+                            </li>
+                            <li id="req-common" data-requirement="common">
+                                <span class="req-icon">○</span>
+                                Cannot be a commonly used password
+                            </li>
+                            <li id="req-numeric" data-requirement="numeric">
+                                <span class="req-icon">○</span>
+                                Cannot be entirely numeric
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_new_password2">Confirm New Password</label>
+                    <input type="password" name="new_password2" id="id_new_password2" class="form-control" required>
+                </div>
+                
+                <button type="submit" class="btn">Complete Setup</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Password requirements validation
+        function validatePasswordRequirements(password) {
+            const requirements = {
+                length: password.length >= 8,
+                username: true, // We don't have username field in counselor setup
+                common: !isCommonPassword(password),
+                numeric: !/^\d+$/.test(password)
+            };
+            
+            // Update UI for each requirement
+            const reqElements = {
+                length: document.getElementById('req-length'),
+                username: document.getElementById('req-username'),
+                common: document.getElementById('req-common'),
+                numeric: document.getElementById('req-numeric')
+            };
+            
+            // Update each requirement element
+            Object.keys(requirements).forEach(req => {
+                const element = reqElements[req];
+                if (element) {
+                    const icon = element.querySelector('.req-icon');
+                    if (requirements[req]) {
+                        element.classList.add('valid');
+                        element.classList.remove('invalid');
+                        if (icon) icon.textContent = '✓';
+                    } else {
+                        element.classList.add('invalid');
+                        element.classList.remove('valid');
+                        if (icon) icon.textContent = '○';
+                    }
+                }
+            });
+            
+            return requirements;
+        }
+
+        // Check if password is commonly used
+        function isCommonPassword(password) {
+            const commonPasswords = [
+                'password', '123456', '123456789', 'qwerty', 'abc123',
+                'password123', 'admin', 'letmein', 'welcome', 'monkey',
+                'dragon', 'master', 'hello', 'freedom', 'whatever',
+                'qazwsx', 'trustno1', 'jordan', 'harley', 'ranger',
+                'jennifer', 'hunter', 'buster', 'soccer', 'baseball',
+                'tiger', 'charlie', 'andrew', 'michelle', 'love',
+                'sunshine', 'jessica', 'asshole', 'magic', 'shadow',
+                'michael', 'mustang', 'superman', 'batman', 'spider'
+            ];
+            return commonPasswords.includes(password.toLowerCase());
+        }
+
+        // Add event listener to new password field
+        document.getElementById('id_new_password1')?.addEventListener('input', function() {
+            validatePasswordRequirements(this.value);
+        });
+    </script>
+</body>
+</html>

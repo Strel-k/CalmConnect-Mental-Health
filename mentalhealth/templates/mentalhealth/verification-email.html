@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Verification | CalmConnect</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .button {
+            display: inline-block;
+            background: #2ecc71;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Welcome to CalmConnect!</h1>
+        <p>Please verify your email address</p>
+    </div>
+    
+    <div class="content">
+        <h2>Hello {{ user.full_name }},</h2>
+        
+        <p>Thank you for registering with CalmConnect! To complete your registration and access your account, please verify your email address by clicking the button below:</p>
+        
+        <div style="text-align: center;">
+            <a href="{{ verification_link }}" class="button">Verify Email Address</a>
+        </div>
+        
+        <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; background: #f0f0f0; padding: 10px; border-radius: 5px;">
+            {{ verification_link }}
+        </p>
+        
+        <p><strong>Important:</strong> This verification link will expire in 24 hours for security reasons.</p>
+        
+        <p>If you didn't create an account with CalmConnect, you can safely ignore this email.</p>
+    </div>
+    
+    <div class="footer">
+        <p>Best regards,<br>The CalmConnect Team</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</body>
+</html>

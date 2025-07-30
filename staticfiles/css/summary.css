@@ -1,0 +1,123 @@
+.results-wrapper {
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .results-grid {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-top: 2rem;
+    flex-wrap: nowrap; /* prevent wrapping on large screens */
+  }
+  
+  .result-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    width: 200px;
+    text-align: center;
+    transition: transform 0.3s ease;
+    flex-shrink: 0; /* ensure it doesn't shrink */
+  }
+  
+  .result-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .result-card h4 {
+    color: #2ecc71;
+    margin-bottom: 0.5rem;
+  }
+  
+  .result-card .score {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #34495e;
+  }
+  
+  .result-card .level {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #888;
+  }
+  #try-again-btn {
+    margin-top: 2rem;
+    padding: 0.75rem 2rem;
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  #try-again-btn:hover {
+    background-color: #27ae60;
+  }
+  .fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  
+  .fade-in {
+    opacity: 1;
+    transition: opacity 0.5s ease;
+  }
+  .results-summary {
+  display: flex;
+  justify-content: space-around;
+  margin: 1.5rem 0;
+  gap: 1rem;
+}
+
+.result-box {
+  background: #f1fdf6;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  flex: 1;
+}
+
+.recommendations {
+  background-color: #eafaf1;
+  border-left: 4px solid #2ecc71;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.schedule-btn-wrapper {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+#schedule-btn {
+  background-color: #32a57c;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#schedule-btn:hover {
+  background-color: #27ae60;
+}
+
+  @media (max-width: 768px) {
+    .results-grid {
+      flex-wrap: wrap;
+    }
+  
+    .result-card {
+      width: 100%;
+      max-width: 300px;
+    }
+  }
+  

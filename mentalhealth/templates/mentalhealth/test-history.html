@@ -1,0 +1,102 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <link rel="stylesheet" href="css/summary.css">
+    <link rel="stylesheet" href="css/profile-dropdown.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+    <link rel="stylesheet" href="css/test-history.css">
+    <title>History | CalmConnect</title>
+</head>
+<body>
+    <header>
+        <div class="hdr">
+            <div class="hdr-logo"><a href="{% url 'index' %}"><h2>CalmConnect</h2></div></a>
+            <div class="hdr-btns">
+                <div class="prfl-bell dropdown">
+                    <i class="bx bxs-bell" id="bell-icon"></i>
+                    <div class="dropdown-menu" id="bell-dropdown">
+                      <p>No new notifications</p>
+                    </div>
+                  </div>
+                <div class="prfl-name">
+                    <h4>Username</h4>
+                </div>
+                <div class="prfl-container dropdown">
+                    <img src="img/default.jpg" alt="Profile Picture" id="profile-img">
+                    <div class="dropdown-menu" id="profile-dropdown">
+                      <a href="#">Settings</a>
+                      <a href="login.html">Log out</a>
+                      <a href="user-profile.html">Profile</a>
+                    </div>
+                  </div>
+                
+            </div>
+        </div>
+    </header>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+          <div class="sidebar-logo">
+          </div>
+          <nav class="sidebar-nav">
+            <a href="index.html"><i class='bx bxs-home'></i> Dashboard</a>
+            <a href="test-history.html"><i class='bx bxs-calendar-event'></i> Test History</a>
+            <a href="user-profile.html"><i class='bx bxs-user'></i> Profile</a>
+            <a href="scheduler.html"><i class='bx bxs-calendar-event'></i> Appointment</a>
+          </nav>
+        </aside>
+    <section class="test-history">
+        <div class="test-history-container">
+            <div class="test-history-title">
+                <h2>Test History</h2>
+
+            </div>
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Username</th>
+                  <th>Anxiety</th>
+                  <th>Depression</th>
+                  <th>Stress</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2025-05-18</td>
+                  <td>student01</td>
+                  <td>12 (Moderate)</td>
+                  <td>16 (Mild)</td>
+                  <td>20 (Severe)</td>
+                    <td></td>
+                </tr>
+                <tr>
+                  <td>2025-05-15</td>
+                  <td>student01</td>
+                  <td>4 (Normal)</td>
+                  <td>5 (Normal)</td>
+                  <td>8 (Mild)</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+           
+          </div>
+          <div class="pagination-controls">
+            <button class="next-page-btn">Next Page</button>
+          </div>
+    </section>
+    <script src="js/bell.js"></script>
+    <script src="js/question.js"></script>
+    <script src="js/progress-bar.js"></script>
+    <script src="js/summary.js"></script>
+    <script src="js/dropdown.js"></script>
+</body>
+</html>

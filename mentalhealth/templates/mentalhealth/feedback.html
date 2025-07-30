@@ -1,0 +1,607 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        /* Header Styles - Matching Admin Panel */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hdr-logo h2 {
+            color: #2ecc71;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .hdr-logo a {
+            text-decoration: none;
+        }
+
+        /* Main Content */
+        .main-bdy {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Hero Section */
+        .bdy-upper {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            text-align: center;
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 15px 35px rgba(46, 204, 113, 0.3);
+        }
+
+        .upper-txt h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .upper-txt p {
+            font-size: 1.2rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        /* Feedback Container */
+        .feedback-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .feedback-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .feedback-title h2 {
+            color: #2c3e50;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .appointment-details {
+            background: rgba(233, 249, 241, 0.7);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .counselor-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #2ecc71;
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+        }
+
+        .appointment-info h3 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .appointment-info p {
+            color: #666;
+            margin-bottom: 0.3rem;
+            font-size: 1rem;
+        }
+
+        .appointment-info .date {
+            color: #2ecc71;
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+
+        /* Rating Section */
+        .rating-section {
+            margin-bottom: 2rem;
+        }
+
+        .rating-section h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .rating-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .rating-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .rating-item label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .star {
+            font-size: 1.8rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .star:hover,
+        .star.active {
+            color: #f39c12;
+        }
+
+        .rating-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        /* Feedback Form */
+        .feedback-form {
+            margin-top: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-family: 'Poppins', sans-serif;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .submit-btn, .skip-btn {
+            padding: 1rem 2.2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        .skip-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .submit-btn:hover, .skip-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Thank You Message */
+        .thank-you-message {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            background: rgba(46, 204, 113, 0.1);
+            border-radius: 16px;
+            margin-top: 2rem;
+        }
+
+        .thank-you-message h3 {
+            color: #27ae60;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .thank-you-message p {
+            color: #2c3e50;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .thank-you-icon {
+            font-size: 4rem;
+            color: #2ecc71;
+            margin-bottom: 1rem;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .appointment-details {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .submit-btn, .skip-btn {
+                width: 100%;
+            }
+        }
+    </style>    
+</head>
+<body>
+    <header>
+        <div class="hdr">
+            <div class="hdr-logo"><a href="{% url 'index' %}"><h2>CalmConnect</h2></a></div>
+        </div>
+    </header>
+
+    <main class="main-bdy">
+        <div class="bdy-upper">
+            <div class="upper-txt">
+                <h2>Session Feedback</h2>
+                <p>Help us improve our counseling services</p>
+            </div>
+        </div>
+
+        <div class="feedback-container">
+            <div class="feedback-title">
+                <h2>How was your session?</h2>
+                <p>Your feedback helps us improve our services and support counselors</p>
+            </div>
+
+            <div class="appointment-details">
+                                    <img src="{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}" 
+                     alt="{{ counselor.name }}" 
+                     class="counselor-avatar">
+                <div class="appointment-info">
+                    <h3>{{ counselor.name }}</h3>
+                    <p class="date">{{ appointment_date }} at {{ appointment_time }}</p>
+                    <p>{{ appointment_type }} session</p>
+                    <p>Duration: {{ duration }} minutes</p>
+                </div>
+            </div>
+
+            <form id="feedbackForm">
+                <div class="rating-section">
+                    <h3>Please rate your experience</h3>
+                    
+                    <div class="rating-grid">
+                        <div class="rating-item">
+                            <label>Overall satisfaction</label>
+                            <div class="rating-stars" id="overallRating">
+                                <i class="bx bxs-star star" data-value="1"></i>
+                                <i class="bx bxs-star star" data-value="2"></i>
+                                <i class="bx bxs-star star" data-value="3"></i>
+                                <i class="bx bxs-star star" data-value="4"></i>
+                                <i class="bx bxs-star star" data-value="5"></i>
+                            </div>
+                            <p class="rating-description">How satisfied were you with your session overall?</p>
+                            <input type="hidden" name="overall_rating" id="overallRatingValue" value="0">
+                        </div>
+                        
+                        <div class="rating-item">
+                            <label>Counselor's professionalism</label>
+                            <div class="rating-stars" id="professionalismRating">
+                                <i class="bx bxs-star star" data-value="1"></i>
+                                <i class="bx bxs-star star" data-value="2"></i>
+                                <i class="bx bxs-star star" data-value="3"></i>
+                                <i class="bx bxs-star star" data-value="4"></i>
+                                <i class="bx bxs-star star" data-value="5"></i>
+                            </div>
+                            <p class="rating-description">How would you rate the counselor's professionalism?</p>
+                            <input type="hidden" name="professionalism_rating" id="professionalismRatingValue" value="0">
+                        </div>
+                        
+                        <div class="rating-item">
+                            <label>Helpfulness</label>
+                            <div class="rating-stars" id="helpfulnessRating">
+                                <i class="bx bxs-star star" data-value="1"></i>
+                                <i class="bx bxs-star star" data-value="2"></i>
+                                <i class="bx bxs-star star" data-value="3"></i>
+                                <i class="bx bxs-star star" data-value="4"></i>
+                                <i class="bx bxs-star star" data-value="5"></i>
+                            </div>
+                            <p class="rating-description">How helpful was the session for your needs?</p>
+                            <input type="hidden" name="helpfulness_rating" id="helpfulnessRatingValue" value="0">
+                        </div>
+                        
+                        <div class="rating-item">
+                            <label>Would you recommend?</label>
+                            <div class="rating-stars" id="recommendRating">
+                                <i class="bx bxs-star star" data-value="1"></i>
+                                <i class="bx bxs-star star" data-value="2"></i>
+                                <i class="bx bxs-star star" data-value="3"></i>
+                                <i class="bx bxs-star star" data-value="4"></i>
+                                <i class="bx bxs-star star" data-value="5"></i>
+                            </div>
+                            <p class="rating-description">How likely are you to recommend this counselor?</p>
+                            <input type="hidden" name="recommend_rating" id="recommendRatingValue" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="feedback-form">
+                    <div class="form-group">
+                        <label for="positiveFeedback">What did you like most about your session?</label>
+                        <textarea id="positiveFeedback" name="positive_feedback" placeholder="Please share what worked well for you..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="improvementFeedback">What could be improved?</label>
+                        <textarea id="improvementFeedback" name="improvement_feedback" placeholder="Please share any suggestions for improvement..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="additionalComments">Additional comments (optional)</label>
+                        <textarea id="additionalComments" name="additional_comments" placeholder="Any other feedback you'd like to share..."></textarea>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="submit-btn">Submit Feedback</button>
+                    <button type="button" class="skip-btn" id="skipBtn">Skip Feedback</button>
+                </div>
+            </form>
+
+            <div class="thank-you-message" id="thankYouMessage">
+                <i class="bx bxs-check-circle thank-you-icon"></i>
+                <h3>Thank You!</h3>
+                <p>We appreciate your feedback and will use it to improve our services.</p>
+                <p>Your counselor will review your comments to continue providing the best support.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize star ratings
+        function initializeStarRatings() {
+            const starGroups = document.querySelectorAll('.rating-stars');
+            
+            starGroups.forEach(group => {
+                const stars = group.querySelectorAll('.star');
+                const hiddenInput = document.getElementById(group.id + 'Value');
+                
+                stars.forEach(star => {
+                    star.addEventListener('click', function() {
+                        const value = parseInt(this.dataset.value);
+                        hiddenInput.value = value;
+                        
+                        // Update star display
+                        stars.forEach((s, index) => {
+                            if (index < value) {
+                                s.classList.add('active');
+                            } else {
+                                s.classList.remove('active');
+                            }
+                        });
+                    });
+                    
+                    star.addEventListener('mouseover', function() {
+                        const hoverValue = parseInt(this.dataset.value);
+                        stars.forEach((s, index) => {
+                            if (index < hoverValue) {
+                                s.classList.add('hover');
+                            } else {
+                                s.classList.remove('hover');
+                            }
+                        });
+                    });
+                    
+                    star.addEventListener('mouseout', function() {
+                        stars.forEach(s => s.classList.remove('hover'));
+                    });
+                });
+            });
+        }
+        
+        // Handle form submission
+        document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const formData = {
+                overall_rating: document.getElementById('overallRatingValue').value,
+                professionalism_rating: document.getElementById('professionalismRatingValue').value,
+                helpfulness_rating: document.getElementById('helpfulnessRatingValue').value,
+                recommend_rating: document.getElementById('recommendRatingValue').value,
+                positive_feedback: document.getElementById('positiveFeedback').value,
+                improvement_feedback: document.getElementById('improvementFeedback').value,
+                additional_comments: document.getElementById('additionalComments').value,
+                appointment_id: '{{ appointment_id }}' // This would come from your backend
+            };
+            
+            // Validate at least one rating is provided
+            if (formData.overall_rating === '0' && 
+                formData.professionalism_rating === '0' && 
+                formData.helpfulness_rating === '0' && 
+                formData.recommend_rating === '0') {
+                alert('Please provide at least one rating before submitting.');
+                return;
+            }
+            
+            // Get CSRF token
+            const csrftoken = getCookie('csrftoken');
+            
+            // Send to server
+            fetch('/submit-feedback/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Show thank you message
+                    document.getElementById('feedbackForm').style.display = 'none';
+                    document.getElementById('thankYouMessage').style.display = 'block';
+                    
+                    // Scroll to thank you message
+                    document.getElementById('thankYouMessage').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('Error submitting feedback: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting feedback. Please try again.');
+            });
+        });
+        
+        // Skip feedback button
+        document.getElementById('skipBtn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to skip providing feedback? Your input helps us improve our services.')) {
+                // Send skip request to server
+                const csrftoken = getCookie('csrftoken');
+                
+                fetch('/skip-feedback/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({
+                        appointment_id: '{{ appointment_id }}',
+                        skipped: true
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Show thank you message even when skipped
+                        document.getElementById('feedbackForm').style.display = 'none';
+                        document.getElementById('thankYouMessage').style.display = 'block';
+                        document.getElementById('thankYouMessage').querySelector('p').textContent = 
+                            'We respect your decision not to provide feedback at this time.';
+                        
+                        // Scroll to thank you message
+                        document.getElementById('thankYouMessage').scrollIntoView({ behavior: 'smooth' });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        });
+        
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            initializeStarRatings();
+        });
+    </script>
+</body>
+</html>

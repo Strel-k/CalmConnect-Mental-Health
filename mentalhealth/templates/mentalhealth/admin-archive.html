@@ -1,0 +1,1478 @@
+{% load static %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Archives | CalmConnect</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" />
+  <link rel="stylesheet" href="{% static 'css/admin-panel.css' %}">
+      <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      min-height: 100vh;
+    }
+
+    /* Main Layout */
+    .admin-dashboard {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 2rem;
+      padding: 2rem;
+      min-height: calc(100vh - 120px);
+    }
+
+    /* Header Styles */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hdr-logo h2 {
+      color: #2ecc71;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .hdr-btns {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .prfl-bell {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .prfl-bell i {
+      font-size: 1.3rem;
+      color: #666;
+      transition: color 0.3s ease;
+    }
+
+    .prfl-bell:hover i {
+      color: #2ecc71;
+    }
+
+    /* Notification styles */
+    .notification-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      width: 350px;
+      max-height: 400px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      display: none;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+    }
+
+    .notification-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e0e0e0;
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+    }
+
+    .notification-header h4 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .notification-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .notification-item {
+      padding: 1rem;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.3s ease;
+    }
+
+    .notification-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .notification-item:last-child {
+      border-bottom: none;
+    }
+
+    .notification-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.3rem;
+      font-size: 0.9rem;
+    }
+
+    .notification-message {
+      color: #666;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    .notification-time {
+      color: #999;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #e74c3c;
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .no-notifications {
+      padding: 2rem;
+      text-align: center;
+      color: #666;
+    }
+
+    .prfl-name h4 {
+      color: #333;
+      font-weight: 600;
+    }
+
+    .prfl-container img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #2ecc71;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+
+    .sidebar-logo h3 {
+      color: #2ecc71;
+      font-size: 1.4rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #666;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .sidebar-nav a i {
+      font-size: 1.2rem;
+    }
+
+    /* Main Content */
+    .admin-options {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .dashboard-welcome {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      padding: 2.5rem;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(46, 204, 113, 0.3);
+    }
+
+    .dashboard-welcome h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .dashboard-welcome p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    /* Archive Navigation */
+    .archive-nav-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .archive-btn {
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      color: #2c3e50;
+      font-weight: 600;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .archive-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .archive-btn.active {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(46, 204, 113, 0.3);
+    }
+
+    .archive-btn i {
+      font-size: 1.2rem;
+    }
+
+    /* Archive Sections */
+    .archive-section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      display: none;
+    }
+
+    .archive-section.active {
+      display: block;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .section-header h3 {
+      color: #2c3e50;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .section-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .filter-btn, .export-btn {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .filter-btn:hover, .export-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+    }
+
+    /* Table Styles */
+    .table-container {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .archive-section table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .archive-section th {
+      background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+      color: #2c3e50;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 1.2rem 1rem;
+      text-align: left;
+      font-size: 0.85rem;
+      border-bottom: 2px solid #2ecc71;
+    }
+
+    .archive-section td {
+      padding: 1.2rem 1rem;
+      color: #444;
+      font-size: 0.95rem;
+      border-bottom: 1px solid #f1f3f4;
+      transition: background-color 0.3s ease;
+    }
+
+    .archive-section tr:hover td {
+      background-color: rgba(46, 204, 113, 0.05);
+    }
+
+    .archive-section tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: capitalize;
+      color: white;
+    }
+
+    .status-badge.completed {
+      background-color: #2ecc71;
+    }
+
+    .status-badge.cancelled {
+      background-color: #e74c3c;
+    }
+
+    .status-badge.pending {
+      background-color: #f39c12;
+    }
+
+    .status-badge.confirmed {
+      background-color: #3498db;
+    }
+
+    .view-btn {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+    }
+
+    .view-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 20px;
+      color: #777;
+    }
+
+    /* Pagination Styles */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      padding: 1.5rem;
+      margin-top: 1rem;
+      background: white;
+      border-radius: 0 0 15px 15px;
+    }
+
+    .pagination a {
+      color: #2ecc71;
+      padding: 0.5rem 1rem;
+      text-decoration: none;
+      border: 1px solid #ddd;
+      margin: 0 0.25rem;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .pagination a:hover {
+      background: #2ecc71;
+      color: white;
+      border-color: #2ecc71;
+    }
+
+    .pagination .current {
+      padding: 0.5rem 1rem;
+      background: #2ecc71;
+      color: white;
+      border: 1px solid #2ecc71;
+      border-radius: 5px;
+      margin: 0 0.25rem;
+    }
+
+    .step-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Enhanced Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 16px;
+      margin: 8% auto;
+      padding: 2.5rem;
+      max-width: 700px;
+      width: 90%;
+      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.15);
+      animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+    }
+
+    .modal-content h3 {
+      color: #2c3e50;
+      font-size: 1.8rem;
+      margin-bottom: 1.8rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #f1f3f4;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .modal-details {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+      background: #f9fafb;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+    }
+
+    .detail-row {
+      display: flex;
+      padding: 1rem 1.5rem;
+      background: white;
+      border-bottom: 1px solid #f1f3f4;
+      transition: background-color 0.2s ease;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-row:hover {
+      background-color: #f8f9fa;
+    }
+
+    .detail-label {
+      font-weight: 600;
+      min-width: 180px;
+      color: #4b5563;
+      font-size: 0.95rem;
+      letter-spacing: 0.3px;
+    }
+
+    .detail-value {
+      color: #1f2937;
+      font-size: 1rem;
+      flex: 1;
+      line-height: 1.5;
+    }
+
+    .detail-value .status-badge {
+      padding: 0.35rem 0.7rem;
+      font-size: 0.85rem;
+      border-radius: 6px;
+    }
+
+    .score-display {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .score-value {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #1f2937;
+    }
+
+    .severity-indicator {
+      display: inline-block;
+      padding: 0.35rem 0.7rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background-color: #e5e7eb;
+      color: #374151;
+    }
+
+    .severity-indicator.extreme {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    .severity-indicator.severe {
+      background-color: #ffedd5;
+      color: #9a3412;
+    }
+
+    .severity-indicator.moderate {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+
+    .severity-indicator.mild {
+      background-color: #ecfccb;
+      color: #365314;
+    }
+
+    .severity-indicator.normal {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+
+    .download-btn {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border: none;
+      padding: 0.9rem 1.8rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin: 2rem auto 0;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+      width: fit-content;
+    }
+
+    .download-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 1.2rem;
+      right: 1.5rem;
+      font-size: 1.8rem;
+      font-weight: 300;
+      color: #9ca3af;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: none;
+      border: none;
+      padding: 0.5rem;
+      line-height: 1;
+    }
+
+    .close-btn:hover {
+      color: #ef4444;
+      transform: rotate(90deg);
+    }
+
+    /* Enhanced status badges */
+    .status-badge {
+      padding: 0.35rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .status-badge:before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.6);
+    }
+
+    .status-badge.completed {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .status-badge.cancelled {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .status-badge.pending {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .status-badge.confirmed {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { 
+        opacity: 0; 
+        transform: translateY(20px);
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(-30px) scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .admin-dashboard {
+        flex-direction: column;
+        padding: 1rem;
+      }
+
+      .sidebar {
+        width: 100%;
+        position: static;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hdr {
+        padding: 0 1rem;
+      }
+
+      .dashboard-welcome h1 {
+        font-size: 2rem;
+      }
+
+      .archive-nav-buttons {
+        flex-direction: column;
+      }
+
+      .archive-btn {
+        width: 100%;
+      }
+
+      .section-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+
+      .section-actions {
+        justify-content: center;
+      }
+
+      .table-container {
+        overflow-x: auto;
+      }
+      
+      .pagination {
+        flex-wrap: wrap;
+      }
+
+      .modal-content {
+        padding: 1.5rem;
+      }
+
+      .detail-row {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .detail-label {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hdr">
+      <div class="hdr-logo"><h2>CalmConnect</h2></div>
+      <div class="hdr-btns">
+        <div class="prfl-bell" id="notif-bell" aria-label="Notifications">
+          <i class="bx bxs-bell"></i>
+          <div class="notification-badge" id="notification-badge" style="display: none;">0</div>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="no-notifications">
+                <i class="bx bx-bell" style="font-size:2.2rem;"></i><br>No notifications
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="prfl-name"><h4>{{ request.user.username }}</h4></div>
+        <div class="prfl-container">
+                          <img src="{% static 'mentalhealth/img/default.jpg' %}" alt="Profile" />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-dashboard">
+    <aside class="sidebar">
+      <div class="sidebar-logo"><h3>Admin Panel</h3></div>
+      <nav class="sidebar-nav">
+        <a href="{% url 'admin_dashboard' %}"><i class="bx bxs-dashboard"></i> Dashboard</a>
+        <a href="{% url 'admin_data' %}"><i class='bx bxs-data'></i> Data</a>
+        <a href="{% url 'admin_appointments' %}"><i class='bx bxs-calendar'></i> Appointments</a>
+        <a href="{% url 'admin_archive' %}" class="active"><i class='bx bxs-archive'></i> Archives</a>
+        <a href="{% url 'admin_personnel' %}"><i class='bx bxs-user-badge'></i> Personnel</a>
+        <a href="{% url 'logout' %}"><i class="bx bx-log-out"></i> Logout</a>
+      </nav>
+    </aside>
+
+    <main class="admin-options">
+      <div class="dashboard-welcome">
+        <h1>Archive Management</h1>
+        <p>View and manage archived records and data</p>
+      </div>
+
+      <div class="archive-nav-buttons">
+        <button class="archive-btn active" data-type="appointments">
+          <i class='bx bxs-calendar-check'></i> Appointments
+        </button>
+        <button class="archive-btn" data-type="dass21">
+          <i class='bx bxs-bar-chart-alt-2'></i> DASS21 Results
+        </button>
+        <button class="archive-btn" data-type="employees">
+          <i class='bx bxs-user-detail'></i> Employees
+        </button>
+        <button class="archive-btn" data-type="reports">
+          <i class='bx bxs-file-doc'></i> Reports
+        </button>
+      </div>
+
+      <!-- Appointments Section -->
+      <section id="appointmentsArchive" class="archive-section active">
+        <div class="section-header">
+          <h3>Past Appointments</h3>
+          <div class="section-actions">
+            <button class="filter-btn"><i class='bx bxs-filter-alt'></i> Filter</button>
+            <button class="export-btn"><i class='bx bxs-download'></i> Export</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Student ID</th>
+                <th>College</th>
+                <th>Program</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Counselor</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appointment in archived_appointments_page %}
+              <tr>
+                <td>{{ appointment.user.full_name }}</td>
+                <td>{{ appointment.user.student_id }}</td>
+                <td>{{ appointment.user.get_college_display }}</td>
+                <td>{{ appointment.user.program }}</td>
+                <td>{{ appointment.date }}</td>
+                <td>{{ appointment.time|time:"h:i A" }}</td>
+                <td>{{ appointment.counselor.name }}</td>
+                <td>
+                  <span class="status-badge {{ appointment.status|get_status_class }}">
+                    {{ appointment.status|title }}
+                  </span>
+                </td>
+                <td>
+                  <button class="view-btn" onclick='showArchiveModal("appointments", {
+                    "student": "{{ appointment.user.full_name }}",
+                    "studentId": "{{ appointment.user.student_id }}",
+                    "date": "{{ appointment.date }}",
+                    "time": "{{ appointment.time|time:'h:i A' }}",
+                    "counselor": "{{ appointment.counselor.name }}",
+                    "status": "{{ appointment.status }}",
+                    "reason": "{{ appointment.reason|escapejs }}",
+                    "services": "{{ appointment.services|join:', '|escapejs }}",
+                    "phone": "{{ appointment.phone|escapejs }}",
+                    "courseSection": "{{ appointment.course_section|escapejs }}"
+                  })'><i class='bx bx-show'></i> View</button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="9" class="no-data">No archived appointments found</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <!-- Pagination for Appointments -->
+          <div class="pagination">
+            <span class="step-links">
+              {% if archived_appointments_page.has_previous %}
+                <a href="?appointments_page=1&tab=appointments">&laquo; first</a>
+                <a href="?appointments_page={{ archived_appointments_page.previous_page_number }}&tab=appointments">previous</a>
+              {% endif %}
+
+              <span class="current">
+                Page {{ archived_appointments_page.number }} of {{ archived_appointments_page.paginator.num_pages }}
+              </span>
+
+              {% if archived_appointments_page.has_next %}
+                <a href="?appointments_page={{ archived_appointments_page.next_page_number }}&tab=appointments">next</a>
+                <a href="?appointments_page={{ archived_appointments_page.paginator.num_pages }}&tab=appointments">last &raquo;</a>
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- DASS21 Section -->
+      <section id="dass21Archive" class="archive-section">
+        <div class="section-header">
+          <h3>DASS21 Assessment Results</h3>
+          <div class="section-actions">
+            <button class="filter-btn"><i class='bx bxs-filter-alt'></i> Filter</button>
+            <button class="export-btn"><i class='bx bxs-download'></i> Export</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Date Completed</th>
+                <th>Depression Score</th>
+                <th>Anxiety Score</th>
+                <th>Stress Score</th>
+                <th>Risk Level</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for result in dass_results_page %}
+              <tr>
+                <td>{{ result.user.student_id }}</td>
+                <td>{{ result.user.full_name }}</td>
+                <td>{{ result.date_taken|date:"Y-m-d" }}</td>
+                <td>{{ result.depression_score }}</td>
+                <td>{{ result.anxiety_score }}</td>
+                <td>{{ result.stress_score }}</td>
+                <td>
+                  <span style="font-weight: bold; color: {{ result|get_risk_level|last }};">
+                    {{ result|get_risk_level|first }}
+                  </span>
+                </td>
+                <td>
+                  <button class="view-btn" onclick='showArchiveModal("dass21", {
+                    "studentId": "{{ result.user.student_id }}",
+                    "studentName": "{{ result.user.full_name|escapejs }}",
+                    "date": "{{ result.date_taken|date:'Y-m-d' }}",
+                    "depression": {{ result.depression_score }},
+                    "depressionSeverity": "{{ result.depression_severity|escapejs }}",
+                    "anxiety": {{ result.anxiety_score }},
+                    "anxietySeverity": "{{ result.anxiety_severity|escapejs }}",
+                    "stress": {{ result.stress_score }},
+                    "stressSeverity": "{{ result.stress_severity|escapejs }}"
+                  })'><i class='bx bx-show'></i> View</button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="no-data">No DASS21 results found</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <!-- Pagination for DASS21 Results -->
+          <div class="pagination">
+            <span class="step-links">
+              {% if dass_results_page.has_previous %}
+                <a href="?dass_page=1">&laquo; first</a>
+                <a href="?dass_page={{ dass_results_page.previous_page_number }}">previous</a>
+              {% endif %}
+
+              <span class="current">
+                Page {{ dass_results_page.number }} of {{ dass_results_page.paginator.num_pages }}
+              </span>
+
+              {% if dass_results_page.has_next %}
+                <a href="?dass_page={{ dass_results_page.next_page_number }}">next</a>
+                <a href="?dass_page={{ dass_results_page.paginator.num_pages }}">last &raquo;</a>
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Employees Section -->
+      <section id="employeesArchive" class="archive-section">
+        <div class="section-header">
+          <h3>Former Employees</h3>
+          <div class="section-actions">
+            <button class="filter-btn"><i class='bx bxs-filter-alt'></i> Filter</button>
+            <button class="export-btn"><i class='bx bxs-download'></i> Export</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Position</th>
+                <th>Department</th>
+                <th>Last Active</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for counselor in inactive_counselors_page %}
+              <tr>
+                <td>{{ counselor.name }}</td>
+                <td>{{ counselor.email|default:"N/A" }}</td>
+                <td>{{ counselor.rank }}</td>
+                <td>{{ counselor.unit }}</td>
+                <td>
+                  {% with last_appointment=counselor.appointment_set.last %}
+                    {% if last_appointment %}
+                      {{ last_appointment.date }}
+                    {% else %}
+                      Unknown
+                    {% endif %}
+                  {% endwith %}
+                </td>
+                <td>
+                  <button class="view-btn" onclick='showArchiveModal("employees", {
+                    "name": "{{ counselor.name|escapejs }}",
+                    "email": "{{ counselor.email|default:'N/A'|escapejs }}",
+                    "position": "{{ counselor.rank|escapejs }}",
+                    "department": "{{ counselor.unit|escapejs }}",
+                    "bio": "{{ counselor.bio|default:'Not available'|escapejs }}",
+                    "lastActive": "{% with last_appointment=counselor.appointment_set.last %}{% if last_appointment %}{{ last_appointment.date }}{% else %}Unknown{% endif %}{% endwith %}"
+                  })'><i class='bx bx-show'></i> View</button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="no-data">No inactive counselors found</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <!-- Pagination for Employees -->
+          <div class="pagination">
+            <span class="step-links">
+              {% if inactive_counselors_page.has_previous %}
+                <a href="?employees_page=1">&laquo; first</a>
+                <a href="?employees_page={{ inactive_counselors_page.previous_page_number }}">previous</a>
+              {% endif %}
+
+              <span class="current">
+                Page {{ inactive_counselors_page.number }} of {{ inactive_counselors_page.paginator.num_pages }}
+              </span>
+
+              {% if inactive_counselors_page.has_next %}
+                <a href="?employees_page={{ inactive_counselors_page.next_page_number }}">next</a>
+                <a href="?employees_page={{ inactive_counselors_page.paginator.num_pages }}">last &raquo;</a>
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Reports Section -->
+      <section id="reportsArchive" class="archive-section">
+        <div class="section-header">
+          <h3>Archived Reports</h3>
+          <div class="section-actions">
+            <button class="filter-btn"><i class='bx bxs-filter-alt'></i> Filter</button>
+            <button class="export-btn"><i class='bx bxs-download'></i> Export</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Student</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for report in archived_reports_page %}
+              <tr>
+                <td>{{ report.title }}</td>
+                <td>{% if report.user %}{{ report.user.full_name }}{% else %}N/A{% endif %}</td>
+                <td>{{ report.get_report_type_display }}</td>
+                <td><span class="status-badge {{ report.status }}">{{ report.get_status_display }}</span></td>
+                <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                  <button class="view-btn" onclick='showArchiveModal("reports", {
+                    "title": "{{ report.title|escapejs }}",
+                    "student": "{% if report.user %}{{ report.user.full_name|escapejs }}{% else %}N/A{% endif %}",
+                    "type": "{{ report.get_report_type_display|escapejs }}",
+                    "status": "{{ report.get_status_display|escapejs }}",
+                    "created": "{{ report.created_at|date:'Y-m-d H:i' }}",
+                    "updated": "{{ report.updated_at|date:'Y-m-d H:i' }}",
+                    "description": "{{ report.description|linebreaksbr|escapejs }}"
+                  })'><i class='bx bx-show'></i> View</button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="no-data">No archived reports found</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <!-- Pagination for Reports -->
+          <div class="pagination">
+            <span class="step-links">
+              {% if archived_reports_page.has_previous %}
+                <a href="?reports_page=1&tab=reports">&laquo; first</a>
+                <a href="?reports_page={{ archived_reports_page.previous_page_number }}&tab=reports">previous</a>
+              {% endif %}
+              <span class="current">
+                Page {{ archived_reports_page.number }} of {{ archived_reports_page.paginator.num_pages }}
+              </span>
+              {% if archived_reports_page.has_next %}
+                <a href="?reports_page={{ archived_reports_page.next_page_number }}&tab=reports">next</a>
+                <a href="?reports_page={{ archived_reports_page.paginator.num_pages }}&tab=reports">last &raquo;</a>
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Archive Modal -->
+  <div id="archive-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeArchiveModal()">&times;</span>
+      <h3 id="modal-title">Archive Details</h3>
+      <div id="modal-body"></div>
+      <button id="downloadPdfBtn" class="download-btn">
+        <i class='bx bxs-download'></i> Download Report as PDF
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // JavaScript for tab switching
+    document.querySelectorAll('.archive-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.archive-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const type = this.getAttribute('data-type');
+        document.querySelectorAll('.archive-section').forEach(section => {
+          section.classList.remove('active');
+        });
+        document.getElementById(`${type}Archive`).classList.add('active');
+        
+        // Update URL without reload
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', type);
+        window.history.pushState({}, '', url.toString());
+      });
+    });
+
+    // Modal functions
+    function showArchiveModal(type, data) {
+      const modal = document.getElementById('archive-modal');
+      const modalTitle = document.getElementById('modal-title');
+      const modalBody = document.getElementById('modal-body');
+      
+      modalTitle.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} Record Details`;
+      
+      let html = '';
+      
+      if (type === 'appointments') {
+        html = `
+          <div class="modal-details">
+            <div class="detail-row">
+              <span class="detail-label">Student Information</span>
+              <span class="detail-value">${data.student} (ID: ${data.studentId})</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Appointment Date</span>
+              <span class="detail-value">${data.date} at ${data.time}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Assigned Counselor</span>
+              <span class="detail-value">${data.counselor}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Appointment Status</span>
+              <span class="detail-value">
+                <span class="status-badge ${data.status}">${data.status}</span>
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Requested Services</span>
+              <span class="detail-value">${data.services}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Reason for Visit</span>
+              <span class="detail-value">${data.reason || 'Not specified'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Contact Number</span>
+              <span class="detail-value">${data.phone || 'Not provided'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Course & Section</span>
+              <span class="detail-value">${data.courseSection || 'Not specified'}</span>
+            </div>
+          </div>
+        `;
+      } else if (type === 'dass21') {
+        // Function to determine severity class
+        function getSeverityClass(severity) {
+          if (!severity) return '';
+          severity = severity.toLowerCase();
+          if (severity.includes('extreme')) return 'extreme';
+          if (severity.includes('severe')) return 'severe';
+          if (severity.includes('moderate')) return 'moderate';
+          if (severity.includes('mild')) return 'mild';
+          return 'normal';
+        }
+        
+        html = `
+          <div class="modal-details">
+            <div class="detail-row">
+              <span class="detail-label">Student Information</span>
+              <span class="detail-value">${data.studentName} (ID: ${data.studentId})</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Assessment Date</span>
+              <span class="detail-value">${data.date}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Depression Score</span>
+              <span class="detail-value">
+                <div class="score-display">
+                  <span class="score-value">${data.depression}</span>
+                  <span class="severity-indicator ${getSeverityClass(data.depressionSeverity)}">
+                    ${data.depressionSeverity}
+                  </span>
+                </div>
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Anxiety Score</span>
+              <span class="detail-value">
+                <div class="score-display">
+                  <span class="score-value">${data.anxiety}</span>
+                  <span class="severity-indicator ${getSeverityClass(data.anxietySeverity)}">
+                    ${data.anxietySeverity}
+                  </span>
+                </div>
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Stress Score</span>
+              <span class="detail-value">
+                <div class="score-display">
+                  <span class="score-value">${data.stress}</span>
+                  <span class="severity-indicator ${getSeverityClass(data.stressSeverity)}">
+                    ${data.stressSeverity}
+                  </span>
+                </div>
+              </span>
+            </div>
+          </div>
+        `;
+      } else if (type === 'employees') {
+        html = `
+          <div class="modal-details">
+            <div class="detail-row">
+              <span class="detail-label">Employee Name</span>
+              <span class="detail-value">${data.name}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Contact Email</span>
+              <span class="detail-value">${data.email || 'Not available'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Position</span>
+              <span class="detail-value">${data.position}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Department</span>
+              <span class="detail-value">${data.department}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Last Active Date</span>
+              <span class="detail-value">${data.lastActive}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Professional Bio</span>
+              <span class="detail-value">${data.bio || 'No bio available'}</span>
+            </div>
+          </div>
+        `;
+      } else if (type === 'reports') {
+        html = `
+          <div class="modal-details">
+            <div class="detail-row">
+              <span class="detail-label">Title</span>
+              <span class="detail-value">${data.title}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Student</span>
+              <span class="detail-value">${data.student}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Type</span>
+              <span class="detail-value">${data.type}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Status</span>
+              <span class="detail-value">${data.status}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Created</span>
+              <span class="detail-value">${data.created}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Last Updated</span>
+              <span class="detail-value">${data.updated}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Description</span>
+              <span class="detail-value">${data.description}</span>
+            </div>
+          </div>
+        `;
+      }
+      
+      modalBody.innerHTML = html;
+      modal.style.display = 'block';
+      
+      // Center the download button
+      const downloadBtn = document.getElementById('downloadPdfBtn');
+      downloadBtn.style.display = 'flex';
+      downloadBtn.style.margin = '2rem auto 0';
+    }
+    
+    function closeArchiveModal() {
+      document.getElementById('archive-modal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+      const modal = document.getElementById('archive-modal');
+      if (event.target == modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    // Initialize active tab from URL
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const activeTab = urlParams.get('tab') || 'appointments';
+      const activeBtn = document.querySelector(`.archive-btn[data-type="${activeTab}"]`);
+      if (activeBtn) {
+        activeBtn.click();
+      }
+    });
+
+    // Notification functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const notifBell = document.getElementById('notif-bell');
+        const notificationDropdown = document.getElementById('notification-dropdown');
+        const notificationList = document.getElementById('notification-list');
+        const notificationBadge = document.getElementById('notification-badge');
+        
+        // Get CSRF token
+        function getCSRFToken() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') {
+                    return value;
+                }
+            }
+            return '';
+        }
+
+        // Toggle notification dropdown
+        notifBell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isVisible = notificationDropdown.style.display === 'block';
+            notificationDropdown.style.display = isVisible ? 'none' : 'block';
+            
+            if (!isVisible) {
+                loadNotifications();
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!notifBell.contains(e.target)) {
+                notificationDropdown.style.display = 'none';
+            }
+        });
+
+        // Load notifications
+        function loadNotifications() {
+            fetch('/notifications/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login/';
+                        return;
+                    }
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    notificationList.innerHTML = '';
+                    data.notifications.forEach(notif => {
+                        const notifItem = document.createElement('div');
+                        notifItem.className = 'notification-item';
+                        notifItem.innerHTML = `
+                            <div class="notification-title">${notif.title}</div>
+                            <div class="notification-message">${notif.message}</div>
+                            <div class="notification-time">${notif.timestamp}</div>
+                        `;
+                        notificationList.appendChild(notifItem);
+                    });
+                    
+                    // Update badge
+                    notificationBadge.textContent = data.notifications.length;
+                    notificationBadge.style.display = 'block';
+                } else {
+                    notificationList.innerHTML = '<div class="no-notifications"><i class="bx bx-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
+                    notificationBadge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+                notificationList.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
+            });
+        }
+
+        // Auto-refresh notifications every 30 seconds
+        setInterval(() => {
+            if (notificationDropdown.style.display === 'block') {
+                loadNotifications();
+            }
+        }, 30000);
+
+        // Initial load
+        loadNotifications();
+    });
+  </script>
+</body>
+</html>

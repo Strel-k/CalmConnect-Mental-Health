@@ -1,0 +1,1119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personnel | CalmConnect</title>
+
+  <!-- External Libraries -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" />
+  <link rel="stylesheet" href="{% static '/css/admin-panel.css' %}">
+  <link rel="stylesheet" href="{% static '/css/admin-panel-enhanced.css' %}">
+      <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <link rel="stylesheet" href="{% static '/css/profile-dropdown.css' %}">
+  
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      min-height: 100vh;
+    }
+
+    /* Main Content */
+    .personnel-main {
+      flex: 1;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 2rem;
+    }
+    
+    /* Header Card */
+    .personnel-header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      color: #2c3e50;
+      padding: 2rem;
+      border-radius: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .personnel-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #2ecc71, #27ae60);
+    }
+    
+    .personnel-header h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0;
+      color: #2c3e50;
+    }
+    
+    .add-btn {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+    }
+    
+    .add-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(46, 204, 113, 0.4);
+    }
+    
+    /* Table Container */
+    .personnel-table-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .personnel-table-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #3498db, #2980b9);
+    }
+    
+    .personnel-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .personnel-table th,
+    .personnel-table td {
+      padding: 1rem;
+      text-align: center;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .personnel-table th {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 0.85rem;
+    }
+    
+    .personnel-table tbody tr {
+      transition: all 0.3s ease;
+    }
+    
+    .personnel-table tbody tr:hover {
+      background: rgba(52, 152, 219, 0.05);
+      transform: scale(1.01);
+    }
+    
+    .counselor-photo {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 3px solid #3498db;
+    }
+    
+    .personnel-table button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 0 4px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .personnel-table button:first-child {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+    }
+    
+    .personnel-table button:last-child {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+    }
+    
+    .personnel-table button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal.show {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+    
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #2ecc71, #27ae60);
+    }
+    
+    .close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+    }
+    
+    .modal-content h3 {
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    .preview-img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #3498db;
+      margin: 0 auto 1rem;
+      display: block;
+    }
+    
+    .modal-content input {
+      width: 100%;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .modal-actions button {
+      flex: 1;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 12px;
+    }
+
+    /* Notification Styles */
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: var(--secondary-red);
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+
+    /* Notification styles */
+    .notification-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      width: 350px;
+      max-height: 400px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      display: none;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+    }
+
+    .notification-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e0e0e0;
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+    }
+
+    .notification-header h4 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .notification-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .notification-item {
+      padding: 1rem;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.3s ease;
+    }
+
+    .notification-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .notification-item:last-child {
+      border-bottom: none;
+    }
+
+    .notification-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.3rem;
+      font-size: 0.9rem;
+    }
+
+    .notification-message {
+      color: #666;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    .notification-time {
+      color: #999;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #e74c3c;
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .no-notifications {
+      padding: 2rem;
+      text-align: center;
+      color: #666;
+    }
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .save-btn {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+    }
+    
+    .modal-actions button:last-child {
+      background: #e0e0e0;
+      color: #666;
+    }
+    
+    .modal-actions button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+      .personnel-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+      
+      .personnel-table {
+        font-size: 0.9rem;
+      }
+      
+      .personnel-table th,
+      .personnel-table td {
+        padding: 0.8rem;
+      }
+      
+      .modal-actions {
+        flex-direction: column;
+      }
+    }
+    .modal-content select {
+    width: 100%;
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: white;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.8rem center;
+    background-size: 1.2rem;
+}
+
+.modal-content select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+optgroup {
+    font-weight: bold;
+    font-style: normal;
+    color: #2c3e50;
+}
+
+optgroup option {
+    font-weight: normal;
+    padding-left: 1rem;
+}.loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Success modal specific styles */
+#success-modal .modal-content {
+    text-align: center;
+}
+
+#success-modal .modal-content::before {
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+}
+
+#success-modal .bx-check-circle {
+    font-size: 4rem;
+    color: #2ecc71;
+    margin-bottom: 1rem;
+}
+  </style>
+  {% csrf_token %}
+</head>
+<body>
+  <header>
+    <div class="hdr">
+      <div class="hdr-logo">
+        <h2>CalmConnect</h2>
+      </div>
+      <div class="hdr-btns">
+        <div class="prfl-bell" id="notif-bell" aria-label="Notifications">
+          <i class="bx bxs-bell"></i>
+          <div class="notification-badge" id="notification-badge" style="display: none;">0</div>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="no-notifications">
+                <i class="bx bx-bell" style="font-size:2.2rem;"></i><br>No notifications
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="prfl-name">
+          <h4>{{ request.user.username }}</h4>
+        </div>
+        <div class="prfl-container">
+                                  <img src="{% static 'mentalhealth/img/default.jpg' %}" alt="Profile" />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-dashboard">
+    <aside class="sidebar">
+      <div class="sidebar-logo"><h3>Admin Panel</h3></div>
+      <nav class="sidebar-nav">
+        <a href="{% url 'admin_dashboard' %}"><i class="bx bxs-dashboard"></i> Dashboard</a>
+        <a href="{% url 'admin_data' %}"><i class='bx bxs-data'></i> Data</a>
+        <a href="{% url 'admin_appointments' %}"><i class='bx bxs-calendar'></i> Appointments</a>
+        <a href="{% url 'admin_archive' %}"><i class='bx bxs-user'></i> Archives</a>
+        <a href="{% url 'admin_personnel' %}" class="active"><i class='bx bxs-user-badge'></i> Personnel</a>
+        <a href="{% url 'logout' %}"><i class="bx bx-log-out"></i> Logout</a>
+      </nav>
+    </aside>
+
+    <main class="personnel-main">
+      <div class="personnel-header">
+        <h2>Counselor Management</h2>
+        <button onclick="openAddModal()" class="add-btn">
+          <i class="bx bx-plus"></i> Add Counselor
+        </button>
+      </div>
+
+      <div class="personnel-table-container">
+        <table class="personnel-table">
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Department</th>
+              <th>Rank</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="counselor-list">
+            {% for counselor in counselors %}
+            <tr data-counselor-id="{{ counselor.id }}">
+                <td>
+                            <img src="{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}" 
+         class="counselor-photo" alt="{{ counselor.name }}" />
+</td>
+                <td>{{ counselor.name }}</td>
+                <td>{{ counselor.email }}</td>
+                <td>{{ counselor.unit }}</td>
+                <td>{{ counselor.rank }}</td>
+                <td>
+                    <button onclick="openEditModal(this)">Edit</button>
+                    <button onclick="archiveCounselor('{{ counselor.id }}', '{{ counselor.name }}')">Archive</button>
+                </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add/Edit Personnel Modal -->
+  <div class="modal" id="personnel-modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal()">&times;</span>
+      <h3 id="modal-title">Add Counselor</h3>
+      <form id="personnel-form" onsubmit="handleFormSubmit(event)">
+                    <img id="photoPreview" src="{% static 'mentalhealth/img/default.jpg' %}" class="preview-img" alt="Preview" />
+        <input type="file" id="photoInput" accept="image/*" onchange="previewPhoto()" />
+
+        <input type="text" id="nameInput" placeholder="Full Name" required />
+        <input type="email" id="emailInput" placeholder="Email Address" required />
+        <input type="text" id="unitInput" placeholder="Department/Unit" required />
+        <select id="rankInput" required>
+    <option value="" disabled selected>Select Academic Rank</option>
+    <optgroup label="Instructor">
+        <option value="INSTRUCTOR I">INSTRUCTOR I</option>
+        <option value="INSTRUCTOR II">INSTRUCTOR II</option>
+        <option value="INSTRUCTOR III">INSTRUCTOR III</option>
+    </optgroup>
+    <optgroup label="Assistant Professor">
+        <option value="Assistant Professor I">Assistant Professor I</option>
+        <option value="Assistant Professor II">Assistant Professor II</option>
+        <option value="Assistant Professor III">Assistant Professor III</option>
+        <option value="Assistant Professor IV">Assistant Professor IV</option>
+    </optgroup>
+    <optgroup label="Associate Professor">
+        <option value="Associate Professor I">Associate Professor I</option>
+        <option value="Associate Professor II">Associate Professor II</option>
+        <option value="Associate Professor III">Associate Professor III</option>
+        <option value="Associate Professor IV">Associate Professor IV</option>
+        <option value="Associate Professor V">Associate Professor V</option>
+    </optgroup>
+    <optgroup label="Professor">
+        <option value="Professor I">Professor I</option>
+        <option value="Professor II">Professor II</option>
+        <option value="Professor III">Professor III</option>
+        <option value="Professor IV">Professor IV</option>
+        <option value="Professor V">Professor V</option>
+        <option value="Professor VI">Professor VI</option>
+    </optgroup>
+    <option value="University Professor">University Professor</option>
+</select>
+
+        <div class="modal-actions">
+          <button type="submit" class="save-btn">Save</button>
+          <button type="button" onclick="closeModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div class="modal" id="confirmation-modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeConfirmationModal()">&times;</span>
+      <h3>Confirm Action</h3>
+      <p id="confirmation-message">Are you sure you want to archive this counselor?</p>
+      <div class="modal-actions">
+        <button id="confirm-btn" class="save-btn">Confirm</button>
+        <button type="button" onclick="closeConfirmationModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="success-modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeSuccessModal()">&times;</span>
+        <h3 id="success-title">Success!</h3>
+        <p id="success-message">Operation completed successfully.</p>
+        <div class="modal-actions">
+            <button type="button" class="save-btn" onclick="closeSuccessModal()">OK</button>
+        </div>
+    </div>
+</div>
+  <script>
+    function showSuccessModal(title, message) {
+    document.getElementById('success-title').textContent = title;
+    document.getElementById('success-message').textContent = message;
+    document.getElementById('success-modal').classList.add('show');
+}
+
+function closeSuccessModal() {
+    document.getElementById('success-modal').classList.remove('show');
+}
+    // Global variables
+    let currentEditRow = null;
+    let currentEditId = null;
+    let counselorToArchive = null;
+
+    // Modal Functions
+    function openAddModal() {
+        document.getElementById('modal-title').textContent = 'Add Counselor';
+        document.getElementById('personnel-modal').classList.add('show');
+        resetForm();
+        currentEditRow = null;
+        currentEditId = null;
+    }
+
+   function openEditModal(button) {
+    const row = button.closest('tr');
+    currentEditRow = row;
+    currentEditId = row.dataset.counselorId;
+    
+    const cells = row.querySelectorAll('td');
+    const img = cells[0].querySelector('img');
+    const name = cells[1].textContent;
+    const email = cells[2].textContent;
+    const unit = cells[3].textContent;
+    const rank = cells[4].textContent;
+
+    document.getElementById('modal-title').textContent = 'Edit Counselor';
+    document.getElementById('photoPreview').src = img.src;
+    document.getElementById('nameInput').value = name;
+    document.getElementById('emailInput').value = email;
+    document.getElementById('unitInput').value = unit;
+    
+    // Set the rank dropdown value
+    const rankInput = document.getElementById('rankInput');
+    rankInput.value = rank;
+
+    document.getElementById('personnel-modal').classList.add('show');
+}
+
+    function closeModal() {
+        document.getElementById('personnel-modal').classList.remove('show');
+        resetForm();
+    }
+
+ function resetForm() {
+    document.getElementById('personnel-form').reset();
+                document.getElementById('photoPreview').src = "{% static 'mentalhealth/img/default.jpg' %}";
+    currentEditRow = null;
+    currentEditId = null;
+}
+
+    // Archive Functions
+function archiveCounselor(id, name) {
+    counselorToArchive = {id, name};
+    document.getElementById('confirmation-message').textContent = 
+        `Are you sure you want to archive ${name}?`;
+    document.getElementById('confirmation-modal').classList.add('show');
+}
+
+    function closeConfirmationModal() {
+        document.getElementById('confirmation-modal').classList.remove('show');
+        counselorToArchive = null;
+    }
+
+function confirmArchive() {
+    if (!counselorToArchive) return;
+    
+    const archiveBtn = document.getElementById('confirm-btn');
+    const originalBtnText = archiveBtn.innerHTML;
+    archiveBtn.disabled = true;
+    archiveBtn.classList.add('loading');
+    archiveBtn.innerHTML = '<i class="bx bx-loader bx-spin"></i> Archiving...';
+    
+    fetch(`/api/counselors/${counselorToArchive.id}/archive/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const row = document.querySelector(`tr[data-counselor-id="${counselorToArchive.id}"]`);
+            if (row) row.remove();
+            showSuccessModal('Archive Successful', `${counselorToArchive.name} has been archived successfully!`);
+        } else {
+            showToast(data.error || 'Archive failed', 'error');
+        }
+        closeConfirmationModal();
+    })
+    .catch(error => {
+        showToast('Archive failed: ' + error.message, 'error');
+        closeConfirmationModal();
+    })
+    .finally(() => {
+        archiveBtn.disabled = false;
+        archiveBtn.classList.remove('loading');
+        archiveBtn.innerHTML = originalBtnText;
+    });
+}
+
+    // Form Functions
+function previewPhoto() {
+    const file = document.getElementById('photoInput').files[0];
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+        showToast('Please upload a valid image (JPEG, PNG, GIF)', 'error');
+        document.getElementById('photoInput').value = '';
+        return;
+    }
+    
+    // Validate file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('Image must be less than 2MB', 'error');
+        document.getElementById('photoInput').value = '';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('photoPreview').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+function handleFormSubmit(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('personnel-form');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    // Set loading state
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+    submitBtn.innerHTML = '<i class="bx bx-loader bx-spin"></i> Processing...';
+    
+    const formData = new FormData();
+    const photoFile = document.getElementById('photoInput').files[0];
+    
+    formData.append('name', document.getElementById('nameInput').value);
+    formData.append('email', document.getElementById('emailInput').value);
+    formData.append('unit', document.getElementById('unitInput').value);
+    formData.append('rank', document.getElementById('rankInput').value);
+    
+    if (photoFile) {
+        formData.append('photo', photoFile);
+    }
+    
+    const endpoint = currentEditId 
+        ? `/api/counselors/${currentEditId}/` 
+        : '/api/counselors/';
+        
+    fetch(endpoint, {
+        method: currentEditId ? 'PATCH' : 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { 
+                throw new Error(err.error || 'Server error occurred');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (!data) {
+            throw new Error('No response data received');
+        }
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Operation failed');
+        }
+
+        // For update operations, the counselor data might not be returned
+        const counselorData = data.counselor || {
+            id: currentEditId,
+            name: document.getElementById('nameInput').value,
+            email: document.getElementById('emailInput').value,
+            unit: document.getElementById('unitInput').value,
+            rank: document.getElementById('rankInput').value,
+            image_url: document.getElementById('photoPreview').src
+        };
+
+        if (currentEditRow) {
+            updateCounselorRow(currentEditRow, counselorData);
+            showSuccessModal('Update Successful', 'Counselor information has been updated successfully!');
+        } else {
+            if (!counselorData.id) {
+                throw new Error('No counselor ID received');
+            }
+            addNewCounselorRow(counselorData);
+            showSuccessModal('Addition Successful', 'New counselor has been added successfully!');
+        }
+        closeModal();
+    })
+    .catch(error => {
+        showToast(`Error: ${error.message || 'Failed to process request'}`, 'error');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
+        submitBtn.innerHTML = originalBtnText;
+    });
+}
+
+function updateCounselorRow(row, counselorData) {
+    const cells = row.querySelectorAll('td');
+    cells[0].querySelector('img').src = counselorData.image_url;
+    cells[0].querySelector('img').alt = counselorData.name;
+    cells[1].textContent = counselorData.name;
+    cells[2].textContent = counselorData.email;
+    cells[3].textContent = counselorData.unit;
+    cells[4].textContent = counselorData.rank;
+}
+
+function addNewCounselorRow(counselorData) {
+    if (!counselorData || !counselorData.id) {
+        console.error('Invalid counselor data:', counselorData);
+        return;
+    }
+
+    const tbody = document.getElementById('counselor-list');
+    const newRow = document.createElement('tr');
+    newRow.dataset.counselorId = counselorData.id;
+    
+    newRow.innerHTML = `
+                            <td><img src="${counselorData.image_url || '{% static 'mentalhealth/img/default.jpg' %}'}" 
+                 class="counselor-photo" alt="${counselorData.name || 'Counselor'}" /></td>
+        <td>${counselorData.name || ''}</td>
+        <td>${counselorData.email || ''}</td>
+        <td>${counselorData.unit || ''}</td>
+        <td>${counselorData.rank || ''}</td>
+        <td>
+            <button onclick="openEditModal(this)">Edit</button>
+            <button onclick="archiveCounselor('${counselorData.id}', '${counselorData.name || 'this counselor'}')">Archive</button>
+        </td>
+    `;
+    
+    tbody.appendChild(newRow);
+}
+
+    // Helper function to get CSRF token
+ function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+    // Initialize confirm button
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('confirm-btn').addEventListener('click', confirmArchive);
+    
+    // Close modals when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target === document.getElementById('personnel-modal')) {
+            closeModal();
+        }
+        if (event.target === document.getElementById('confirmation-modal')) {
+            closeConfirmationModal();
+        }
+        if (event.target === document.getElementById('success-modal')) {
+            closeSuccessModal();
+        }
+    });
+});
+
+    // Notification functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const notifBell = document.getElementById('notif-bell');
+        const notificationDropdown = document.getElementById('notification-dropdown');
+        const notificationList = document.getElementById('notification-list');
+        const notificationBadge = document.getElementById('notification-badge');
+        
+        // Get CSRF token
+        function getCSRFToken() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') {
+                    return value;
+                }
+            }
+            return '';
+        }
+
+        // Toggle notification dropdown
+        notifBell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isVisible = notificationDropdown.style.display === 'block';
+            notificationDropdown.style.display = isVisible ? 'none' : 'block';
+            
+            if (!isVisible) {
+                loadNotifications();
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!notifBell.contains(e.target)) {
+                notificationDropdown.style.display = 'none';
+            }
+        });
+
+        // Load notifications
+        function loadNotifications() {
+            fetch('/notifications/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login/';
+                        return;
+                    }
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    notificationList.innerHTML = '';
+                    data.notifications.forEach(notif => {
+                        const notifItem = document.createElement('div');
+                        notifItem.className = 'notification-item';
+                        notifItem.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
+                        
+                        const content = document.createElement('div');
+                        content.style.cssText = 'flex:1;';
+                        content.innerHTML = `
+                            <div class="notification-title">${notif.message}</div>
+                            <div class="notification-time">${notif.time}</div>
+                        `;
+                        
+                        const clearBtn = document.createElement('button');
+                        clearBtn.innerHTML = '<i class="bx bx-x"></i>';
+                        clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
+                        clearBtn.title = 'Clear notification';
+                        clearBtn.onclick = function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            clearNotification(notif.id);
+                        };
+                        
+                        notifItem.appendChild(content);
+                        notifItem.appendChild(clearBtn);
+                        notificationList.appendChild(notifItem);
+                    });
+                    
+                    // Add clear all button
+                    const clearAllDiv = document.createElement('div');
+                    clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
+                    
+                    const clearAllBtn = document.createElement('button');
+                    clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
+                    clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
+                    clearAllBtn.onclick = function(e) {
+                        e.preventDefault();
+                        if (confirm('Clear all notifications?')) {
+                            clearAllNotifications();
+                        }
+                    };
+                    
+                    clearAllDiv.appendChild(clearAllBtn);
+                    notificationList.appendChild(clearAllDiv);
+                    
+                    // Update badge
+                    notificationBadge.textContent = data.notifications.length;
+                    notificationBadge.style.display = 'block';
+                } else {
+                    notificationList.innerHTML = '<div class="no-notifications"><i class="bx bx-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
+                    notificationBadge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+                notificationList.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
+            });
+        }
+
+        // Auto-refresh notifications every 30 seconds
+        setInterval(() => {
+            if (notificationDropdown.style.display === 'block') {
+                loadNotifications();
+            }
+        }, 30000);
+
+        // Function to clear individual notification
+        function clearNotification(notificationId) {
+            fetch(`/notifications/${notificationId}/clear/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh the notification dropdown
+                    loadNotifications();
+                } else {
+                    console.error('Error clearing notification:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing notification:', error);
+            });
+        }
+
+        // Function to clear all notifications
+        function clearAllNotifications() {
+            fetch('/notifications/clear-all/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh the notification dropdown
+                    loadNotifications();
+                } else {
+                    console.error('Error clearing all notifications:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing all notifications:', error);
+            });
+        }
+
+        // Initial load
+        loadNotifications();
+    });
+  </script>
+</body>
+</html>

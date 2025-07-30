@@ -1,0 +1,709 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hdr-logo h2 {
+            color: #2ecc71;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .hdr-logo a {
+            text-decoration: none;
+        }
+
+        /* Main Content */
+        .main-bdy {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Hero Section */
+        .bdy-upper {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            text-align: center;
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 15px 35px rgba(46, 204, 113, 0.3);
+        }
+
+        .upper-txt h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .upper-txt p {
+            font-size: 1.2rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        /* Assessment Container */
+        .assessment-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .assessment-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .assessment-title h2 {
+            color: #2c3e50;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .session-details {
+            background: rgba(233, 249, 241, 0.7);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .counselor-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #2ecc71;
+        }
+
+        .session-info h3 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+
+        .session-info p {
+            color: #666;
+            margin-bottom: 0.3rem;
+            font-size: 0.95rem;
+        }
+
+        .session-info .date {
+            color: #2ecc71;
+            font-weight: 500;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            margin-bottom: 2rem;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .progress-section h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .progress-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .progress-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .progress-item label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .progress-scale {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .scale-option {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .progress-bar-container {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Assessment Questions */
+        .assessment-questions {
+            margin-top: 2rem;
+        }
+
+        .question-group {
+            margin-bottom: 2rem;
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .question-group h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #f8f9fa;
+            padding-bottom: 0.5rem;
+        }
+
+        .question-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .question-item label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .radio-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .radio-option {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .radio-option input {
+            display: none;
+        }
+
+        .radio-option label {
+            display: block;
+            padding: 0.8rem 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: normal;
+        }
+
+        .radio-option input:checked + label {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        /* Open-ended Questions */
+        .text-question {
+            margin-top: 1rem;
+        }
+
+        .text-question textarea {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-family: 'Poppins', sans-serif;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        .text-question textarea:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .submit-btn {
+            padding: 1rem 2.2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Thank You Message */
+        .thank-you-message {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            background: rgba(46, 204, 113, 0.1);
+            border-radius: 16px;
+            margin-top: 2rem;
+        }
+
+        .thank-you-message h3 {
+            color: #27ae60;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .thank-you-message p {
+            color: #2c3e50;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .thank-you-icon {
+            font-size: 4rem;
+            color: #2ecc71;
+            margin-bottom: 1rem;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .session-details {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .progress-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .radio-options {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .radio-option {
+                min-width: 100%;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .submit-btn {
+                width: 100%;
+            }
+        }
+    </style>    
+</head>
+<body>
+    <header>
+        <div class="hdr">
+            <div class="hdr-logo"><a href="index.html"><h2>CalmConnect</h2></a></div>
+        </div>
+    </header>
+
+    <main class="main-bdy">
+        <div class="bdy-upper">
+            <div class="upper-txt">
+                <h2>Follow-Up Assessment</h2>
+                <p>Track your progress since your last counseling session</p>
+            </div>
+        </div>
+
+        <div class="assessment-container">
+            <div class="assessment-title">
+                <h2>How Are You Doing Now?</h2>
+                <p>This assessment helps your counselor understand your current state and progress</p>
+            </div>
+
+            <div class="session-details">
+                <img src="{% if counselor.profile_picture %}{{ counselor.profile_picture }}{% else %}{% static 'img/default-counselor.jpg' %}{% endif %}" 
+                     alt="{{ counselor.name }}" 
+                     class="counselor-avatar">
+                <div class="session-info">
+                    <h3>Follow-up for session with {{ counselor.name }}</h3>
+                    <p class="date">Original session: {{ appointment_date }}</p>
+                    <p>{{ days_since_session }} days since your last session</p>
+                </div>
+            </div>
+
+            <form id="followUpForm">
+                <div class="progress-section">
+                    <h3>Rate your progress since your last session</h3>
+                    
+                    <div class="progress-grid">
+                        <div class="progress-item">
+                            <label>Overall well-being</label>
+                            <div class="progress-scale">
+                                <span class="scale-option">Much worse</span>
+                                <span class="scale-option">No change</span>
+                                <span class="scale-option">Much better</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="wellbeingBar"></div>
+                            </div>
+                            <input type="range" min="0" max="100" value="50" class="slider" id="wellbeingSlider">
+                        </div>
+                        
+                        <div class="progress-item">
+                            <label>Symptom improvement</label>
+                            <div class="progress-scale">
+                                <span class="scale-option">No improvement</span>
+                                <span class="scale-option">Some improvement</span>
+                                <span class="scale-option">Great improvement</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="symptomsBar"></div>
+                            </div>
+                            <input type="range" min="0" max="100" value="50" class="slider" id="symptomsSlider">
+                        </div>
+                        
+                        <div class="progress-item">
+                            <label>Application of strategies</label>
+                            <div class="progress-scale">
+                                <span class="scale-option">Not at all</span>
+                                <span class="scale-option">Sometimes</span>
+                                <span class="scale-option">Regularly</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="strategiesBar"></div>
+                            </div>
+                            <input type="range" min="0" max="100" value="50" class="slider" id="strategiesSlider">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-questions">
+                    <div class="question-group">
+                        <h3>About Your Current State</h3>
+                        
+                        <div class="question-item">
+                            <label>Compared to your last session, how would you describe your mood?</label>
+                            <div class="radio-options">
+                                <div class="radio-option">
+                                    <input type="radio" id="mood1" name="mood" value="much_worse">
+                                    <label for="mood1">Much worse</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="mood2" name="mood" value="slightly_worse">
+                                    <label for="mood2">Slightly worse</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="mood3" name="mood" value="same">
+                                    <label for="mood3">About the same</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="mood4" name="mood" value="slightly_better">
+                                    <label for="mood4">Slightly better</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="mood5" name="mood" value="much_better">
+                                    <label for="mood5">Much better</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="question-item">
+                            <label>How often have you practiced the techniques discussed in your session?</label>
+                            <div class="radio-options">
+                                <div class="radio-option">
+                                    <input type="radio" id="practice1" name="practice" value="never">
+                                    <label for="practice1">Not at all</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="practice2" name="practice" value="rarely">
+                                    <label for="practice2">A few times</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="practice3" name="practice" value="sometimes">
+                                    <label for="practice3">1-2 times per week</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="practice4" name="practice" value="often">
+                                    <label for="practice4">3-4 times per week</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="practice5" name="practice" value="regularly">
+                                    <label for="practice5">Daily or almost daily</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="question-item text-question">
+                            <label>What has been most helpful since your last session?</label>
+                            <textarea name="helpful_things" placeholder="Please describe what has worked well for you..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="question-group">
+                        <h3>About Your Challenges</h3>
+                        
+                        <div class="question-item">
+                            <label>Have you experienced any new challenges since your last session?</label>
+                            <div class="radio-options">
+                                <div class="radio-option">
+                                    <input type="radio" id="challenges1" name="new_challenges" value="none">
+                                    <label for="challenges1">No new challenges</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="challenges2" name="new_challenges" value="some">
+                                    <label for="challenges2">Some new challenges</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="challenges3" name="new_challenges" value="many">
+                                    <label for="challenges3">Many new challenges</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="question-item text-question">
+                            <label>If you've faced challenges, please describe them:</label>
+                            <textarea name="challenges_description" placeholder="Describe any difficulties you've encountered..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="question-group">
+                        <h3>Future Sessions</h3>
+                        
+                        <div class="question-item">
+                            <label>How would you feel about scheduling another session?</label>
+                            <div class="radio-options">
+                                <div class="radio-option">
+                                    <input type="radio" id="future1" name="future_session" value="not_needed">
+                                    <label for="future1">Don't need another session</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="future2" name="future_session" value="maybe_later">
+                                    <label for="future2">Maybe later</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="future3" name="future_session" value="would_like">
+                                    <label for="future3">Would like another session</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="future4" name="future_session" value="definitely">
+                                    <label for="future4">Definitely need another session</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="question-item text-question">
+                            <label>What would you like to focus on in future sessions? (optional)</label>
+                            <textarea name="future_focus" placeholder="Topics or issues you'd like to address..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="submit-btn">Submit Assessment</button>
+                </div>
+            </form>
+
+            <div class="thank-you-message" id="thankYouMessage">
+                <i class="bx bxs-check-circle thank-you-icon"></i>
+                <h3>Thank You!</h3>
+                <p>Your counselor will review your responses and follow up as needed.</p>
+                <p>Based on your answers, we'll help determine the best next steps for your care.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize sliders
+        function initializeSliders() {
+            const sliders = [
+                { id: 'wellbeingSlider', bar: 'wellbeingBar' },
+                { id: 'symptomsSlider', bar: 'symptomsBar' },
+                { id: 'strategiesSlider', bar: 'strategiesBar' }
+            ];
+            
+            sliders.forEach(slider => {
+                const sliderElement = document.getElementById(slider.id);
+                const barElement = document.getElementById(slider.bar);
+                
+                // Update bar on input
+                sliderElement.addEventListener('input', function() {
+                    barElement.style.width = this.value + '%';
+                });
+                
+                // Set initial value
+                barElement.style.width = sliderElement.value + '%';
+            });
+        }
+        
+        // Handle form submission
+        document.getElementById('followUpForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const formData = {
+                wellbeing: document.getElementById('wellbeingSlider').value,
+                symptoms: document.getElementById('symptomsSlider').value,
+                strategies: document.getElementById('strategiesSlider').value,
+                mood: document.querySelector('input[name="mood"]:checked')?.value,
+                practice: document.querySelector('input[name="practice"]:checked')?.value,
+                helpful_things: document.querySelector('textarea[name="helpful_things"]').value,
+                new_challenges: document.querySelector('input[name="new_challenges"]:checked')?.value,
+                challenges_description: document.querySelector('textarea[name="challenges_description"]').value,
+                future_session: document.querySelector('input[name="future_session"]:checked')?.value,
+                future_focus: document.querySelector('textarea[name="future_focus"]').value,
+                appointment_id: '{{ appointment_id }}' // This would come from your backend
+            };
+            
+            // Validate required fields
+            if (!formData.mood || !formData.practice || !formData.new_challenges || !formData.future_session) {
+                alert('Please answer all required questions before submitting.');
+                return;
+            }
+            
+            // Get CSRF token
+            const csrftoken = getCookie('csrftoken');
+            
+            // Send to server
+            fetch('/submit-followup/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Show thank you message
+                    document.getElementById('followUpForm').style.display = 'none';
+                    document.getElementById('thankYouMessage').style.display = 'block';
+                    
+                    // If they want another session, show scheduling option
+                    if (formData.future_session === 'would_like' || formData.future_session === 'definitely') {
+                        const thankYou = document.getElementById('thankYouMessage');
+                        const scheduleBtn = document.createElement('a');
+                        scheduleBtn.href = '/schedule/?counselor={{ counselor.id }}';
+                        scheduleBtn.className = 'submit-btn';
+                        scheduleBtn.style.display = 'inline-block';
+                        scheduleBtn.style.marginTop = '1rem';
+                        scheduleBtn.textContent = 'Schedule Next Session';
+                        thankYou.appendChild(scheduleBtn);
+                    }
+                    
+                    // Scroll to thank you message
+                    document.getElementById('thankYouMessage').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('Error submitting assessment: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting your assessment. Please try again.');
+            });
+        });
+        
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            initializeSliders();
+        });
+    </script>
+</body>
+</html>

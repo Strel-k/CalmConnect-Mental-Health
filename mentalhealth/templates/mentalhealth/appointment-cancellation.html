@@ -1,0 +1,98 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Appointment Cancellation | CalmConnect</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #d32f2f;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 0 0 5px 5px;
+        }
+        .details {
+            margin-bottom: 20px;
+        }
+        .details p {
+            margin: 5px 0;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #777;
+        }
+        .reschedule-section {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #e8f5e8;
+            border-left: 4px solid #4caf50;
+        }
+        .reschedule-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Appointment Cancelled</h1>
+        </div>
+        <div class="content">
+            <p>Hello {{ user.full_name }},</p>
+            
+            <div class="details">
+                <p>Your counseling appointment has been successfully cancelled.</p>
+                
+                <h3>Cancelled Appointment Details:</h3>
+                <p><strong>Counselor:</strong> {{ appointment.counselor }}</p>
+                <p><strong>Date:</strong> {{ appointment.date }}</p>
+                <p><strong>Time:</strong> {{ appointment.time }}</p>
+                <p><strong>Services:</strong> {{ appointment.services|join:", " }}</p>
+                {% if appointment.cancellation_reason %}
+                <p><strong>Cancellation Reason:</strong> {{ appointment.cancellation_reason }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="reschedule-section">
+                <h3 style="color: #2e7d32;">Need to reschedule?</h3>
+                <p>You can easily book a new appointment at any time through our scheduling system.</p>
+                <a href="{{ reschedule_url }}" class="reschedule-button">
+                    Book New Appointment
+                </a>
+            </div>
+            
+            <div class="footer">
+                <p>We're sorry to see you go. You can always schedule a new appointment anytime.</p>
+                <p>Thank you for using CalmConnect!</p>
+                <p>The CalmConnect Team</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

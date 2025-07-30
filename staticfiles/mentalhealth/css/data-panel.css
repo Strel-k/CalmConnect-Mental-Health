@@ -1,0 +1,440 @@
+  * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: rgba(255, 255, 255, 0.95);
+      min-height: 100vh;
+    }
+
+    /* Header Styles - Matching admin panel exactly */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hdr-logo h2 {
+      color: #2ecc71;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .hdr-btns {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .prfl-bell {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .prfl-bell i {
+      font-size: 1.3rem;
+      color: #666;
+      transition: color 0.3s ease;
+    }
+
+    .prfl-bell:hover i {
+      color: #2ecc71;
+    }
+
+    .prfl-name h4 {
+      color: #333;
+      font-weight: 600;
+    }
+
+    .prfl-container img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #2ecc71;
+    }
+
+    /* Dashboard Layout - Matching admin panel */
+    .admin-dashboard {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 2rem;
+      padding: 2rem;
+      min-height: calc(100vh - 120px);
+    }
+
+    /* Sidebar - Exactly matching admin panel */
+    .sidebar {
+      width: 280px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+
+    .sidebar-logo h3 {
+      color: #2ecc71;
+      font-size: 1.4rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #666;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .sidebar-nav a i {
+      font-size: 1.2rem;
+    }
+
+    /* Main Content - Using admin panel grid structure */
+    .admin-options {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto 1fr;
+      gap: 2rem;
+      height: fit-content;
+    }
+
+    /* Welcome Section - Matching admin panel */
+    .dashboard-welcome {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      padding: 2.5rem;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(46, 204, 113, 0.3);
+    }
+
+    .dashboard-welcome h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .dashboard-welcome p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    /* Chart Sections - Matching admin panel card style */
+    .data-chart {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .data-chart::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #2ecc71, #27ae60);
+    }
+
+    .data-chart:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .data-chart h3 {
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    .data-chart p {
+      color: #666;
+      margin-bottom: 1.5rem;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    /* College Selector */
+    #collegeSelector {
+      padding: 0.8rem 1.2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      border: 2px solid #e0e0e0;
+      max-width: 350px;
+      width: 100%;
+      background: white;
+      transition: all 0.3s ease;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+
+    #collegeSelector:focus {
+      outline: none;
+      border-color: #2ecc71;
+      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+    }
+
+    label[for="collegeSelector"] {
+      display: block;
+      margin-bottom: 0.8rem;
+      color: #2c3e50;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    /* Canvas Charts */
+    #collegeChart,
+    #combinedCollegeChart {
+      background: rgba(248, 249, 250, 0.5);
+      border-radius: 12px;
+      padding: 1rem;
+      height: 300px !important;
+    }
+
+    /* Data Table Section - Full width like admin panel recent activity */
+    .data-list {
+      grid-column: 1 / -1;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .data-list::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #3498db, #2980b9);
+    }
+
+    .data-list:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .data-list h3 {
+      color: #2c3e50;
+      margin-bottom: 2rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    /* Export Controls */
+    .export-controls {
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 0.8rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .export-controls button,
+    .export-chart-buttons button {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .export-chart-buttons button {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+    }
+
+    .export-controls button:hover {
+      background: linear-gradient(135deg, #2980b9, #21618c);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+    }
+
+    .export-chart-buttons button:hover {
+      background: linear-gradient(135deg, #27ae60, #1e8449);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
+    }
+
+    .export-chart-buttons {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 0.8rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    /* Data Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 1rem 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .data-table th {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 0.85rem;
+    }
+
+    .data-table tbody tr {
+      transition: all 0.3s ease;
+    }
+
+    .data-table tbody tr:hover {
+      background: rgba(46, 204, 113, 0.05);
+      transform: scale(1.01);
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Status indicators - matching admin panel activity icons style */
+    .status-active {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-inactive {
+      background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+      color: white;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-warning {
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: white;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Responsive Design - Matching admin panel */
+    @media (max-width: 1024px) {
+      .admin-dashboard {
+        flex-direction: column;
+        padding: 1rem;
+      }
+
+      .sidebar {
+        width: 100%;
+        position: static;
+      }
+
+      .admin-options {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hdr {
+        padding: 0 1rem;
+      }
+
+      .dashboard-welcome h1 {
+        font-size: 2rem;
+      }
+
+      .sidebar-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 1rem;
+      }
+
+      .sidebar-nav a {
+        white-space: nowrap;
+      }
+
+      .export-controls,
+      .export-chart-buttons {
+        justify-content: center;
+      }
+
+      #collegeChart,
+      #combinedCollegeChart {
+        height: 250px !important;
+      }
+    }
