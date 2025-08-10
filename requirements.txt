@@ -7,4 +7,12 @@ python-decouple>=3.8
 channels>=4.0.0
 channels-redis>=4.1.0
 daphne>=4.0.0
-redis>=5.0.0 
+redis>=5.0.0
+# Security Dependencies
+django-security>=0.17.0
+django-axes>=5.40.1
+django-csp>=3.7
+django-environ>=0.10.0
+psycopg2-binary>=2.9.0
+cryptography>=41.0.0
+django-extensions>=3.2.0

@@ -28,9 +28,12 @@ class CustomUserRegistrationForm(UserCreationForm):
         <div class="password-requirements">
             <strong>Password Requirements:</strong>
             <ul>
-                <li>At least 8 characters long</li>
+                <li>At least 12 characters long</li>
+                <li>Contains at least one uppercase letter (A-Z)</li>
+                <li>Contains at least one lowercase letter (a-z)</li>
+                <li>Contains at least one number (0-9)</li>
+                <li>Contains at least one special character (@$!%*?&)</li>
                 <li>Cannot be too similar to your username</li>
-                <li>Cannot be a commonly used password</li>
                 <li>Cannot be entirely numeric</li>
             </ul>
         </div>

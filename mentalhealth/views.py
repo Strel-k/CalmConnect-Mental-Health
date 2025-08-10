@@ -1,8 +1,15 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from django.http import JsonResponse
+from django.http import HttpResponse
+class HttpResponseTooManyRequests(HttpResponse):
+    status_code = 429
+from django.core.cache import cache
+from django.utils import timezone
+import hashlib
+import time
 
 from django.views.decorators.http import require_http_methods
 from django.core.mail import send_mail

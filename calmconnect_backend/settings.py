@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+import logging
+from django.core.management.utils import get_random_secret_key
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,10 +21,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # --- SECURITY: Load secrets from environment variables ---
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 print(f"OpenAI API Key loaded: {'Yes' if OPENAI_API_KEY else 'No'}")
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    'replace-this-in-production'
-)
+
+# CRITICAL: Generate a random secret key if not provided
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if os.environ.get('DJANGO_DEBUG', 'True') == 'False':
+        raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production!")
+    else:
+        # Development fallback - generate random key
+        SECRET_KEY = get_random_secret_key()
+        print("WARNING: Using auto-generated SECRET_KEY for development. Set DJANGO_SECRET_KEY in production!")
 
 # Email settings - use environment variables
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'sandbox.smtp.mailtrap.io')
@@ -43,12 +51,35 @@ ALLOWED_HOSTS = os.environ.get(
 SECURE_SSL_REDIRECT = not DEBUG  # Force HTTPS in production
 SESSION_COOKIE_SECURE = not DEBUG  # Secure cookies in production
 CSRF_COOKIE_SECURE = not DEBUG  # Secure CSRF cookies in production
-SECURE_HSTS_SECONDS = 3600 if not DEBUG else 0  # Enable HSTS in production
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0  # 1 year HSTS in production
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking
+
+# --- ENHANCED SECURITY SETTINGS ---
+# Session Security
+SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', 3600))  # 1 hour default
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookies
+SESSION_COOKIE_SAMESITE = 'Strict'  # CSRF protection
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire sessions on browser close
+SESSION_SAVE_EVERY_REQUEST = True  # Update session on every request
+
+# CSRF Security
+CSRF_COOKIE_HTTPONLY = True  # Prevent JavaScript access to CSRF tokens
+CSRF_COOKIE_SAMESITE = 'Strict'
+CSRF_USE_SESSIONS = True  # Store CSRF tokens in sessions instead of cookies
+
+# Additional Security Headers
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+
+# File Upload Security
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+FILE_UPLOAD_PERMISSIONS = 0o644
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
 
 # --- SECURITY: Add django-ratelimit for API protection ---
 INSTALLED_APPS = [
@@ -67,12 +98,16 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'mentalhealth.middleware.SecurityMiddleware',  # Custom security middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'mentalhealth.middleware.LoginSecurityMiddleware',  # Login security
+    'mentalhealth.middleware.AuditLoggingMiddleware',  # Security logging
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'mentalhealth.middleware.ContentSecurityMiddleware',  # CSP headers
 ]
 
 ROOT_URLCONF = 'calmconnect_backend.urls'
@@ -99,12 +134,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'calmconnect_backend.wsgi.application'
 
 # --- EMAIL ---
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# Mailtrap recommends False for port 2525
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = False
-# Can be any fake email (Mailtrap won't verify)
-DEFAULT_FROM_EMAIL = 'noreply@calmconnect.com'
+EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
+EMAIL_HOST_USER = 'd2ded003c8e726'
+EMAIL_HOST_PASSWORD = '7a1e018014057e'
+EMAIL_PORT = '2525'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -128,11 +161,15 @@ LOGOUT_REDIRECT_URL = '/login/'
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'OPTIONS': {
+            'user_attributes': ('username', 'email', 'first_name', 'last_name', 'full_name'),
+            'max_similarity': 0.7,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
-            'min_length': 8,
+            'min_length': 12,  # Increased from 8 to 12
         }
     },
     {
@@ -189,6 +226,66 @@ CHANNEL_LAYERS = {
 # Ensure ASGI is used for both HTTP and WebSocket
 # Comment out WSGI_APPLICATION to force ASGI usage
 # WSGI_APPLICATION = 'calmconnect_backend.wsgi.application'
+
+# --- SECURITY LOGGING ---
+# Create logs directory if it doesn't exist
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'security': {
+            'format': '[SECURITY] {asctime} {levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGS_DIR, 'calmconnect.log'),
+            'formatter': 'verbose',
+        },
+        'security_file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGS_DIR, 'security.log'),
+            'formatter': 'security',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'mentalhealth.middleware': {
+            'handlers': ['security_file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['security_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}
 
 # --- PRIVACY POLICY & CONSENT ---
 # Ensure your privacy policy and user consent modal are updated to reflect:

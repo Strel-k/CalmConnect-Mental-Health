@@ -698,15 +698,14 @@
         function handleUserJoined(data) {
             console.log('User joined event received:', data);
             console.log('sessionData:', sessionData);
-            console.log('sessionData.isCounselor:', sessionData.isCounselor);
             if (data.user_id != sessionData.userId) {
-                console.log('Other user joined, checking if I am counselor...');
-                if (sessionData.isCounselor) {
-                    console.log('Counselor creating offer...');
+                // Either participant can create the offer if not already connecting
+                if (peerConnection.signalingState === 'stable' && !peerConnection.localDescription) {
+                    console.log('Creating offer as other user joined...');
                     peerConnection.createOffer()
                     .then(offer => peerConnection.setLocalDescription(offer))
                     .then(() => {
-                        console.log('Counselor sending offer:', {
+                        console.log('Sending offer:', {
                             type: peerConnection.localDescription.type,
                             sdp: peerConnection.localDescription.sdp
                         });
@@ -719,7 +718,7 @@
                         }));
                     });
                 } else {
-                    console.log('Not counselor, will not create offer.');
+                    console.log('Not creating offer: signalingState =', peerConnection.signalingState, 'localDescription =', peerConnection.localDescription);
                 }
                 hideWaitingRoom();
             } else {
