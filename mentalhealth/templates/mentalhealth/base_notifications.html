@@ -1,0 +1,535 @@
+{% load static %}
+<!-- Real-time Notification System -->
+<script>
+    // Set user authentication status for notification system
+    document.body.dataset.userAuthenticated = '{{ user.is_authenticated|yesno:"true,false" }}';
+</script>
+
+<!-- Include notification JavaScript -->
+<script src="{% static 'mentalhealth/js/notifications.js' %}"></script>
+
+<!-- Enhanced Notification Bell with Real-time Updates -->
+<style>
+    .notification-bell-container {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .notification-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        min-width: 320px;
+        max-width: 400px;
+        max-height: 500px;
+        overflow-y: auto;
+        z-index: 1000;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .notification-dropdown-header {
+        padding: 16px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8f9fa;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .notification-dropdown-title {
+        font-weight: 600;
+        color: #333;
+        font-size: 16px;
+    }
+    
+    .notification-dropdown-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .notification-action-btn {
+        background: none;
+        border: none;
+        color: #007bff;
+        font-size: 12px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    
+    .notification-action-btn:hover {
+        background: #e3f2fd;
+    }
+    
+    .notification-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .notification-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .notification-item:last-child {
+        border-bottom: none;
+        border-radius: 0 0 8px 8px;
+    }
+    
+    .notification-item.unread {
+        background: #f0f8ff;
+        border-left: 3px solid #007bff;
+    }
+    
+    .notification-item.urgent {
+        background: #fff5f5;
+        border-left: 3px solid #dc3545;
+    }
+    
+    .notification-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .notification-icon {
+        font-size: 18px;
+        color: #007bff;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+    
+    .notification-icon.urgent {
+        color: #dc3545;
+    }
+    
+    .notification-text {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .notification-message {
+        font-size: 14px;
+        color: #333;
+        line-height: 1.4;
+        margin-bottom: 4px;
+    }
+    
+    .notification-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .notification-time {
+        white-space: nowrap;
+    }
+    
+    .notification-type {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .notification-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    
+    .notification-action {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .notification-action:hover {
+        background: #0056b3;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .notification-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: none;
+        border: none;
+        color: #999;
+        cursor: pointer;
+        font-size: 16px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+    
+    .notification-close:hover {
+        background: #f0f0f0;
+        color: #666;
+    }
+    
+    .notification-empty {
+        padding: 40px 20px;
+        text-align: center;
+        color: #666;
+    }
+    
+    .notification-empty-icon {
+        font-size: 48px;
+        color: #ddd;
+        margin-bottom: 16px;
+    }
+    
+    .notification-loading {
+        padding: 20px;
+        text-align: center;
+        color: #666;
+    }
+    
+    .notification-error {
+        padding: 20px;
+        text-align: center;
+        color: #dc3545;
+        background: #fff5f5;
+    }
+    
+    /* Enhanced bell animation */
+    .notification-bell {
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    
+    .notification-bell:hover {
+        transform: scale(1.1);
+    }
+    
+    .notification-bell.has-notifications {
+        animation: bellShake 0.5s ease-in-out;
+    }
+    
+    @keyframes bellShake {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-10deg); }
+        75% { transform: rotate(10deg); }
+    }
+    
+    /* Real-time connection indicator */
+    .connection-indicator {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #28a745;
+        border: 2px solid white;
+    }
+    
+    .connection-indicator.disconnected {
+        background: #dc3545;
+    }
+    
+    .connection-indicator.connecting {
+        background: #ffc107;
+        animation: pulse 1s infinite;
+    }
+</style>
+
+<!-- Enhanced Notification Dropdown Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced notification dropdown functionality
+    function initializeNotificationDropdown() {
+        const bellIcon = document.getElementById('bell-icon');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        
+        if (!bellIcon || !notificationDropdown) return;
+        
+        // Add connection indicator
+        const connectionIndicator = document.createElement('div');
+        connectionIndicator.className = 'connection-indicator connecting';
+        connectionIndicator.id = 'connection-indicator';
+        bellIcon.parentElement.appendChild(connectionIndicator);
+        
+        // Enhanced show notification dropdown
+        window.showNotificationDropdown = function() {
+            console.log('📱 Opening notification dropdown');
+            
+            // Show loading state
+            notificationDropdown.innerHTML = `
+                <div class="notification-dropdown-header">
+                    <div class="notification-dropdown-title">
+                        <i class="bx bx-bell"></i> Notifications
+                    </div>
+                    <div class="notification-dropdown-actions">
+                        <button class="notification-action-btn" onclick="markAllNotificationsRead()">
+                            Mark all read
+                        </button>
+                    </div>
+                </div>
+                <div class="notification-loading">
+                    <i class="bx bx-loader-alt bx-spin"></i> Loading...
+                </div>
+            `;
+            notificationDropdown.style.display = 'block';
+            
+            // Fetch notifications
+            fetch('/notifications/', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderNotifications(data.notifications || [], data.unread_count || 0);
+                } else {
+                    showNotificationError('Failed to load notifications');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error loading notifications:', error);
+                showNotificationError('Error loading notifications');
+            });
+        };
+        
+        function renderNotifications(notifications, unreadCount) {
+            const header = `
+                <div class="notification-dropdown-header">
+                    <div class="notification-dropdown-title">
+                        <i class="bx bx-bell"></i> Notifications ${unreadCount > 0 ? `(${unreadCount})` : ''}
+                    </div>
+                    <div class="notification-dropdown-actions">
+                        ${unreadCount > 0 ? '<button class="notification-action-btn" onclick="markAllNotificationsRead()">Mark all read</button>' : ''}
+                        <button class="notification-action-btn" onclick="refreshNotifications()">
+                            <i class="bx bx-refresh"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            if (notifications.length === 0) {
+                notificationDropdown.innerHTML = header + `
+                    <div class="notification-empty">
+                        <div class="notification-empty-icon">
+                            <i class="bx bx-bell"></i>
+                        </div>
+                        <div>No notifications</div>
+                        <small>You're all caught up!</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            const notificationItems = notifications.map(notification => {
+                const timeAgo = getTimeAgo(new Date(notification.created_at || notification.time));
+                const icon = getNotificationIcon(notification.type);
+                const isUnread = !notification.read;
+                const isUrgent = notification.priority === 'urgent';
+                
+                return `
+                    <div class="notification-item ${isUnread ? 'unread' : ''} ${isUrgent ? 'urgent' : ''}" 
+                         data-notification-id="${notification.id}"
+                         onclick="handleNotificationClick(${notification.id}, '${notification.action_url || notification.url || '#'}')">
+                        <button class="notification-close" onclick="event.stopPropagation(); clearNotification(${notification.id})">&times;</button>
+                        <div class="notification-content">
+                            <div class="notification-icon ${isUrgent ? 'urgent' : ''}">
+                                <i class="bx ${icon}"></i>
+                            </div>
+                            <div class="notification-text">
+                                <div class="notification-message">${notification.message}</div>
+                                <div class="notification-meta">
+                                    <span class="notification-type">${notification.type}</span>
+                                    <span class="notification-time">${timeAgo}</span>
+                                </div>
+                                ${notification.action_url ? `
+                                    <div class="notification-actions">
+                                        <a href="${notification.action_url}" class="notification-action" onclick="event.stopPropagation();">
+                                            ${notification.action_text || 'View'}
+                                        </a>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            notificationDropdown.innerHTML = header + notificationItems;
+        }
+        
+        function showNotificationError(message) {
+            notificationDropdown.innerHTML = `
+                <div class="notification-dropdown-header">
+                    <div class="notification-dropdown-title">
+                        <i class="bx bx-bell"></i> Notifications
+                    </div>
+                </div>
+                <div class="notification-error">
+                    <i class="bx bx-error"></i> ${message}
+                </div>
+            `;
+        }
+        
+        // Global functions for notification management
+        window.handleNotificationClick = function(notificationId, url) {
+            // Mark as read
+            if (window.notificationManager) {
+                window.notificationManager.markAsRead(notificationId);
+            }
+            
+            // Navigate if URL provided
+            if (url && url !== '#') {
+                window.location.href = url;
+            }
+        };
+        
+        window.clearNotification = function(notificationId) {
+            fetch(`/notifications/${notificationId}/clear/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken(),
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove from dropdown
+                    const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                    if (item) {
+                        item.style.animation = 'slideOut 0.3s ease-in forwards';
+                        setTimeout(() => item.remove(), 300);
+                    }
+                    
+                    // Update badge
+                    if (window.notificationManager) {
+                        window.notificationManager.loadNotifications();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error clearing notification:', error);
+            });
+        };
+        
+        window.markAllNotificationsRead = function() {
+            if (window.notificationManager) {
+                window.notificationManager.markAllAsRead();
+            }
+            
+            // Also make HTTP request as fallback
+            fetch('/notifications/clear-all/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken(),
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotificationDropdown(); // Refresh
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error marking all as read:', error);
+            });
+        };
+        
+        window.refreshNotifications = function() {
+            showNotificationDropdown();
+        };
+        
+        // Bell click handler
+        bellIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isVisible = notificationDropdown.style.display === 'block';
+            
+            if (isVisible) {
+                notificationDropdown.style.display = 'none';
+            } else {
+                showNotificationDropdown();
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!bellIcon.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.style.display = 'none';
+            }
+        });
+    }
+    
+    // Utility functions
+    function getNotificationIcon(type) {
+        const icons = {
+            'appointment': 'bx-calendar',
+            'report': 'bx-file',
+            'system': 'bx-cog',
+            'reminder': 'bx-bell',
+            'feedback': 'bx-message-dots',
+            'general': 'bx-info-circle'
+        };
+        return icons[type] || 'bx-info-circle';
+    }
+    
+    function getTimeAgo(date) {
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+        return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    }
+    
+    function getCsrfToken() {
+        const token = document.querySelector('[name=csrfmiddlewaretoken]');
+        return token ? token.value : '';
+    }
+    
+    // Initialize the enhanced dropdown
+    initializeNotificationDropdown();
+    
+    // Update connection indicator based on WebSocket status
+    if (window.notificationManager) {
+        const indicator = document.getElementById('connection-indicator');
+        if (indicator) {
+            // Monitor connection status
+            const originalUpdateStatus = window.notificationManager.updateConnectionStatus;
+            window.notificationManager.updateConnectionStatus = function(status) {
+                originalUpdateStatus.call(this, status);
+                indicator.className = `connection-indicator ${status}`;
+            };
+        }
+    }
+});
+</script>

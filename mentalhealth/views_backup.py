@@ -1,49 +1,52 @@
-# Standard library imports
-import json
-import logging
-from datetime import datetime, timedelta
-
-# Django imports
-from django.conf import settings
-from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth import login, logout, update_session_auth_hash
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import PasswordChangeForm
-from django.core.files.storage import default_storage
-from django.core.mail import send_mail
-from django.core.paginator import Paginator
-from django.db import IntegrityError
-from django.db.models import Avg, OuterRef, Q
-from django.http import JsonResponse
-from django.shortcuts import redirect, render
-from django.template.loader import render_to_string
+from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.contrib.auth import login, logout, authenticate
+from django.contrib import messages
+from django.http import JsonResponse
+from django.http import HttpResponse
+class HttpResponseTooManyRequests(HttpResponse):
+    status_code = 429
+from django.core.cache import cache
 from django.utils import timezone
+import hashlib
+import time
+
+from django.views.decorators.http import require_http_methods
+from django.core.mail import send_mail
+from django.conf import settings
+import json
+from .forms import CustomUserRegistrationForm, CustomLoginForm, CounselorProfileForm, AppointmentForm, AppointmentStatusForm, ReportForm
+from .models import CustomUser, DASSResult, Counselor, Appointment, RelaxationLog, Notification, Feedback, LiveSession, SessionParticipant, SessionMessage
+from django.contrib.auth.decorators import login_required
 from django.utils.crypto import get_random_string
-from django.utils.timezone import now
-from django.views.decorators.http import (require_GET, require_POST,
-                                          require_http_methods)
-
-# Third-party imports
-import openai
-
-# Django REST Framework imports
+from .templates.mentalhealth.decorators import verified_required
+from django.views.decorators.http import require_GET, require_POST
+from django.core.paginator import Paginator
+from django.contrib.admin.views.decorators import staff_member_required
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-# Local imports
-from .decorators import counselor_required, verified_required
-from .forms import (AppointmentForm, AppointmentStatusForm,
-                   CounselorProfileForm, CustomLoginForm,
-                   CustomUserRegistrationForm, ReportForm)
-from .models import (Appointment, Counselor, CustomUser, DASSResult,
-                    Feedback, LiveSession, Notification, RelaxationLog,
-                    Report, SessionMessage, SessionParticipant)
-from .notification_service import (notification_service,
-                                   create_appointment_notification)
 from .serializers import AppointmentSerializer
+from django.utils import timezone
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from django.db import IntegrityError
+from django.core.files.storage import default_storage
+from .decorators import counselor_required
+from .models import Report
+import logging
+from django.utils.timezone import now
+from django.db.models import (
+    Q,
+    Avg,
+    OuterRef
+)
+from datetime import timedelta, datetime
+from django.template.loader import render_to_string
+
+# OpenAI integration for AI feedback
+import openai
+
 
 # Import ratelimit with fallback
 try:
@@ -59,12 +62,13 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-
 @login_required
 def dass21_test(request):
-    return render(request, 'index.html', {
+    context = {
         'username': request.user.username,
-    })
+        # other context data...
+    }
+    return render(request, 'index.html', context)
 
 
 def generate_verification_token(self):
@@ -75,21 +79,18 @@ def generate_verification_token(self):
 
 @verified_required
 @login_required
-def index(request):
+def index(request): 
     # Get the most recent DASS result for this user
-    latest_result = DASSResult.objects.filter(user=request.user).order_by(
-        '-date_taken').first()
-
+    latest_result = DASSResult.objects.filter(user=request.user).order_by('-date_taken').first()
+    
     return render(request, 'index.html', {
         'user': request.user,
         'username': request.user.username,
         'college_display': request.user.get_college_display(),
         'year_display': request.user.get_year_level_display(),
-        'profile_picture': (request.user.profile_picture.url
-                           if request.user.profile_picture else None),
+        'profile_picture': request.user.profile_picture.url if request.user.profile_picture else None,
         'scores': {
-            'depression': (latest_result.depression_score
-                          if latest_result else 0),
+            'depression': latest_result.depression_score if latest_result else 0,
             'anxiety': latest_result.anxiety_score if latest_result else 0,
             'stress': latest_result.stress_score if latest_result else 0,
         } if latest_result else {'depression': 0, 'anxiety': 0, 'stress': 0},
@@ -2219,7 +2220,7 @@ def report_detail(request, pk):
 def report_api(request, pk=None):
     """API endpoint for report CRUD operations"""
     counselor = request.user.counselor_profile
-
+    
     if request.method == 'GET':
         if pk:
             try:
@@ -2232,24 +2233,16 @@ def report_api(request, pk=None):
                         'description': report.description,
                         'report_type': report.report_type,
                         'status': report.status,
-                        'user_name': (report.user.full_name
-                                    if report.user else None),
-                        'created_at': report.created_at.strftime(
-                            '%Y-%m-%d %H:%M'),
-                        'updated_at': report.updated_at.strftime(
-                            '%Y-%m-%d %H:%M')
+                        'user_name': report.user.full_name if report.user else None,
+                        'created_at': report.created_at.strftime('%Y-%m-%d %H:%M'),
+                        'updated_at': report.updated_at.strftime('%Y-%m-%d %H:%M')
                     }
                 })
             except Report.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Report not found'
-                }, status=404)
+                return JsonResponse({'success': False, 'error': 'Report not found'}, status=404)
         else:
             # Get all reports for counselor (excluding archived and completed)
-            reports = Report.objects.filter(counselor=counselor).exclude(
-                status__in=['archived', 'completed']
-            ).order_by('-created_at')
+            reports = Report.objects.filter(counselor=counselor).exclude(status__in=['archived', 'completed']).order_by('-created_at')
             reports_data = [{
                 'id': report.id,
                 'title': report.title,
@@ -2260,26 +2253,23 @@ def report_api(request, pk=None):
                 'updated_at': report.updated_at.strftime('%Y-%m-%d %H:%M')
             } for report in reports]
             return JsonResponse({'success': True, 'reports': reports_data})
-
+    
     elif request.method == 'POST':
         # Create new report
         try:
             data = json.loads(request.body)
-
+            
             # Get the user if provided
             user = None
             if data.get('user_id'):
                 try:
                     user = CustomUser.objects.get(id=data['user_id'])
                 except CustomUser.DoesNotExist:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'Student not found'
-                    }, status=400)
-
+                    return JsonResponse({'success': False, 'error': 'Student not found'}, status=400)
+            
             # Always set status to completed when creating reports
             status = 'completed'
-
+            
             report = Report.objects.create(
                 counselor=counselor,
                 user=user,
@@ -2288,26 +2278,24 @@ def report_api(request, pk=None):
                 report_type=data.get('report_type', 'session'),
                 status=status
             )
-
+            
             # Create notification for the student if report has a user
             if user:
                 create_notification(
                     user=user,
-                    message=('Your session report with '
-                           f'{counselor.name} has been completed.'),
+                    message=f'Your session report with {counselor.name} has been completed.',
                     notification_type='report',
                     url=reverse('user-profile')
                 )
-
+                
                 # Send feedback request email if this is a session report
                 print(f"🔍 Debug: report_type = {data.get('report_type')}")
                 print(f"🔍 Debug: user = {user}")
                 print(f"🔍 Debug: counselor = {counselor}")
-
+                
                 if data.get('report_type') == 'session':
-                    print("✅ Report type is 'session', proceeding with feedback email...")
-                    # Find the appointment for this user and counselor
-                    # (not completed or cancelled)
+                    print(f"✅ Report type is 'session', proceeding with feedback email...")
+                    # Find the appointment for this user and counselor (not completed or cancelled)
                     try:
                         appointment = Appointment.objects.filter(
                             user=user,
@@ -2315,23 +2303,23 @@ def report_api(request, pk=None):
                         ).exclude(status__in=['completed', 'cancelled']).latest('date')
                         print(f"✅ Found appointment {appointment.id} for feedback email")
                         print(f"📊 Found appointment status: {appointment.status}")
-
+                        
                         # Mark as completed
                         appointment.status = 'completed'
                         appointment.save()
                         print(f"✅ Appointment {appointment.id} marked as completed")
-
+                        
                         # Send feedback email
                         print("🔔 Sending feedback email...")
                         send_feedback_request_email(request, appointment)
                         print("✅ Feedback email sent successfully via API simulation")
-
+                        
                     except Appointment.DoesNotExist:
                         print(f"❌ No available appointment found for user {user} and counselor {counselor}")
                         pass  # No appointment found, skip feedback email
                 else:
                     print(f"❌ Report type is not 'session': {data.get('report_type')}")
-
+            
             return JsonResponse({
                 'success': True,
                 'report': {
@@ -2346,13 +2334,13 @@ def report_api(request, pk=None):
             })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
+    
     elif request.method == 'PUT':
         # Update report
         try:
             report = Report.objects.get(pk=pk, counselor=counselor)
             data = json.loads(request.body)
-
+            
             if 'title' in data:
                 report.title = data['title']
             if 'description' in data:
@@ -2365,44 +2353,31 @@ def report_api(request, pk=None):
                     report.status = 'archived'
                 else:
                     report.status = data['status']
-
+            
             report.save()
-
+            
             # Check if the report was automatically archived
             if data.get('status') == 'completed':
                 return JsonResponse({
-                    'success': True,
-                    'message': ('Report completed and automatically archived! '
-                              'Completed reports are moved to the archive.'),
+                    'success': True, 
+                    'message': 'Report completed and automatically archived! Completed reports are moved to the archive.',
                     'status': 'archived'
                 })
             else:
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Report updated successfully'
-                })
+                return JsonResponse({'success': True, 'message': 'Report updated successfully'})
         except Report.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'error': 'Report not found'
-            }, status=404)
+            return JsonResponse({'success': False, 'error': 'Report not found'}, status=404)
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
+    
     elif request.method == 'DELETE':
         # Delete report
         try:
             report = Report.objects.get(pk=pk, counselor=counselor)
             report.delete()
-            return JsonResponse({
-                'success': True,
-                'message': 'Report deleted successfully'
-            })
+            return JsonResponse({'success': True, 'message': 'Report deleted successfully'})
         except Report.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'error': 'Report not found'
-            }, status=404)
+            return JsonResponse({'success': False, 'error': 'Report not found'}, status=404)
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
@@ -2679,13 +2654,6 @@ def ai_feedback(request):
         user_history, dass_analysis
     )
 
-    # Generate mental health tips for moderate/normal scores
-    tips_result = generate_mental_health_tips(
-        user, depression, anxiety, stress,
-        depression_severity, anxiety_severity, stress_severity,
-        user_history, dass_analysis
-    )
-
     try:
         openai.api_key = getattr(settings, 'OPENAI_API_KEY', None)
         logger.info(f"OpenAI API key status: {'Configured' if openai.api_key else 'Not configured'}")
@@ -2697,12 +2665,9 @@ def ai_feedback(request):
                 depression_severity, anxiety_severity, stress_severity,
                 user_history, dass_analysis
             )
-            # Include tips in fallback response if available
-            fallback_tips = tips_result['tips'] if tips_result else None
             return Response({
                 'success': True, 
                 'feedback': fallback_feedback,
-                'tips': fallback_tips,
                 'source': 'fallback',
                 'personalization_level': 'high',
                 'dass_analysis': dass_analysis
@@ -2719,12 +2684,9 @@ def ai_feedback(request):
         )
         feedback = response.choices[0].message['content'].strip()
         logger.info(f"Personalized AI feedback generated for user {user.id}")
-        # Include tips in response if available
-        tips_text = tips_result['tips'] if tips_result else None
         return Response({
             'success': True, 
             'feedback': feedback,
-            'tips': tips_text,
             'source': 'openai',
             'personalization_level': 'high',
             'dass_analysis': dass_analysis,
@@ -2744,12 +2706,9 @@ def ai_feedback(request):
             depression_severity, anxiety_severity, stress_severity,
             user_history, dass_analysis
         )
-        # Include tips in fallback response if available
-        fallback_tips = tips_result['tips'] if tips_result else None
         return Response({
             'success': True, 
             'feedback': fallback_feedback,
-            'tips': fallback_tips,
             'source': 'fallback',
             'personalization_level': 'high',
             'error': 'OpenAI service temporarily unavailable',
@@ -3616,12 +3575,12 @@ def analyze_exercise_preferences(relaxation_history):
     """Analyze user's relaxation exercise preferences"""
     if not relaxation_history:
         return None
-
+    
     exercise_counts = {}
     for log in relaxation_history:
         exercise_type = log.exercise_type
         exercise_counts[exercise_type] = exercise_counts.get(exercise_type, 0) + 1
-
+    
     # Get most preferred exercise
     if exercise_counts:
         preferred_exercise = max(exercise_counts, key=exercise_counts.get)
@@ -3630,151 +3589,6 @@ def analyze_exercise_preferences(relaxation_history):
             'total_sessions': len(relaxation_history),
             'exercise_counts': exercise_counts
         }
-
+    
     return None
 
-def generate_mental_health_tips(user, depression, anxiety, stress,
-                               depression_severity, anxiety_severity, stress_severity,
-                               user_history, dass_analysis):
-    """Generate specific mental health tips for moderate/normal scores using OpenAI"""
-
-    # Check if any severity is moderate or normal/mild
-    moderate_normal_severities = ['normal', 'mild', 'moderate']
-    has_moderate_normal = (
-        depression_severity in moderate_normal_severities or
-        anxiety_severity in moderate_normal_severities or
-        stress_severity in moderate_normal_severities
-    )
-
-    if not has_moderate_normal:
-        return None
-
-    # Build tips-specific prompt
-    prompt = f"Generate 5-7 practical, actionable mental health tips for a university student with DASS21 scores: "
-    prompt += f"Depression: {depression} ({depression_severity}), "
-    prompt += f"Anxiety: {anxiety} ({anxiety_severity}), "
-    prompt += f"Stress: {stress} ({stress_severity}). "
-
-    # Add specific concerns
-    if dass_analysis['primary_concerns']:
-        prompt += f"\n\nKey concerns from their responses: "
-        for concern in dass_analysis['primary_concerns'][:3]:
-            prompt += f"- {concern['question']} "
-
-    # Add personalization
-    if user_history['academic_context']:
-        context = user_history['academic_context']
-        if 'college_stressors' in context:
-            prompt += f"\n\nAcademic context: Student is in {user.get_college_display()} facing {context['college_stressors']}."
-        if 'year_challenges' in context:
-            prompt += f" As a {user.get_year_level_display()} student, they're dealing with {context['year_challenges']}."
-
-    # Add exercise preferences
-    if user_history['exercise_preferences']:
-        pref = user_history['exercise_preferences']
-        prompt += f"\n\nThey've completed {pref['total_sessions']} relaxation sessions, preferring {pref['preferred_exercise']}."
-
-    prompt += (
-        "\n\nGenerate tips that are: "
-        "1. Specific to their DASS21 scores and concerns "
-        "2. Tailored to university student life "
-        "3. Practical and immediately actionable "
-        "4. Focused on prevention and maintenance for moderate/normal mental health "
-        "5. Include a mix of academic, social, and self-care strategies "
-        "6. Number them 1-7 and keep each tip concise (1-2 sentences) "
-        "7. Use encouraging, supportive language "
-        "8. Avoid medical advice or diagnosis "
-        "Format as a bulleted list with <b>bold</b> key actions."
-    )
-
-    try:
-        openai.api_key = getattr(settings, 'OPENAI_API_KEY', None)
-        if not openai.api_key:
-            logger.warning("OpenAI API key not configured for tips generation")
-            return generate_fallback_tips(user, depression, anxiety, stress,
-                                        depression_severity, anxiety_severity, stress_severity,
-                                        user_history, dass_analysis)
-
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a supportive mental health assistant specializing in university student wellness. Provide practical, evidence-based tips for maintaining mental health and preventing escalation of symptoms."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=400,
-            temperature=0.7,
-        )
-        tips = response.choices[0].message['content'].strip()
-        logger.info(f"AI-generated tips created for user {user.id}")
-        return {
-            'tips': tips,
-            'source': 'openai',
-            'generated_for': 'moderate_normal'
-        }
-    except Exception as e:
-        logger.error(f"Tips generation error for user {user.id}: {str(e)}")
-        return generate_fallback_tips(user, depression, anxiety, stress,
-                                    depression_severity, anxiety_severity, stress_severity,
-                                    user_history, dass_analysis)
-
-def generate_fallback_tips(user, depression, anxiety, stress,
-                          depression_severity, anxiety_severity, stress_severity,
-                          user_history, dass_analysis):
-    """Generate fallback tips when OpenAI is not available"""
-
-    tips = []
-
-    # Depression tips for moderate/normal
-    if depression_severity in ['mild', 'moderate', 'normal']:
-        tips.extend([
-            "1. <b>Maintain a consistent sleep schedule</b> of 7-9 hours per night to support emotional regulation.",
-            "2. <b>Practice daily gratitude</b> by noting 3 things you're thankful for each evening.",
-            "3. <b>Stay connected with friends</b> through regular social activities, even small ones like coffee chats."
-        ])
-
-    # Anxiety tips for moderate/normal
-    if anxiety_severity in ['mild', 'moderate', 'normal']:
-        tips.extend([
-            "4. <b>Use the 4-7-8 breathing technique</b>: inhale for 4 counts, hold for 7, exhale for 8 when feeling anxious.",
-            "5. <b>Break tasks into smaller steps</b> to reduce overwhelm and build momentum.",
-            "6. <b>Practice progressive muscle relaxation</b> for 10 minutes daily to release physical tension."
-        ])
-
-    # Stress tips for moderate/normal
-    if stress_severity in ['mild', 'moderate', 'normal']:
-        tips.extend([
-            "7. <b>Try the Pomodoro Technique</b>: 25 minutes focused work followed by 5-minute breaks.",
-            "8. <b>Incorporate short walks</b> between classes to clear your mind and reduce stress.",
-            "9. <b>Set boundaries</b> around study time and leisure time to maintain work-life balance."
-        ])
-
-    # Academic-specific tips
-    if user_history['academic_context']:
-        context = user_history['academic_context']
-        if 'college_stressors' in context:
-            if 'engineering' in context['college_stressors'].lower():
-                tips.append("10. <b>For technical coursework</b>, schedule regular review sessions to prevent last-minute stress.")
-            elif 'business' in context['college_stressors'].lower():
-                tips.append("10. <b>For case studies</b>, discuss complex topics with classmates to gain different perspectives.")
-            elif 'arts' in context['college_stressors'].lower():
-                tips.append("10. <b>For creative projects</b>, set aside time for free-writing or sketching to overcome blocks.")
-
-    # Exercise preference tips
-    if user_history['exercise_preferences']:
-        pref = user_history['exercise_preferences']
-        if pref['preferred_exercise'] == 'PMR':
-            tips.append("11. <b>Continue with Progressive Muscle Relaxation</b> - it's working well for you!")
-        elif pref['preferred_exercise'] == 'EFT':
-            tips.append("11. <b>Use Emotional Freedom Technique tapping</b> when you need quick stress relief.")
-        elif pref['preferred_exercise'] == 'Breathing':
-            tips.append("11. <b>Build on your breathing exercises</b> with longer sessions for deeper relaxation.")
-
-    # Limit to 7 tips and format
-    final_tips = tips[:7]
-    formatted_tips = "\n".join(final_tips)
-
-    return {
-        'tips': formatted_tips,
-        'source': 'fallback',
-        'generated_for': 'moderate_normal'
-    }

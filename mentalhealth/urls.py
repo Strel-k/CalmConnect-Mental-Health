@@ -31,7 +31,7 @@ urlpatterns = [
     path('counselor/reports/', counselor_required(views.counselor_reports), name='counselor_reports'),
     path('counselor/archive/', counselor_required(views.counselor_archive), name='counselor_archive'),
     path('counselor/profile/', counselor_required(views.counselor_profile), name='counselor_profile'),
-    path('counselor/setup/<str:token>/', counselor_setup, name='counselor_setup'),  # Add this line
+    path('counselor/setup/<str:token>/', counselor_setup, name='counselor_setup'),
 
     # Appointment URLs
     path('appointments/create/', counselor_required(views.create_appointment), name='create_appointment'),
@@ -57,7 +57,6 @@ urlpatterns = [
     path('api/counselors/', views.add_counselor, name='add_counselor'),
     path('api/counselors/<int:counselor_id>/', views.update_counselor, name='update_counselor'),
     path('api/counselors/<int:counselor_id>/archive/', views.archive_counselor, name='archive_counselor'),
-    # Student-only: AI feedback endpoint (add student-only decorator in future)
     path('api/ai-feedback/', views.ai_feedback, name='ai_feedback'),
 
     # Other URLs
@@ -93,4 +92,6 @@ urlpatterns = [
     path('test-video-call/<int:appointment_id>/', views.test_video_call, name='test_video_call'),
     path('websocket-test/', views.websocket_test, name='websocket_test'),
     path('simple-websocket-test/', views.simple_websocket_test, name='simple_websocket_test'),
+    
+    
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -368,42 +368,203 @@
 }
 
 
-    /* Calendar Header Styles */
+    /* Enhanced Calendar Header Styles */
     .fc .fc-toolbar {
-      padding: 1rem;
+      padding: 1.5rem;
       margin-bottom: 1rem;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid rgba(46, 204, 113, 0.1);
     }
 
     .fc .fc-toolbar-title {
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       color: #2c3e50;
-      font-weight: 600;
+      font-weight: 700;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
 
     .fc .fc-button {
-      background-color: white;
-      border: 1px solid #e0e0e0;
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border: 2px solid #e0e0e0;
       color: #555;
       text-transform: capitalize;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-weight: 500;
-      transition: all 0.2s;
+      padding: 0.6rem 1.2rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
     .fc .fc-button:hover {
-      background-color: #f8f9fa;
-      color: #2ecc71;
+      background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+      color: white;
       border-color: #2ecc71;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(46, 204, 113, 0.3);
     }
 
     .fc .fc-button-primary:not(:disabled).fc-button-active {
-      background-color: #2ecc71;
+      background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
       color: white;
       border-color: #2ecc71;
+      box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+    }
+
+    .fc .fc-button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Modern Filter Panel */
+    .filter-panel {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid rgba(46, 204, 113, 0.1);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-label {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 0.9rem;
+    }
+
+    .filter-select {
+      padding: 0.5rem 1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      background: white;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      border-color: #2ecc71;
+      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+      outline: none;
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-left: auto;
+    }
+
+    .filter-btn {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-btn.primary {
+      background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+      color: white;
+    }
+
+    .filter-btn.secondary {
+      background: #ecf0f1;
+      color: #7f8c8d;
+    }
+
+    .filter-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    /* Enhanced Calendar Container */
+    .calendar-container {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      backdrop-filter: blur(10px);
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(46, 204, 113, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .calendar-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #2ecc71, #27ae60, #3498db, #f39c12);
+    }
+
+    /* Bulk Actions Panel */
+    .bulk-actions-panel {
+      background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+      border: 2px solid #f39c12;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bulk-actions-panel.show {
+      display: flex;
+    }
+
+    .bulk-count {
+      font-weight: 600;
+      color: #856404;
+    }
+
+    .bulk-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .bulk-btn.confirm {
+      background: #2ecc71;
+      color: white;
+    }
+
+    .bulk-btn.cancel {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .bulk-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     /* Modal Styles */
@@ -832,7 +993,65 @@
         <h2>Scheduled Appointments</h2>
         <p>Manage and view all upcoming counseling sessions</p>
       </div>
-      
+
+      <!-- Filter Panel -->
+      <div class="filter-panel">
+        <div class="filter-group">
+          <span class="filter-label">Status:</span>
+          <select id="status-filter" class="filter-select">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Counselor:</span>
+          <select id="counselor-filter" class="filter-select">
+            <option value="">All Counselors</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Date Range:</span>
+          <select id="date-filter" class="filter-select">
+            <option value="">All Dates</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="upcoming">Upcoming</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button id="apply-filters" class="filter-btn primary">
+            <i class='bx bx-filter-alt'></i> Apply Filters
+          </button>
+          <button id="clear-filters" class="filter-btn secondary">
+            <i class='bx bx-x'></i> Clear
+          </button>
+          <button id="export-calendar" class="filter-btn primary">
+            <i class='bx bx-download'></i> Export
+          </button>
+        </div>
+      </div>
+
+      <!-- Bulk Actions Panel -->
+      <div id="bulk-actions-panel" class="bulk-actions-panel">
+        <span id="bulk-count" class="bulk-count">0 appointments selected</span>
+        <button id="bulk-confirm" class="bulk-btn confirm">
+          <i class='bx bx-check'></i> Confirm Selected
+        </button>
+        <button id="bulk-cancel" class="bulk-btn cancel">
+          <i class='bx bx-x'></i> Cancel Selected
+        </button>
+        <button id="bulk-clear" class="bulk-btn secondary">
+          <i class='bx bx-x-circle'></i> Clear Selection
+        </button>
+      </div>
+
       <div class="calendar-container">
         <div id="admin-calendar"></div>
       </div>
@@ -909,21 +1128,32 @@
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+(function() {
   // Global variables
   let currentAppointmentId = null;
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
   let calendar; // Make calendar globally accessible
+  window.selectedEvents = window.selectedEvents || new Set(); // For bulk operations
+  let allEvents = []; // Store all events for filtering
+  let counselors = []; // Store counselor data
 
   document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('admin-calendar');
-    
+
     if (!calendarEl) {
       console.error("Calendar element not found!");
+      showNotification('Calendar element not found. Please refresh the page.', 'error');
       return;
     }
 
-    // Initialize calendar
-    calendar = new FullCalendar.Calendar(calendarEl, {
+    console.log('Initializing calendar...');
+
+    // Load counselors for filter dropdown
+    loadCounselors();
+
+    try {
+      // Initialize calendar with enhanced features
+      calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'dayGridMonth',
       headerToolbar: {
         left: 'prev,next today',
@@ -935,7 +1165,32 @@
       editable: true,
       dayMaxEvents: true,
       eventClick: function(info) {
-        openModal(info.event);
+        if (info.jsEvent.ctrlKey || info.jsEvent.metaKey) {
+          // Multi-select with Ctrl/Cmd
+          toggleEventSelection(info.event);
+        } else {
+          // Single click - open modal
+          openModal(info.event);
+        }
+      },
+      eventMouseEnter: function(info) {
+        // Enhanced tooltip on hover
+        showEnhancedTooltip(info);
+      },
+      eventMouseLeave: function() {
+        hideEnhancedTooltip();
+      },
+      eventDrop: function(info) {
+        // Handle drag and drop rescheduling
+        handleEventDrop(info);
+      },
+      eventResize: function(info) {
+        // Handle event resizing
+        handleEventResize(info);
+      },
+      select: function(info) {
+        // Handle date selection for bulk operations
+        handleDateSelection(info);
       },
 eventContent: function(arg) {
     // Create the event element
@@ -969,10 +1224,16 @@ eventContent: function(arg) {
     
     return { domNodes: [eventEl] };
 }
-    });
+      });
 
-    calendar.render();
-    fetchAppointments();
+      calendar.render();
+      console.log('Calendar rendered successfully');
+      fetchAppointments();
+
+    } catch (error) {
+      console.error('Error initializing calendar:', error);
+      showNotification('Failed to initialize calendar: ' + error.message, 'error');
+    }
   });
 
   // Helper functions
@@ -991,42 +1252,75 @@ eventContent: function(arg) {
   }
 
   function fetchAppointments() {
+    console.log('Fetching appointments...');
     fetch('/api/appointments/?upcoming=true', {
       method: 'GET',
       headers: {
         'X-CSRFToken': csrfToken,
-        'X-Requested-With': 'XMLHttpRequest'
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/json'
       },
       credentials: 'same-origin'
     })
       .then(response => {
+        console.log('Response status:', response.status);
         if (!response.ok) {
           if (response.status === 401) {
             throw new Error('Authentication required. Please log in again.');
           }
-          throw new Error('Network response was not ok');
+          if (response.status === 403) {
+            throw new Error('You do not have permission to view appointments.');
+          }
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         return response.json();
       })
       .then(data => {
-        const events = data.map(appointment => ({
-          id: appointment.id,
-          title: `${appointment.user?.full_name || 'Student'} - ${appointment.counselor_name || 'Counselor'}`,
-          start: `${appointment.date}T${appointment.time}`,
-          extendedProps: {
-            user: appointment.user,
-            college: appointment.college,
-            program: appointment.program,
-            reason: appointment.reason,
-            status: appointment.status || 'pending',
-            counselor_name: appointment.counselor_name
-          },
-          className: `fc-event-${appointment.status || 'pending'}`
-        }));
-        
-        calendar.removeAllEvents();
-        calendar.addEventSource(events);
-        console.log("Appointments loaded successfully");
+        console.log('Received data:', data);
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid data format received from server');
+        }
+
+        const events = data.map(appointment => {
+          // Ensure we have valid date and time
+          if (!appointment.date || !appointment.time) {
+            console.warn('Appointment missing date or time:', appointment);
+            return null;
+          }
+
+          const eventData = {
+            id: appointment.id,
+            title: `${appointment.user?.full_name || appointment.user?.username || 'Student'} - ${appointment.counselor_name || 'Counselor'}`,
+            start: `${appointment.date}T${appointment.time}`,
+            extendedProps: {
+              user: appointment.user,
+              college: appointment.college || 'N/A',
+              program: appointment.program || 'N/A',
+              reason: appointment.reason || 'N/A',
+              status: appointment.status || 'pending',
+              counselor_name: appointment.counselor_name || 'N/A',
+              counselor_id: appointment.counselor_id,
+              originalColor: getStatusColor(appointment.status || 'pending')
+            },
+            className: `fc-event-${appointment.status || 'pending'}`
+          };
+
+          return eventData;
+        }).filter(event => event !== null); // Remove null events
+
+        // Store events for filtering
+        allEvents = [...events];
+
+        // Clear and add events to calendar
+        if (calendar) {
+          calendar.removeAllEvents();
+          calendar.addEventSource(events);
+          console.log(`Loaded ${events.length} appointments successfully`);
+          showNotification(`Loaded ${events.length} appointments`, 'success');
+        } else {
+          console.error('Calendar not initialized');
+          showNotification('Calendar not initialized properly', 'error');
+        }
       })
       .catch(error => {
         console.error('Error fetching appointments:', error);
@@ -1192,16 +1486,9 @@ async function cancelAppointment() {
         const notificationList = document.getElementById('notification-list');
         const notificationBadge = document.getElementById('notification-badge');
         
-        // Get CSRF token
+        // Get CSRF token - use the same method as global csrfToken
         function getCSRFToken() {
-            const cookies = document.cookie.split(';');
-            for (let cookie of cookies) {
-                const [name, value] = cookie.trim().split('=');
-                if (name === 'csrftoken') {
-                    return value;
-                }
-            }
-            return '';
+            return csrfToken || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
         }
 
         // Toggle notification dropdown
@@ -1280,6 +1567,433 @@ async function cancelAppointment() {
         // Initial load
         loadNotifications();
     });
+
+    // Enhanced Features Functions
+
+    // Load counselors for filter dropdown
+    function loadCounselors() {
+      fetch('/api/counselors/', {
+        headers: {
+          'X-CSRFToken': csrfToken
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        counselors = data;
+        const counselorSelect = document.getElementById('counselor-filter');
+        counselorSelect.innerHTML = '<option value="">All Counselors</option>';
+        data.forEach(counselor => {
+          const option = document.createElement('option');
+          option.value = counselor.id;
+          option.textContent = counselor.name;
+          counselorSelect.appendChild(option);
+        });
+      })
+      .catch(error => console.error('Error loading counselors:', error));
+    }
+
+    // Toggle event selection for bulk operations
+    function toggleEventSelection(event) {
+      const eventId = event.id;
+      if (selectedEvents.has(eventId)) {
+        selectedEvents.delete(eventId);
+        event.setProp('borderColor', '');
+        event.setProp('backgroundColor', event.extendedProps.originalColor || '#2ecc71');
+      } else {
+        selectedEvents.add(eventId);
+        event.setProp('borderColor', '#f39c12');
+        event.setProp('backgroundColor', '#f39c12');
+      }
+      updateBulkActionsPanel();
+    }
+
+    // Update bulk actions panel visibility and count
+    function updateBulkActionsPanel() {
+      const panel = document.getElementById('bulk-actions-panel');
+      const count = document.getElementById('bulk-count');
+
+      if (selectedEvents.size > 0) {
+        panel.classList.add('show');
+        count.textContent = `${selectedEvents.size} appointment${selectedEvents.size > 1 ? 's' : ''} selected`;
+      } else {
+        panel.classList.remove('show');
+      }
+    }
+
+    // Enhanced tooltip functionality
+    function showEnhancedTooltip(info) {
+      const event = info.event;
+      const tooltip = document.createElement('div');
+      tooltip.className = 'enhanced-tooltip';
+      tooltip.innerHTML = `
+        <div class="tooltip-header">
+          <strong>${event.title}</strong>
+        </div>
+        <div class="tooltip-body">
+          <p><i class='bx bx-user'></i> ${event.extendedProps.counselor_name || 'N/A'}</p>
+          <p><i class='bx bx-time'></i> ${event.start.toLocaleTimeString()} - ${event.end ? event.end.toLocaleTimeString() : 'N/A'}</p>
+          <p><i class='bx bx-info-circle'></i> ${event.extendedProps.status || 'N/A'}</p>
+          <p><i class='bx bx-message-square-detail'></i> ${event.extendedProps.reason || 'N/A'}</p>
+        </div>
+      `;
+
+      // Position tooltip
+      tooltip.style.position = 'absolute';
+      tooltip.style.left = info.jsEvent.pageX + 10 + 'px';
+      tooltip.style.top = info.jsEvent.pageY + 10 + 'px';
+      tooltip.style.zIndex = '9999';
+
+      document.body.appendChild(tooltip);
+
+      // Remove tooltip on mouse leave
+      info.el.addEventListener('mouseleave', () => {
+        if (tooltip.parentNode) {
+          tooltip.parentNode.removeChild(tooltip);
+        }
+      });
+    }
+
+    function hideEnhancedTooltip() {
+      const tooltips = document.querySelectorAll('.enhanced-tooltip');
+      tooltips.forEach(tooltip => {
+        if (tooltip.parentNode) {
+          tooltip.parentNode.removeChild(tooltip);
+        }
+      });
+    }
+
+    // Handle drag and drop rescheduling
+    function handleEventDrop(info) {
+      const event = info.event;
+      const newStart = info.event.start;
+      const newEnd = info.event.end;
+
+      // Show confirmation dialog
+      if (confirm(`Reschedule appointment "${event.title}" to ${newStart.toLocaleString()}?`)) {
+        // Send update to server
+        fetch(`/api/appointments/${event.id}/reschedule/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({
+            start: newStart.toISOString(),
+            end: newEnd ? newEnd.toISOString() : null
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('Appointment rescheduled successfully!', 'success');
+            fetchAppointments(); // Refresh calendar
+          } else {
+            info.revert();
+            showNotification('Failed to reschedule appointment', 'error');
+          }
+        })
+        .catch(error => {
+          info.revert();
+          console.error('Error rescheduling:', error);
+          showNotification('Error rescheduling appointment', 'error');
+        });
+      } else {
+        info.revert();
+      }
+    }
+
+    // Handle event resizing
+    function handleEventResize(info) {
+      const event = info.event;
+      const newEnd = info.event.end;
+
+      fetch(`/api/appointments/${event.id}/resize/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+          end: newEnd.toISOString()
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (!data.success) {
+          info.revert();
+          showNotification('Failed to update appointment duration', 'error');
+        } else {
+          showNotification('Appointment duration updated!', 'success');
+        }
+      })
+      .catch(error => {
+        info.revert();
+        console.error('Error resizing:', error);
+        showNotification('Error updating appointment duration', 'error');
+      });
+    }
+
+    // Handle date selection for bulk operations
+    function handleDateSelection(info) {
+      // Clear previous selection
+      selectedEvents.clear();
+      updateBulkActionsPanel();
+
+      // Select all events in the selected date range
+      const events = calendar.getEvents();
+      events.forEach(event => {
+        if (event.start >= info.start && event.start < info.end) {
+          selectedEvents.add(event.id);
+          event.setProp('borderColor', '#f39c12');
+          event.setProp('backgroundColor', '#f39c12');
+        }
+      });
+
+      updateBulkActionsPanel();
+      calendar.unselect();
+    }
+
+    // Filter functions
+    function applyFilters() {
+      if (!allEvents || allEvents.length === 0) {
+        console.warn('No events available for filtering');
+        showNotification('No appointments available to filter', 'info');
+        return;
+      }
+
+      const statusFilter = document.getElementById('status-filter').value;
+      const counselorFilter = document.getElementById('counselor-filter').value;
+      const dateFilter = document.getElementById('date-filter').value;
+
+      let filteredEvents = [...allEvents];
+
+      if (statusFilter) {
+        filteredEvents = filteredEvents.filter(event => event.extendedProps.status === statusFilter);
+      }
+
+      if (counselorFilter) {
+        filteredEvents = filteredEvents.filter(event => event.extendedProps.counselor_id == counselorFilter);
+      }
+
+      if (dateFilter) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        switch (dateFilter) {
+          case 'today':
+            filteredEvents = filteredEvents.filter(event => {
+              const eventDate = new Date(event.start);
+              return eventDate.toDateString() === today.toDateString();
+            });
+            break;
+          case 'week':
+            const weekEnd = new Date(today);
+            weekEnd.setDate(today.getDate() + 7);
+            filteredEvents = filteredEvents.filter(event => {
+              const eventDate = new Date(event.start);
+              return eventDate >= today && eventDate < weekEnd;
+            });
+            break;
+          case 'month':
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            filteredEvents = filteredEvents.filter(event => {
+              const eventDate = new Date(event.start);
+              return eventDate >= today && eventDate <= monthEnd;
+            });
+            break;
+          case 'upcoming':
+            filteredEvents = filteredEvents.filter(event => new Date(event.start) >= today);
+            break;
+        }
+      }
+
+      // Update calendar with filtered events
+      if (calendar) {
+        calendar.removeAllEvents();
+        calendar.addEventSource(filteredEvents);
+        showNotification(`Showing ${filteredEvents.length} appointments`, 'info');
+      } else {
+        console.error('Calendar not available for filtering');
+        showNotification('Calendar not available for filtering', 'error');
+      }
+    }
+
+    function clearFilters() {
+      document.getElementById('status-filter').value = '';
+      document.getElementById('counselor-filter').value = '';
+      document.getElementById('date-filter').value = '';
+
+      if (calendar && allEvents) {
+        calendar.removeAllEvents();
+        calendar.addEventSource(allEvents);
+        showNotification('Filters cleared', 'info');
+      } else {
+        console.error('Calendar or events not available for clearing filters');
+        showNotification('Unable to clear filters', 'error');
+      }
+    }
+
+    // Bulk operations
+    function bulkConfirm() {
+      if (selectedEvents.size === 0) return;
+
+      const eventIds = Array.from(selectedEvents);
+      bulkUpdateStatus(eventIds, 'confirmed');
+    }
+
+    function bulkCancel() {
+      if (selectedEvents.size === 0) return;
+
+      if (confirm(`Cancel ${selectedEvents.size} selected appointment(s)?`)) {
+        const eventIds = Array.from(selectedEvents);
+        bulkUpdateStatus(eventIds, 'cancelled');
+      }
+    }
+
+    function bulkClear() {
+      selectedEvents.clear();
+
+      // Reset event colors
+      const events = calendar.getEvents();
+      events.forEach(event => {
+        event.setProp('borderColor', '');
+        event.setProp('backgroundColor', event.extendedProps.originalColor || '#2ecc71');
+      });
+
+      updateBulkActionsPanel();
+    }
+
+    function bulkUpdateStatus(eventIds, status) {
+      fetch('/api/appointments/bulk-update/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+          appointment_ids: eventIds,
+          status: status
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showNotification(`${eventIds.length} appointments ${status} successfully!`, 'success');
+          bulkClear();
+          fetchAppointments(); // Refresh calendar
+        } else {
+          showNotification('Failed to update appointments', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Bulk update error:', error);
+        showNotification('Error updating appointments', 'error');
+      });
+    }
+
+    // Export functionality
+    function exportCalendar() {
+      const format = prompt('Choose export format: (1) PDF, (2) ICS, (3) CSV', '1');
+
+      if (!format) return;
+
+      let endpoint = '';
+      switch (format) {
+        case '1':
+          endpoint = '/api/appointments/export/pdf/';
+          break;
+        case '2':
+          endpoint = '/api/appointments/export/ics/';
+          break;
+        case '3':
+          endpoint = '/api/appointments/export/csv/';
+          break;
+        default:
+          showNotification('Invalid format selected', 'error');
+          return;
+      }
+
+      // Create download link
+      const link = document.createElement('a');
+      link.href = endpoint;
+      link.download = `appointments.${format === '1' ? 'pdf' : format === '2' ? 'ics' : 'csv'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showNotification('Export started! File will download shortly.', 'info');
+    }
+
+    // Initialize filter event listeners
+    document.getElementById('apply-filters').addEventListener('click', applyFilters);
+    document.getElementById('clear-filters').addEventListener('click', clearFilters);
+    document.getElementById('export-calendar').addEventListener('click', exportCalendar);
+
+    // Initialize bulk action event listeners
+    document.getElementById('bulk-confirm').addEventListener('click', bulkConfirm);
+    document.getElementById('bulk-cancel').addEventListener('click', bulkCancel);
+    document.getElementById('bulk-clear').addEventListener('click', bulkClear);
+
+    // Load initial data
+    fetchAppointments();
+    loadNotifications();
+
+    // Enhanced tooltip styles (add to CSS)
+    const tooltipStyles = `
+      .enhanced-tooltip {
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 14px;
+        max-width: 300px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+      }
+
+      .tooltip-header {
+        font-weight: bold;
+        margin-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding-bottom: 4px;
+      }
+
+      .tooltip-body p {
+        margin: 4px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 10000;
+        animation: slideInRight 0.3s ease;
+      }
+
+      .notification-success { background: #2ecc71; }
+      .notification-error { background: #e74c3c; }
+      .notification-info { background: #3498db; }
+
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+
+    // Add tooltip styles to head
+    const style = document.createElement('style');
+    style.textContent = tooltipStyles;
+    document.head.appendChild(style);
+})();
 </script>
 </body>
 </html>

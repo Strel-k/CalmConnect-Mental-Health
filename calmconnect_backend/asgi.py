@@ -8,27 +8,21 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
 import os
-
+import django
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-# Temporarily removed for testing:
-# from channels.security.websocket import AllowedHostsOriginValidator
 
+# Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calmconnect_backend.settings')
+django.setup()
 
-
-def get_websocket_urlpatterns():
-    # Import here so Django is fully initialized
-    from mentalhealth.routing import websocket_urlpatterns
-    return websocket_urlpatterns
-
+# Import WebSocket routing after Django setup
+from mentalhealth.routing import websocket_urlpatterns
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
-            URLRouter(
-            get_websocket_urlpatterns()
-        )
+        URLRouter(websocket_urlpatterns)
     ),
 })

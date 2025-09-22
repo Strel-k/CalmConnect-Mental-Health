@@ -564,6 +564,9 @@
                 case 'chat_message':
                     handleChatMessage(data);
                     break;
+                case 'session_started':
+                    handleSessionStarted(data);
+                    break;
             }
         }
 
@@ -637,62 +640,110 @@
         function handleWebRTCSignal(data) {
             if (data.user_id == sessionData.userId) return; // Ignore own signals
             console.log('Received WebRTC signal:', data.signal);
-            console.log('typeof sdp:', typeof data.signal.sdp);
-            console.log('sdp value:', data.signal.sdp);
 
-            if (data.signal.type === 'offer') {
-                console.log('Received offer');
-                peerConnection.setRemoteDescription(new RTCSessionDescription({
-                    type: data.signal.type,
-                    sdp: data.signal.sdp
-                }))
-                .then(() => {
-                    remoteDescriptionSet = true;
-                    // Add any queued ICE candidates
-                    iceCandidateQueue.forEach(candidate => {
-                        console.log('Adding queued ICE candidate after offer', candidate);
-                        peerConnection.addIceCandidate(candidate);
-                    });
-                    iceCandidateQueue = [];
-                    return peerConnection.createAnswer();
-                })
-                .then(answer => peerConnection.setLocalDescription(answer))
-                .then(() => {
-                    socket.send(JSON.stringify({
-                        type: 'webrtc_signal',
-                        signal: {
-                            type: peerConnection.localDescription.type,
-                            sdp: peerConnection.localDescription.sdp
-                        }
-                    }));
-                    console.log('Sent answer');
-                });
-            } else if (data.signal.type === 'answer') {
-                console.log('Received answer');
-                peerConnection.setRemoteDescription(new RTCSessionDescription({
-                    type: data.signal.type,
-                    sdp: data.signal.sdp
-                }))
-                .then(() => {
-                    remoteDescriptionSet = true;
-                    // Add any queued ICE candidates
-                    iceCandidateQueue.forEach(candidate => {
-                        console.log('Adding queued ICE candidate after answer', candidate);
-                        peerConnection.addIceCandidate(candidate);
-                    });
-                    iceCandidateQueue = [];
-                });
-            } else if (data.signal.type === 'ice-candidate') {
-                console.log('Received ICE candidate', data.signal.candidate);
-                const candidate = new RTCIceCandidate(data.signal.candidate);
-                if (remoteDescriptionSet) {
-                    peerConnection.addIceCandidate(candidate);
-                    console.log('Added ICE candidate immediately');
-                } else {
-                    iceCandidateQueue.push(candidate);
-                    console.log('Queued ICE candidate');
-                }
+            // Validate signal data
+            if (!data.signal || !data.signal.type) {
+                console.error('Invalid WebRTC signal received:', data);
+                return;
             }
+
+            try {
+                if (data.signal.type === 'offer') {
+                    console.log('Processing offer...');
+                    if (peerConnection.signalingState !== 'stable') {
+                        console.warn('PeerConnection not in stable state, queuing offer');
+                        signalingQueue.push(data);
+                        return;
+                    }
+
+                    peerConnection.setRemoteDescription(new RTCSessionDescription({
+                        type: data.signal.type,
+                        sdp: data.signal.sdp
+                    }))
+                    .then(() => {
+                        console.log('Remote description set for offer');
+                        remoteDescriptionSet = true;
+                        // Process queued ICE candidates
+                        return processQueuedIceCandidates();
+                    })
+                    .then(() => {
+                        console.log('Creating answer...');
+                        return peerConnection.createAnswer();
+                    })
+                    .then(answer => {
+                        console.log('Setting local description for answer...');
+                        return peerConnection.setLocalDescription(answer);
+                    })
+                    .then(() => {
+                        console.log('Sending answer...');
+                        socket.send(JSON.stringify({
+                            type: 'webrtc_signal',
+                            signal: {
+                                type: peerConnection.localDescription.type,
+                                sdp: peerConnection.localDescription.sdp
+                            }
+                        }));
+                        console.log('Answer sent successfully');
+                    })
+                    .catch(error => {
+                        console.error('Error processing offer:', error);
+                        showError('Failed to process video call offer. Please try refreshing the page.');
+                    });
+
+                } else if (data.signal.type === 'answer') {
+                    console.log('Processing answer...');
+                    if (peerConnection.signalingState !== 'have-local-offer') {
+                        console.warn('Unexpected signaling state for answer:', peerConnection.signalingState);
+                    }
+
+                    peerConnection.setRemoteDescription(new RTCSessionDescription({
+                        type: data.signal.type,
+                        sdp: data.signal.sdp
+                    }))
+                    .then(() => {
+                        console.log('Remote description set for answer');
+                        remoteDescriptionSet = true;
+                        // Process queued ICE candidates
+                        return processQueuedIceCandidates();
+                    })
+                    .catch(error => {
+                        console.error('Error processing answer:', error);
+                        showError('Failed to process video call answer. Please try refreshing the page.');
+                    });
+
+                } else if (data.signal.type === 'ice-candidate') {
+                    console.log('Processing ICE candidate...');
+                    if (!data.signal.candidate) {
+                        console.warn('Received empty ICE candidate');
+                        return;
+                    }
+
+                    const candidate = new RTCIceCandidate(data.signal.candidate);
+
+                    if (remoteDescriptionSet && peerConnection.remoteDescription) {
+                        peerConnection.addIceCandidate(candidate)
+                            .then(() => console.log('ICE candidate added immediately'))
+                            .catch(error => console.error('Error adding ICE candidate:', error));
+                    } else {
+                        console.log('Queueing ICE candidate');
+                        iceCandidateQueue.push(candidate);
+                    }
+                }
+            } catch (error) {
+                console.error('Error in handleWebRTCSignal:', error);
+                showError('Video call signaling error. Please refresh the page.');
+            }
+        }
+
+        function processQueuedIceCandidates() {
+            console.log(`Processing ${iceCandidateQueue.length} queued ICE candidates`);
+            const promises = iceCandidateQueue.map(candidate => {
+                return peerConnection.addIceCandidate(candidate)
+                    .then(() => console.log('Queued ICE candidate added'))
+                    .catch(error => console.error('Error adding queued ICE candidate:', error));
+            });
+            iceCandidateQueue = [];
+            return Promise.all(promises);
         }
 
         function handleUserJoined(data) {
@@ -740,6 +791,19 @@
             if (data.user_id != sessionData.userId) {
                 addChatMessage(data.message, data.username, false);
             }
+        }
+
+        function handleSessionStarted(data) {
+            console.log('Session started event received:', data);
+            // Hide waiting room
+            hideWaitingRoom();
+            // Update session status display
+            const statusElement = document.getElementById('sessionStatus');
+            if (statusElement) {
+                statusElement.textContent = 'Active';
+            }
+            // Show system message
+            showMessage('Session has started! You can now begin your video call.', 'system');
         }
 
         function setupEventListeners() {

@@ -303,8 +303,19 @@ class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ('appointment', 'Appointment'),
         ('report', 'Report'),
+        ('system', 'System'),
+        ('reminder', 'Reminder'),
+        ('feedback', 'Feedback'),
         ('general', 'General'),
     ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('normal', 'Normal'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
+    
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
         related_name='notifications'
@@ -313,16 +324,60 @@ class Notification(models.Model):
     type = models.CharField(
         max_length=20, choices=NOTIFICATION_TYPES, default='general'
     )
+    category = models.CharField(
+        max_length=20, choices=NOTIFICATION_TYPES, default='general'
+    )
+    priority = models.CharField(
+        max_length=10, choices=PRIORITY_CHOICES, default='normal'
+    )
     url = models.CharField(max_length=255, blank=True, null=True)
+    action_url = models.URLField(blank=True, null=True)
+    action_text = models.CharField(max_length=50, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField(blank=True, null=True)
     read = models.BooleanField(default=False)
     dismissed = models.BooleanField(default=False)
+    metadata = models.JSONField(default=dict)
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'read', 'dismissed']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['priority', 'created_at']),
+        ]
 
     def __str__(self):
         return f"{self.user.username} - {self.message[:50]}"
+    
+    @property
+    def is_expired(self):
+        """Check if notification has expired"""
+        if self.expires_at:
+            return timezone.now() > self.expires_at
+        return False
+    
+    def get_icon(self):
+        """Get appropriate icon for notification type"""
+        icons = {
+            'appointment': 'bx-calendar',
+            'report': 'bx-file',
+            'system': 'bx-cog',
+            'reminder': 'bx-bell',
+            'feedback': 'bx-message-dots',
+            'general': 'bx-info-circle',
+        }
+        return icons.get(self.type, 'bx-info-circle')
+    
+    def get_color(self):
+        """Get appropriate color for notification priority"""
+        colors = {
+            'low': '#6c757d',
+            'normal': '#007bff',
+            'high': '#fd7e14',
+            'urgent': '#dc3545',
+        }
+        return colors.get(self.priority, '#007bff')
 
 
 class Feedback(models.Model):
