@@ -95,7 +95,6 @@ class CustomUser(AbstractUser):
     )
 
     # Your existing custom fields
-    student_id = models.CharField(max_length=20, unique=True)
     age = models.PositiveIntegerField(null=True, blank=True)
     full_name = models.CharField(max_length=255)
 

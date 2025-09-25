@@ -24,7 +24,7 @@
             min-height: 100vh;
         }
 
-        /* Header Styles */
+        /* Header Styles - Matching Admin Panel */
         header {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -513,303 +513,7 @@
 
         .resource-link {
             display: inline-block;
-            padding: 0.5rem 1rem;
-            background: #2ecc71;
-            color: white;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: background 0.3s ease;
         }
-        .non-editable-field {
-    padding: 1.2rem;
-    background-color: #f5f5f5;
-    border-radius: 12px;
-    border: 2px solid #ddd;
-    color: #666;
-    font-size: 1.1rem;
-}
-        .resource-link:hover {
-            background: #27ae60;
-        }
-
-        /* Edit Profile Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 3rem;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .modal-header h3 {
-            color: #2c3e50;
-            font-size: 1.8rem;
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.8rem;
-            cursor: pointer;
-            color: #666;
-        }
-
-        .form-group {
-            margin-bottom: 2rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.8rem;
-            color: #2c3e50;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 1.2rem;
-            border: 2px solid #ddd;
-            border-radius: 12px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #2ecc71;
-            box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-
-        .btn {
-            padding: 1.2rem 2rem;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #27ae60, #229954);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.3);
-        }
-
-        .btn-secondary {
-            background: #ecf0f1;
-            color: #2c3e50;
-        }
-
-        .btn-secondary:hover {
-            background: #d5dbdb;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .hdr {
-                padding: 1rem;
-            }
-
-            .main-bdy {
-                padding: 1rem;
-            }
-
-            .bdy-upper {
-                padding: 2rem 1rem;
-            }
-
-            .upper-txt h2 {
-                font-size: 2rem;
-            }
-
-            .profile-container {
-                padding: 2rem 1rem;
-            }
-
-            .dass21-status {
-                grid-template-columns: 1fr;
-            }
-
-            .history-table {
-                display: block;
-                overflow-x: auto;
-            }
-
-            .resources-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        .status-pending {
-    background-color: #f39c12;
-    color: white;
-}
-
-.status-upcoming {
-    background-color: #3498db;
-    color: white;
-}
-
-.status-completed {
-    background-color: #2ecc71;
-    color: white;
-}
-
-.status-cancelled {
-    background-color: #e74c3c;
-    color: white;
-}
-
-.appointment-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-/* Pagination Styles */
-.pagination {
-    margin-top: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.pagination a {
-    color: #2c3e50;
-    padding: 0.5rem 1rem;
-    text-decoration: none;
-    border: 1px solid #ddd;
-    margin: 0 0.25rem;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.pagination a:hover {
-    background: #2ecc71;
-    color: white;
-    border-color: #2ecc71;
-}
-
-.pagination .current {
-    padding: 0.5rem 1rem;
-    background: #2ecc71;
-    color: white;
-    border-radius: 4px;
-}
-
-.pagination .disabled {
-    color: #ddd;
-    pointer-events: none;
-}
-.notification-dropdown {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 8px 32px rgba(46,204,113,0.13), 0 1.5px 6px rgba(46,204,113,0.08);
-    padding: 1.1rem 0.7rem 0.7rem 0.7rem;
-    min-width: 320px;
-    max-width: 360px;
-    max-height: 420px;
-    overflow-y: auto;
-    z-index: 2000;
-    border: 1.5px solid #e9f7ef;
-    animation: fadeIn 0.3s cubic-bezier(.4,0,.2,1);
-}
-.notification-item {
-    display: block;
-    background: #f8f9fa;
-    border-radius: 8px;
-    margin-bottom: 0.7rem;
-    padding: 0.85rem 1rem;
-    color: #229954;
-    text-decoration: none;
-    transition: background 0.18s, box-shadow 0.18s;
-    box-shadow: 0 1px 3px rgba(46,204,113,0.03);
-}
-.notification-item:hover {
-    background: #e8f5e9;
-    box-shadow: 0 2px 8px rgba(46,204,113,0.08);
-}
-.notification-badge {
-    position: absolute;
-    top: -7px;
-    right: -7px;
-    background: #e74c3c;
-    color: #fff;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: bold;
-    box-shadow: 0 2px 6px rgba(231,76,60,0.13);
-    border: 2px solid #fff;
-}
-.ai-spinner {
-    width: 22px;
-    height: 22px;
-    border: 3px solid #e5e5e5;
-    border-top: 3px solid #27ae60;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-}
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-    </style>
 </head>
   <header>
         <div class="hdr">
@@ -920,10 +624,10 @@
                     <span class="interpretation">{{ latest_result.stress_severity }}</span>
                 </div>
                 {% else %}
-                <div class="status-card">
-                    <h4>-</h4>
-                    <p>No test results yet</p>
-                    <a href="{% url 'index' %}" class="resource-link">Take the test</a>
+                <div class="status-card" style="grid-column: 1 / -1;">
+                    <h3>No test results yet</h3>
+                    <p>Take the DASS21 test to track your mental health.</p>
+                    <a href="{% url 'dass21_test' %}" class="btn-primary">Take Test</a>
                 </div>
                 {% endif %}
                 {% endwith %}
@@ -990,6 +694,7 @@
     </table>
     
     <!-- Pagination for test results -->
+    {% if test_page_obj.paginator.count > 0 %}
     <div class="pagination" style="margin-top: 20px; display: flex; justify-content: center;">
         <span class="step-links">
             {% if test_page_obj.has_previous %}
@@ -1007,6 +712,7 @@
             {% endif %}
         </span>
     </div>
+    {% endif %}
 </div>
 
 <!-- Appointments Section -->
@@ -1019,12 +725,12 @@
             <h4>Counseling Session with {{ appointment.counselor }}</h4>
             <p><i class='bx bxs-calendar'></i> {{ appointment.date|date:"F j, Y" }} | {{ appointment.time|time:"g:i A" }}</p>
             <p><i class='bx bxs-note'></i> {{ appointment.reason|truncatechars:50 }}</p>
-            <span class="appointment-status 
+            <span class="appointment-status
                 {% if appointment.status == 'confirmed' %}status-upcoming
                 {% elif appointment.status == 'completed' %}status-completed
                 {% elif appointment.status == 'cancelled' %}status-cancelled
                 {% else %}status-pending{% endif %}">
-                {{ appointment.status|title }}
+                {% if appointment.status == 'confirmed' %}Upcoming{% else %}{{ appointment.status|title }}{% endif %}
             </span>
             
             {% if appointment.status == 'pending' or appointment.status == 'confirmed' %}
@@ -1045,6 +751,7 @@
     {% endif %}
     
     <!-- Pagination for appointments -->
+    {% if appt_page_obj.paginator.count > 0 %}
     <div class="pagination" style="margin-top: 20px; display: flex; justify-content: center;">
         <span class="step-links">
             {% if appt_page_obj.has_previous %}
@@ -1062,6 +769,7 @@
             {% endif %}
         </span>
     </div>
+    {% endif %}
 </div>
 
             <!-- Resources Section -->

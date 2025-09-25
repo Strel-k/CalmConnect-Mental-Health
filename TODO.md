@@ -1,61 +1,61 @@
-# Video Call Session Auto-Start Implementation
+# TODO - CalmConnect Backend
 
-## ✅ Completed Tasks
+## Current Tasks
 
-### Backend Changes (consumers.py)
-- [x] Added imports for LiveSession and SessionParticipant models
-- [x] Added `track_participant_connection()` method to track when users join
-- [x] Added `track_participant_disconnection()` method to track when users leave
-- [x] Added `check_and_start_session()` async method to check for both parties
-- [x] Added `_check_session_participants()` database method to verify participants
-- [x] Added `session_started()` handler to send notifications to clients
-- [x] Modified `connect()` to track participant connections
-- [x] Modified `disconnect()` to track participant disconnections
-- [x] Modified `user_joined()` to trigger session start check
+### 1. Fix Pagination Issue
+**Status:** In Progress
+**Priority:** High
 
-### Frontend Changes (live-session.html)
-- [x] Added 'session_started' case to `handleWebSocketMessage()` switch
-- [x] Added `handleSessionStarted()` function to:
-  - Hide waiting room
-  - Update session status display
-  - Show system message about session starting
+**Problem:** Pagination buttons are not working correctly - clicking pagination buttons doesn't redirect to pages where articles not displayed on homepage should appear.
 
-## 🔧 How It Works
+**Current Status:**
+- [x] Analyzed current pagination implementation
+- [x] Identified issue with pagination logic
+- [ ] Implement proper pagination functionality
+- [ ] Test pagination with different page numbers
+- [ ] Verify articles appear correctly on different pages
 
-1. **Participant Tracking**: When a user connects, their participation is tracked in the `SessionParticipant` model
-2. **Role Detection**: System determines if user is 'student' or 'counselor' based on appointment relationship
-3. **Session Monitoring**: When any user joins, system checks if both student and counselor are connected
-4. **Auto-Start**: If both parties are present and session is in 'waiting' status, automatically:
-   - Changes session status to 'active'
-   - Sets `actual_start` timestamp
-   - Notifies all connected clients
-5. **UI Updates**: Frontend receives notification and:
-   - Hides waiting room
-   - Updates status display
-   - Shows confirmation message
+**Files to examine:**
+- `mentalhealth/views.py` - Main views handling pagination
+- `templates/` - Frontend templates with pagination UI
+- `static/` - JavaScript handling pagination clicks
 
-## 🧪 Testing Requirements
+**Next Steps:**
+1. Fix pagination logic in views.py
+2. Update frontend templates to handle pagination correctly
+3. Test pagination functionality across multiple pages
 
-- [ ] Test with real users (student and counselor)
-- [ ] Verify session starts immediately when both join
-- [ ] Check that waiting room disappears automatically
-- [ ] Confirm session status updates correctly
-- [ ] Test edge cases (one user leaves and rejoins)
-- [ ] Verify WebRTC connection still works after auto-start
+### 2. Database Migration
+**Status:** Completed
+**Priority:** Completed
 
-## 🚀 Expected Behavior
+**Completed Tasks:**
+- [x] SQLite to PostgreSQL migration completed
+- [x] All data successfully migrated
+- [x] Database connection verified
 
-**Before Fix:**
-- Client joins → Session status: 'waiting' → Waiting room shown
-- Counselor joins → Session status remains 'waiting' → Manual intervention required
+## Environment Variables Template
 
-**After Fix:**
-- Client joins → Session status: 'waiting' → Waiting room shown
-- Counselor joins → Both parties detected → Session status: 'active' → Video call starts immediately
+Create a `.env` file in the project root:
 
-## 📝 Notes
+```env
+# Database Configuration
+DB_NAME=calmconnect_db
+DB_USER=postgres
+DB_PASSWORD=your_secure_password
+DB_HOST=localhost
+DB_PORT=5432
 
-- Uses existing `SessionParticipant` model for tracking
-- Maintains backward compatibility
-- No breaking changes to existing functionality
-- Automatic detection eliminates need for manual session start
+# Django Settings
+DJANGO_DEBUG=False
+DJANGO_SECRET_KEY=your-secret-key-here
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com
+
+# OpenAI API
+OPENAI_API_KEY=your-openai-api-key
+
+# Email Settings (if needed)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+EMAIL_PORT=587
