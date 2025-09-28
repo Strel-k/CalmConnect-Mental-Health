@@ -1,61 +1,67 @@
-# TODO - CalmConnect Backend
+# Task: Fix and Enhance User-Profile Design
 
-## Current Tasks
+## Steps to Complete:
 
-### 1. Fix Pagination Issue
-**Status:** In Progress
-**Priority:** High
+1. **Verify User Authentication and DB State**
+   - Use Django shell to check if user 'fdave.pararuan@clsu2.edu.ph' exists, is_active=True, email_verified=True.
+   - If not active/verified, activate via shell: from mentalhealth.models import CustomUser; user = CustomUser.objects.get(email='fdave.pararuan@clsu2.edu.ph'); user.is_active = True; user.email_verified = True; user.save().
+   - Confirm password hash or reset if needed.
 
-**Problem:** Pagination buttons are not working correctly - clicking pagination buttons doesn't redirect to pages where articles not displayed on homepage should appear.
+2. **Check and Fix Static/Media Serving** [x]
+   - Read settings.py to verify STATIC_URL, MEDIA_URL, STATICFILES_DIRS.
+   - Run `python manage.py collectstatic --noinput` to collect static files.
+   - Ensure 'mentalhealth/static/' is in STATICFILES_DIRS.
 
-**Current Status:**
-- [x] Analyzed current pagination implementation
-- [x] Identified issue with pagination logic
-- [ ] Implement proper pagination functionality
-- [ ] Test pagination with different page numbers
-- [ ] Verify articles appear correctly on different pages
+3. **Enhance user-profile.html Design** [x]
+   - Add media queries for mobile responsiveness (e.g., @media (max-width: 768px) { .profile-container { flex-direction: column; } }).
+   - Add CSS animations (e.g., .card { transition: transform 0.3s; } .card:hover { transform: translateY(-5px); }).
+   - Add image fallbacks: Replaced static image with dynamic avatar URL using ui-avatars.com API.
+   - Add loading spinners for AJAX (e.g., profile upload, notifications fetch).
+   - Harmonize colors/gradients with index.html (e.g., primary green #4CAF50).
 
-**Files to examine:**
-- `mentalhealth/views.py` - Main views handling pagination
-- `templates/` - Frontend templates with pagination UI
-- `static/` - JavaScript handling pagination clicks
+4. **Update views.py for Better Context**
+   - Enhance user_profile context: Add 'full_name': user.get_full_name(), 'college_display': user.get_college_display(), handle empty test_page_obj/appt_page_obj with messages.
+   - Add login_view debug: logger.info(f"Login attempt for {username}, user_exists: {user_exists}, is_active: {user.is_active if user else None}").
 
-**Next Steps:**
-1. Fix pagination logic in views.py
-2. Update frontend templates to handle pagination correctly
-3. Test pagination functionality across multiple pages
+5. **Test the Implementation**
+   - Relaunch browser to http://localhost:8000/login/, login with credentials.
+   - Navigate to /user-profile/, verify design (cards, table, modals render with styles/images).
+   - Test interactions: Edit profile modal, upload picture, load notifications, paginate history/appointments.
+   - Check console for errors; test on mobile viewport if possible.
+   - If issues, inspect DB for data (DASS results, appointments).
 
-### 2. Database Migration
-**Status:** Completed
-**Priority:** Completed
+6. **Final Verification**
+   - Confirm no blank sections (e.g., if no tests, show "No results yet" message).
+   - Update TODO.md with [x] for completed steps.
 
-**Completed Tasks:**
-- [x] SQLite to PostgreSQL migration completed
-- [x] All data successfully migrated
-- [x] Database connection verified
+Progress: 5/6 completed.
 
-## Environment Variables Template
+---
 
-Create a `.env` file in the project root:
+# Task: Implement Add Counselor Functionality
 
-```env
-# Database Configuration
-DB_NAME=calmconnect_db
-DB_USER=postgres
-DB_PASSWORD=your_secure_password
-DB_HOST=localhost
-DB_PORT=5432
+## Steps to Complete:
 
-# Django Settings
-DJANGO_DEBUG=False
-DJANGO_SECRET_KEY=your-secret-key-here
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com
+1. **Verify Backend Implementation**
+   - Confirm add_counselor view exists in views.py with proper validation, user creation, email sending.
+   - Verify URL configuration in urls.py for /api/counselors/.
+   - Check admin_personnel view renders admin-personnel.html with counselors context.
 
-# OpenAI API
-OPENAI_API_KEY=your-openai-api-key
+2. **Create Frontend Template**
+   - Create admin-personnel.html with stats cards, counselors table, and add/edit modal.
+   - Include AJAX form submission for adding counselors with file upload support.
+   - Add edit and archive functionality with confirmation dialogs.
 
-# Email Settings (if needed)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-EMAIL_PORT=587
+3. **Test the Implementation**
+   - Run Django server and navigate to admin personnel page.
+   - Test adding new counselor: fill form, upload photo, verify success message and table update.
+   - Test editing counselor: pre-fill modal, update details, verify changes.
+   - Test archiving counselor: confirm dialog, verify removal from table.
+   - Check email is sent to new counselor with setup instructions.
+
+4. **Final Verification**
+   - Ensure responsive design and error handling.
+   - Verify CSRF protection and proper form validation.
+   - Update TODO.md with [x] for completed steps.
+
+Progress: 4/4 completed. ✅

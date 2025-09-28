@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+    <title>Admin Personnel | CalmConnect</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hdr-logo h2 {
+            color: #2ecc71;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .hdr-logo a {
+            text-decoration: none;
+        }
+
+        .hdr-btns {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .prfl-bell {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .prfl-bell i {
+            font-size: 1.3rem;
+            color: #666;
+            transition: color 0.3s ease;
+        }
+
+        .prfl-bell:hover i {
+            color: #2ecc71;
+        }
+
+        .prfl-name h4 {
+            color: #333;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .prfl-container img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #2ecc71;
+        }
+
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1rem;
+            min-width: 150px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 1001;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 0.5rem 0;
+            color: #333;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .dropdown-menu a:hover {
+            color: #2ecc71;
+        }
+
+        /* Main Content */
+        .main-bdy {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Hero Section */
+        .bdy-upper {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            text-align: center;
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 15px 35px rgba(46, 204, 113, 0.3);
+        }
+
+        .upper-txt h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .upper-txt p {
+            font-size: 1.2rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        /* Stats Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card i {
+            font-size: 3rem;
+            color: #2ecc71;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card h3 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* Personnel Section */
+        .personnel-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .personnel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .personnel-header h3 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+        }
+
+        .add-btn {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Personnel Table */
+        .personnel-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .personnel-table th,
+        .personnel-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .personnel-table th {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .personnel-table tr:hover {
+            background-color: rgba(233, 249, 241, 0.5);
+        }
+
+        .counselor-photo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #2ecc71;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 5px;
+            margin-right: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .edit-btn {
+            color: #3498db;
+        }
+
+        .edit-btn:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .archive-btn {
+            color: #e74c3c;
+        }
+
+        .archive-btn:hover {
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.8rem;
+            border: 2px dashed #2ecc71;
+            border-radius: 10px;
+            background: rgba(46, 204, 113, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-label:hover {
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .file-input-label i {
+            margin-right: 0.5rem;
+            color: #2ecc71;
+        }
+
+        .file-name {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        /* Alert Styles */
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            border: 1px solid #2ecc71;
+            color: #27ae60;
+        }
+
+        .alert-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            border: 1px solid #e74c3c;
+            color: #c0392b;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 50%;
+            border-top-color: #2ecc71;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .main-bdy {
+                padding: 1rem;
+            }
+
+            .personnel-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .personnel-table {
+                font-size: 0.9rem;
+            }
+
+            .personnel-table th,
+            .personnel-table td {
+                padding: 0.5rem;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="hdr">
+            <div class="hdr-logo"><a href="{% url 'admin-dashboard' %}"><h2>CalmConnect</h2></a></div>
+            <div class="hdr-btns">
+                <div class="prfl-bell" id="notif-bell">
+                    <i class="bx bxs-bell" id="bell-icon"></i>
+                </div>
+                <div class="prfl-name">
+                    <h4>{{ user.username }}</h4>
+                </div>
+                <div class="prfl-container dropdown">
+                    <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}"
+                         alt="Profile Picture" id="profile-img"
+                         onerror="this.src='{% static 'mentalhealth/img/default.jpg' %}'">
+                    <div class="dropdown-menu" id="profile-dropdown">
+                        <a href="{% url 'admin-dashboard' %}">Dashboard</a>
+                        <a href="{% url 'logout' %}">Log out</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-bdy">
+        <div class="bdy-upper">
+            <div class="upper-txt">
+                <h2>Personnel Management</h2>
+                <p>Manage counselors and staff members</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="bx bxs-user-check"></i>
+                <h3>{{ active_counselors }}</h3>
+                <p>Active Counselors</p>
+            </div>
+            <div class="stat-card">
+                <i class="bx bxs-calendar-event"></i>
+                <h3>{{ total_appointments }}</h3>
+                <p>Total Appointments</p>
+            </div>
+            <div class="stat-card">
+                <i class="bx bxs-error-circle"></i>
+                <h3>{{ high_risk_cases }}</h3>
+                <p>High Risk Cases</p>
+            </div>
+        </div>
+
+        <!-- Personnel Table -->
+        <div class="personnel-container">
+            <div class="personnel-header">
+                <h3>Counselors</h3>
+                <button class="add-btn" onclick="openAddModal()">
+                    <i class="bx bx-plus"></i> Add New Counselor
+                </button>
+            </div>
+
+            <table class="personnel-table">
+                <thead>
+                    <tr>
+                        <th>Photo</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Unit</th>
+                        <th>Rank</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="counselorsTableBody">
+                    {% for counselor in counselors %}
+                    <tr data-counselor-id="{{ counselor.id }}">
+                        <td>
+                            <img src="{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}"
+                                 alt="{{ counselor.name }}"
+                                 class="counselor-photo"
+                                 onerror="this.src='{% static 'mentalhealth/img/default.jpg' %}'">
+                        </td>
+                        <td>{{ counselor.name }}</td>
+                        <td>{{ counselor.email }}</td>
+                        <td>{{ counselor.unit }}</td>
+                        <td>{{ counselor.rank }}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="openEditModal({{ counselor.id }}, '{{ counselor.name }}', '{{ counselor.email }}', '{{ counselor.unit }}', '{{ counselor.rank }}')">
+                                <i class="bx bx-edit"></i>
+                            </button>
+                            <button class="action-btn archive-btn" onclick="archiveCounselor({{ counselor.id }}, '{{ counselor.name }}')">
+                                <i class="bx bx-archive"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Add/Edit Counselor Modal -->
+    <div class="modal" id="counselorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add New Counselor</h3>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="alertContainer"></div>
+                <form id="counselorForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="counselorId" name="counselor_id">
+
+                    <div class="form-group">
+                        <label for="counselorName">Full Name</label>
+                        <input type="text" id="counselorName" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="counselorEmail">Email</label>
+                        <input type="email" id="counselorEmail" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="counselorUnit">Unit</label>
+                        <input type="text" id="counselorUnit" name="unit" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="counselorRank">Rank</label>
+                        <select id="counselorRank" name="rank" required>
+                            <option value="">Select Rank</option>
+                            <option value="Counselor">Counselor</option>
+                            <option value="Senior Counselor">Senior Counselor</option>
+                            <option value="Psychologist">Psychologist</option>
+                            <option value="Clinical Psychologist">Clinical Psychologist</option>
+                            <option value="Therapist">Therapist</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Photo</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="counselorPhoto" name="image" accept="image/*" class="file-input">
+                            <label for="counselorPhoto" class="file-input-label">
+                                <i class="bx bx-upload"></i>
+                                <span>Choose Photo</span>
+                            </label>
+                            <div id="fileName" class="file-name"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" id="submitBtn" onclick="submitCounselorForm()">
+                    <span id="submitText">Add Counselor</span>
+                    <span id="submitSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dropdown functionality
+        document.getElementById('profile-img').addEventListener('click', function() {
+            const dropdown = document.getElementById('profile-dropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('profile-dropdown');
+            const profileImg = document.getElementById('profile-img');
+            if (!profileImg.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Modal functions
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Add New Counselor';
+            document.getElementById('submitText').textContent = 'Add Counselor';
+            document.getElementById('counselorForm').reset();
+            document.getElementById('counselorId').value = '';
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('alertContainer').innerHTML = '';
+            document.getElementById('counselorModal').style.display = 'block';
+        }
+
+        function openEditModal(id, name, email, unit, rank) {
+            document.getElementById('modalTitle').textContent = 'Edit Counselor';
+            document.getElementById('submitText').textContent = 'Update Counselor';
+            document.getElementById('counselorId').value = id;
+            document.getElementById('counselorName').value = name;
+            document.getElementById('counselorEmail').value = email;
+            document.getElementById('counselorUnit').value = unit;
+            document.getElementById('counselorRank').value = rank;
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('alertContainer').innerHTML = '';
+            document.getElementById('counselorModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('counselorModal').style.display = 'none';
+        }
+
+        // File input handling
+        document.getElementById('counselorPhoto').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : '';
+            document.getElementById('fileName').textContent = fileName;
+        });
+
+        // Submit counselor form
+        async function submitCounselorForm() {
+            const form = document.getElementById('counselorForm');
+            const formData = new FormData(form);
+            const isEdit = formData.get('counselor_id') !== '';
+
+            // Show loading state
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitSpinner').style.display = 'inline-block';
+            document.getElementById('submitText').textContent = isEdit ? 'Updating...' : 'Adding...';
+
+            // Clear previous alerts
+            document.getElementById('alertContainer').innerHTML = '';
+
+            try {
+                const url = isEdit ? `/api/counselors/${formData.get('counselor_id')}/` : '/api/counselors/';
+                const method = isEdit ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                });
+
+                let data;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    // Handle non-JSON responses (e.g., HTML error pages)
+                    const text = await response.text();
+                    data = { error: 'Server returned an unexpected response. Please try again.' };
+                }
+
+                if (response.ok) {
+                    // Success
+                    showAlert('success', data.message || `Counselor ${isEdit ? 'updated' : 'added'} successfully!`);
+                    setTimeout(() => {
+                        closeModal();
+                        location.reload(); // Refresh to show updated data
+                    }, 1500);
+                } else {
+                    // Error
+                    const errorMessage = data.error || data.message || 'An error occurred. Please try again.';
+                    showAlert('error', errorMessage);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', 'Network error. Please check your connection and try again.');
+            } finally {
+                // Reset loading state
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('submitSpinner').style.display = 'none';
+                document.getElementById('submitText').textContent = isEdit ? 'Update Counselor' : 'Add Counselor';
+            }
+        }
+
+        // Archive counselor
+        async function archiveCounselor(id, name) {
+            if (!confirm(`Are you sure you want to archive ${name}? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/counselors/${id}/archive/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    // Remove row from table
+                    const row = document.querySelector(`tr[data-counselor-id="${id}"]`);
+                    if (row) {
+                        row.remove();
+                    }
+                    alert(`${name} has been archived successfully.`);
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to archive counselor.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Show alert
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            const alert = alertContainer.firstElementChild;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('counselorModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

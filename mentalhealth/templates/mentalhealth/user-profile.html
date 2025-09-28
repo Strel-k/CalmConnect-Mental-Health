@@ -10,7 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
     <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
     <title>Profile | CalmConnect</title>
-    
+
+    <!-- Using inline CSS to match the design system from index.html -->
+
     <style>
         * {
             margin: 0;
@@ -22,6 +24,21 @@
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             min-height: 100vh;
+        }
+
+        /* AI Spinner Animation */
+        .ai-spinner {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #e9ecef;
+            border-radius: 50%;
+            border-top-color: #2ecc71;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         /* Header Styles - Matching Admin Panel */
@@ -117,6 +134,16 @@
 
         .dropdown-menu a:hover {
             color: #2ecc71;
+        }
+
+        /* FadeIn Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
         }
 
         /* Main Content */
@@ -514,8 +541,70 @@
         .resource-link {
             display: inline-block;
         }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .main-bdy {
+                padding: 1rem;
+            }
+
+            .profile-container {
+                padding: 1.5rem;
+            }
+
+            .detail-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .dass21-status {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .history-table {
+                font-size: 0.9rem;
+            }
+
+            .history-table th, .history-table td {
+                padding: 0.5rem;
+            }
+
+            .resources-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .bdy-upper {
+                padding: 2rem 1rem;
+            }
+
+            .upper-txt h2 {
+                font-size: 2rem;
+            }
+
+            .status-card h4 {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hdr {
+                padding: 0 1rem;
+            }
+
+            .hdr-logo h2 {
+                font-size: 1.5rem;
+            }
+
+            .profile-picture {
+                width: 120px;
+                height: 120px;
+            }
+        }
+    </style>
 </head>
-  <header>
+<body>
+    <header>
         <div class="hdr">
             <div class="hdr-logo"><a href="{% url 'index' %}"><h2>CalmConnect</h2></a></div>
             <div class="hdr-btns">
@@ -528,7 +617,8 @@
                     <h4>{{ user.username }}</h4>
                 </div>
                 <div class="prfl-container dropdown">
-                    <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}" alt="Profile Picture" id="profile-img">
+                    <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ user.full_name|urlencode }}&background=cccccc&color=666666&size=150{% endif %}" alt="Profile Picture" id="profile-img"
+                         onerror="this.src='https://ui-avatars.com/api/?name={{ user.full_name|urlencode }}&background=cccccc&color=666666&size=150'">
                     <div class="dropdown-menu" id="profile-dropdown">
                         <a href="#">Settings</a>
                         <a href="{% url 'logout' %}">Log out</a>
@@ -547,13 +637,14 @@
             </div>
         </div>
 
-        <div class="profile-container">
+        <div class="profile-container fade-in">
             <div class="profile-header">
                 <div class="profile-picture-container">
-                                            <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}" 
-                         alt="Profile Picture" 
-                         class="profile-picture" 
-                         id="profilePicture">
+                    <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ user.full_name|urlencode }}&background=cccccc&color=666666&size=150{% endif %}"
+                         alt="Profile Picture"
+                         class="profile-picture"
+                         id="profilePicture"
+                         onerror="this.src='https://ui-avatars.com/api/?name={{ user.full_name|urlencode }}&background=cccccc&color=666666&size=150'">
                     <div class="profile-picture-overlay">
                         <label for="profilePictureInput" class="upload-btn">
                             <i class='bx bxs-camera'></i>
@@ -605,7 +696,7 @@
             </div>
 
             <!-- DASS21 Status Cards -->
-            <div class="dass21-status">
+            <div class="dass21-status fade-in">
                 {% with latest_result=user.dassresult_set.last %}
                 {% if latest_result %}
                 <div class="status-card anxiety">
@@ -634,146 +725,146 @@
             </div>
 
             <!-- Test History Section -->
-            <div class="history-section">
-    <h3 class="section-title">Test History</h3>
-    <table class="history-table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Depression</th>
-                <th>Anxiety</th>
-                <th>Stress</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for result in test_page_obj %}
-            <tr>
-                <td>{{ result.date_taken|date:"M j, Y" }}</td>
-                <td>
-                    {{ result.depression_score }} 
-                    <span class="badge 
-                        {% if result.depression_severity == 'Normal' %}badge-normal
-                        {% elif result.depression_severity == 'Mild' %}badge-mild
-                        {% elif result.depression_severity == 'Moderate' %}badge-moderate
-                        {% elif result.depression_severity == 'Severe' or result.depression_severity == 'Extremely Severe' %}badge-severe
-                        {% endif %}">
-                        {{ result.depression_severity }}
-                    </span>
-                </td>
-                <td>
-                    {{ result.anxiety_score }} 
-                    <span class="badge 
-                        {% if result.anxiety_severity == 'Normal' %}badge-normal
-                        {% elif result.anxiety_severity == 'Mild' %}badge-mild
-                        {% elif result.anxiety_severity == 'Moderate' %}badge-moderate
-                        {% elif result.anxiety_severity == 'Severe' or result.anxiety_severity == 'Extremely Severe' %}badge-severe
-                        {% endif %}">
-                        {{ result.anxiety_severity }}
-                    </span>
-                </td>
-                <td>
-                    {{ result.stress_score }} 
-                    <span class="badge 
-                        {% if result.stress_severity == 'Normal' %}badge-normal
-                        {% elif result.stress_severity == 'Mild' %}badge-mild
-                        {% elif result.stress_severity == 'Moderate' %}badge-moderate
-                        {% elif result.stress_severity == 'Severe' or result.stress_severity == 'Extremely Severe' %}badge-severe
-                        {% endif %}">
-                        {{ result.stress_severity }}
-                    </span>
-                </td>
-                <td><span class="badge badge-normal">Completed</span></td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" style="text-align: center;">No test results yet</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    
-    <!-- Pagination for test results -->
-    {% if test_page_obj.paginator.count > 0 %}
-    <div class="pagination" style="margin-top: 20px; display: flex; justify-content: center;">
-        <span class="step-links">
-            {% if test_page_obj.has_previous %}
-                <a href="?test_page=1{% if appt_page_obj.number > 1 %}&appt_page={{ appt_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">&laquo; First</a>
-                <a href="?test_page={{ test_page_obj.previous_page_number }}{% if appt_page_obj.number > 1 %}&appt_page={{ appt_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Previous</a>
-            {% endif %}
+            <div class="history-section fade-in">
+                <h3 class="section-title">Test History</h3>
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Depression</th>
+                            <th>Anxiety</th>
+                            <th>Stress</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in test_page_obj %}
+                        <tr>
+                            <td>{{ result.date_taken|date:"M j, Y" }}</td>
+                            <td>
+                                {{ result.depression_score }} 
+                                <span class="badge 
+                                    {% if result.depression_severity == 'Normal' %}badge-normal
+                                    {% elif result.depression_severity == 'Mild' %}badge-mild
+                                    {% elif result.depression_severity == 'Moderate' %}badge-moderate
+                                    {% elif result.depression_severity == 'Severe' or result.depression_severity == 'Extremely Severe' %}badge-severe
+                                    {% endif %}">
+                                    {{ result.depression_severity }}
+                                </span>
+                            </td>
+                            <td>
+                                {{ result.anxiety_score }} 
+                                <span class="badge 
+                                    {% if result.anxiety_severity == 'Normal' %}badge-normal
+                                    {% elif result.anxiety_severity == 'Mild' %}badge-mild
+                                    {% elif result.anxiety_severity == 'Moderate' %}badge-moderate
+                                    {% elif result.anxiety_severity == 'Severe' or result.anxiety_severity == 'Extremely Severe' %}badge-severe
+                                    {% endif %}">
+                                    {{ result.anxiety_severity }}
+                                </span>
+                            </td>
+                            <td>
+                                {{ result.stress_score }} 
+                                <span class="badge 
+                                    {% if result.stress_severity == 'Normal' %}badge-normal
+                                    {% elif result.stress_severity == 'Mild' %}badge-mild
+                                    {% elif result.stress_severity == 'Moderate' %}badge-moderate
+                                    {% elif result.stress_severity == 'Severe' or result.stress_severity == 'Extremely Severe' %}badge-severe
+                                    {% endif %}">
+                                    {{ result.stress_severity }}
+                                </span>
+                            </td>
+                            <td><span class="badge badge-normal">Completed</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center;">No test results yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <!-- Pagination for test results -->
+                {% if test_page_obj.paginator.count > 0 %}
+                <div class="pagination" style="margin-top: 20px; display: flex; justify-content: center;">
+                    <span class="step-links">
+                        {% if test_page_obj.has_previous %}
+                            <a href="?test_page=1{% if appt_page_obj.number > 1 %}&appt_page={{ appt_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">&laquo; First</a>
+                            <a href="?test_page={{ test_page_obj.previous_page_number }}{% if appt_page_obj.number > 1 %}&appt_page={{ appt_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Previous</a>
+                        {% endif %}
 
-            <span class="current" style="margin: 0 10px; line-height: 2;">
-                Page {{ test_page_obj.number }} of {{ test_page_obj.paginator.num_pages }}
-            </span>
+                        <span class="current" style="margin: 0 10px; line-height: 2;">
+                            Page {{ test_page_obj.number }} of {{ test_page_obj.paginator.num_pages }}
+                        </span>
 
-            {% if test_page_obj.has_next %}
-                <a href="?test_page={{ test_page_obj.next_page_number }}{% if appt_page_obj.number > 1 %}&appt_page={{ appt_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Next</a>
-                <a href="?test_page={{ test_page_obj.paginator.num_pages }}{% if appt_page_obj.number > 1 %}&appt_page={{ appt_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Last &raquo;</a>
-            {% endif %}
-        </span>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Appointments Section -->
-<div class="appointments-section">
-    <h3 class="section-title">Appointments</h3>
-    
-    {% if appt_page_obj %}
-        {% for appointment in appt_page_obj %}
-        <div class="appointment-card">
-            <h4>Counseling Session with {{ appointment.counselor }}</h4>
-            <p><i class='bx bxs-calendar'></i> {{ appointment.date|date:"F j, Y" }} | {{ appointment.time|time:"g:i A" }}</p>
-            <p><i class='bx bxs-note'></i> {{ appointment.reason|truncatechars:50 }}</p>
-            <span class="appointment-status
-                {% if appointment.status == 'confirmed' %}status-upcoming
-                {% elif appointment.status == 'completed' %}status-completed
-                {% elif appointment.status == 'cancelled' %}status-cancelled
-                {% else %}status-pending{% endif %}">
-                {% if appointment.status == 'confirmed' %}Upcoming{% else %}{{ appointment.status|title }}{% endif %}
-            </span>
-            
-            {% if appointment.status == 'pending' or appointment.status == 'confirmed' %}
-            <div class="appointment-actions" style="margin-top: 10px;">
-                {% if appointment.cancellation_token %}
-                <a href="{% url 'cancel_appointment' token=appointment.cancellation_token %}" 
-                   class="btn btn-secondary" 
-                   style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">
-                    Cancel Appointment
-                </a>
+                        {% if test_page_obj.has_next %}
+                            <a href="?test_page={{ test_page_obj.next_page_number }}{% if appt_page_obj.number > 1 %}&appt_page={{ appt_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Next</a>
+                            <a href="?test_page={{ test_page_obj.paginator.num_pages }}{% if appt_page_obj.number > 1 %}&appt_page={{ appt_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Last &raquo;</a>
+                        {% endif %}
+                    </span>
+                </div>
                 {% endif %}
             </div>
-            {% endif %}
-        </div>
-        {% endfor %}
-    {% else %}
-        <p style="text-align: center; color: #666;">No appointments scheduled yet.</p>
-    {% endif %}
-    
-    <!-- Pagination for appointments -->
-    {% if appt_page_obj.paginator.count > 0 %}
-    <div class="pagination" style="margin-top: 20px; display: flex; justify-content: center;">
-        <span class="step-links">
-            {% if appt_page_obj.has_previous %}
-                <a href="?appt_page=1{% if test_page_obj.number > 1 %}&test_page={{ test_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">&laquo; First</a>
-                <a href="?appt_page={{ appt_page_obj.previous_page_number }}{% if test_page_obj.number > 1 %}&test_page={{ test_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Previous</a>
-            {% endif %}
 
-            <span class="current" style="margin: 0 10px; line-height: 2;">
-                Page {{ appt_page_obj.number }} of {{ appt_page_obj.paginator.num_pages }}
-            </span>
+            <!-- Appointments Section -->
+            <div class="appointments-section fade-in">
+                <h3 class="section-title">Appointments</h3>
+                
+                {% if appt_page_obj %}
+                    {% for appointment in appt_page_obj %}
+                    <div class="appointment-card">
+                        <h4>Counseling Session with {{ appointment.counselor }}</h4>
+                        <p><i class='bx bxs-calendar'></i> {{ appointment.date|date:"F j, Y" }} | {{ appointment.time|time:"g:i A" }}</p>
+                        <p><i class='bx bxs-note'></i> {{ appointment.reason|truncatechars:50 }}</p>
+                        <span class="appointment-status
+                            {% if appointment.status == 'confirmed' %}status-upcoming
+                            {% elif appointment.status == 'completed' %}status-completed
+                            {% elif appointment.status == 'cancelled' %}status-cancelled
+                            {% else %}status-pending{% endif %}">
+                            {% if appointment.status == 'confirmed' %}Upcoming{% else %}{{ appointment.status|title }}{% endif %}
+                        </span>
+                        
+                        {% if appointment.status == 'pending' or appointment.status == 'confirmed' %}
+                        <div class="appointment-actions" style="margin-top: 10px;">
+                            {% if appointment.cancellation_token %}
+                            <a href="{% url 'cancel_appointment' token=appointment.cancellation_token %}" 
+                               class="btn btn-secondary" 
+                               style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">
+                                Cancel Appointment
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; color: #666;">No appointments scheduled yet.</p>
+                {% endif %}
+                
+                <!-- Pagination for appointments -->
+                {% if appt_page_obj.paginator.count > 0 %}
+                <div class="pagination" style="margin-top: 20px; display: flex; justify-content: center;">
+                    <span class="step-links">
+                        {% if appt_page_obj.has_previous %}
+                            <a href="?appt_page=1{% if test_page_obj.number > 1 %}&test_page={{ test_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">&laquo; First</a>
+                            <a href="?appt_page={{ appt_page_obj.previous_page_number }}{% if test_page_obj.number > 1 %}&test_page={{ test_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Previous</a>
+                        {% endif %}
 
-            {% if appt_page_obj.has_next %}
-                <a href="?appt_page={{ appt_page_obj.next_page_number }}{% if test_page_obj.number > 1 %}&test_page={{ test_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Next</a>
-                <a href="?appt_page={{ appt_page_obj.paginator.num_pages }}{% if test_page_obj.number > 1 %}&test_page={{ test_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Last &raquo;</a>
-            {% endif %}
-        </span>
-    </div>
-    {% endif %}
-</div>
+                        <span class="current" style="margin: 0 10px; line-height: 2;">
+                            Page {{ appt_page_obj.number }} of {{ appt_page_obj.paginator.num_pages }}
+                        </span>
+
+                        {% if appt_page_obj.has_next %}
+                            <a href="?appt_page={{ appt_page_obj.next_page_number }}{% if test_page_obj.number > 1 %}&test_page={{ test_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Next</a>
+                            <a href="?appt_page={{ appt_page_obj.paginator.num_pages }}{% if test_page_obj.number > 1 %}&test_page={{ test_page_obj.number }}{% endif %}" class="btn btn-secondary" style="margin: 0 5px;">Last &raquo;</a>
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
 
             <!-- Resources Section -->
-            <div class="resources-section">
+            <div class="resources-section fade-in">
                 <h3 class="section-title">Recommended Resources</h3>
                 <div class="resources-grid">
                     <div class="resource-card">
@@ -797,74 +888,74 @@
     </main>
 
     <!-- Edit Profile Modal -->
-   <div class="modal" id="editModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Edit Profile</h3>
-            <button class="close-modal" onclick="closeEditModal()">&times;</button>
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Profile</h3>
+                <button class="close-modal" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editProfileForm" method="post" action="{% url 'user-profile' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="editFullName">Full Name</label>
+                    <input type="text" id="editFullName" name="full_name" value="{{ user.full_name }}">
+                </div>
+                
+                <!-- Non-editable Email -->
+                <div class="form-group">
+                    <label>Email</label>
+                    <div class="non-editable-field">{{ user.email }}</div>
+                </div>
+                
+                <!-- Non-editable Student ID -->
+                <div class="form-group">
+                    <label>Student ID</label>
+                    <div class="non-editable-field">{{ user.student_id }}</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editCollege">College</label>
+                    <select id="editCollege" name="college">
+                        {% for college in user.COLLEGE_CHOICES %}
+                        <option value="{{ college.0 }}" {% if college.0 == user.college %}selected{% endif %}>{{ college.1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editProgram">Program</label>
+                    <input type="text" id="editProgram" name="program" value="{{ user.program }}">
+                </div>
+                <div class="form-group">
+                    <label for="editYearLevel">Year Level</label>
+                    <select id="editYearLevel" name="year_level">
+                        {% for year in user.YEAR_CHOICES %}
+                        <option value="{{ year.0 }}" {% if year.0 == user.year_level %}selected{% endif %}>{{ year.1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editAge">Age</label>
+                    <input type="number" id="editAge" name="age" value="{{ user.age }}">
+                </div>
+                <div class="form-group">
+                    <label for="editGender">Gender</label>
+                    <select id="editGender" name="gender">
+                        {% for gender in user.GENDER_CHOICES %}
+                        <option value="{{ gender.0 }}" {% if gender.0 == user.gender %}selected{% endif %}>{{ gender.1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
         </div>
-        <form id="editProfileForm" method="post" action="{% url 'user-profile' %}">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="editFullName">Full Name</label>
-                <input type="text" id="editFullName" name="full_name" value="{{ user.full_name }}">
-            </div>
-            
-            <!-- Non-editable Email -->
-            <div class="form-group">
-                <label>Email</label>
-                <div class="non-editable-field">{{ user.email }}</div>
-            </div>
-            
-            <!-- Non-editable Student ID -->
-            <div class="form-group">
-                <label>Student ID</label>
-                <div class="non-editable-field">{{ user.student_id }}</div>
-            </div>
-            
-            <div class="form-group">
-                <label for="editCollege">College</label>
-                <select id="editCollege" name="college">
-                    {% for college in user.COLLEGE_CHOICES %}
-                    <option value="{{ college.0 }}" {% if college.0 == user.college %}selected{% endif %}>{{ college.1 }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="editProgram">Program</label>
-                <input type="text" id="editProgram" name="program" value="{{ user.program }}">
-            </div>
-            <div class="form-group">
-                <label for="editYearLevel">Year Level</label>
-                <select id="editYearLevel" name="year_level">
-                    {% for year in user.YEAR_CHOICES %}
-                    <option value="{{ year.0 }}" {% if year.0 == user.year_level %}selected{% endif %}>{{ year.1 }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="editAge">Age</label>
-                <input type="number" id="editAge" name="age" value="{{ user.age }}">
-            </div>
-            <div class="form-group">
-                <label for="editGender">Gender</label>
-                <select id="editGender" name="gender">
-                    {% for gender in user.GENDER_CHOICES %}
-                    <option value="{{ gender.0 }}" {% if gender.0 == user.gender %}selected{% endif %}>{{ gender.1 }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-            </div>
-        </form>
     </div>
-</div>
 
     <script>
-            // Unified notification dropdown logic
-            function showNotificationDropdown() {
+        // Unified notification dropdown logic
+        function showNotificationDropdown() {
             console.log('showNotificationDropdown called (user-profile)');
             const dropdown = document.getElementById('notificationDropdown');
             if (!dropdown) {
@@ -916,279 +1007,4 @@
                             content.href = notif.url;
                             content.style.cssText = 'flex:1;display:flex;align-items:center;gap:0.7rem;text-decoration:none;color:inherit;';
                             content.innerHTML = `
-                                <i class='bx ${notif.type === 'appointment' ? 'bxs-calendar' : notif.type === 'report' ? 'bxs-report' : 'bxs-bell'}' style='color:#27ae60;font-size:1.2rem;'></i>
-                                <span>${notif.message}</span>
-                                <span style='margin-left:auto;font-size:0.85em;color:#888;'>${notif.time}</span>
-                            `;
-                            
-                            const clearBtn = document.createElement('button');
-                            clearBtn.innerHTML = '<i class="bx bx-x"></i>';
-                            clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
-                            clearBtn.title = 'Clear notification';
-                            clearBtn.onclick = function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                clearNotification(notif.id);
-                            };
-                            
-                            item.appendChild(content);
-                            item.appendChild(clearBtn);
-                            dropdown.appendChild(item);
-                        });
-                        
-                        // Add clear all button
-                        const clearAllDiv = document.createElement('div');
-                        clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
-                        
-                        const clearAllBtn = document.createElement('button');
-                        clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
-                        clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
-                        clearAllBtn.onclick = function(e) {
-                            e.preventDefault();
-                            if (confirm('Clear all notifications?')) {
-                                clearAllNotifications();
-                            }
-                        };
-                        
-                        clearAllDiv.appendChild(clearAllBtn);
-                        dropdown.appendChild(clearAllDiv);
-                    } else {
-                        dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#888;"><i class="bx bxs-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
-                    }
-                })
-                .catch((error) => {
-                    console.error('Notification error (user-profile):', error);
-                    dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
-                });
-    }
-        document.getElementById('bell-icon').addEventListener('click', function(e) {
-            e.stopPropagation();
-            const dropdown = document.getElementById('notificationDropdown');
-            if (dropdown.style.display === 'block') {
-                dropdown.style.display = 'none';
-            } else {
-                showNotificationDropdown();
-            }
-        });
-        document.addEventListener('click', function() {
-            document.getElementById('notificationDropdown').style.display = 'none';
-        });
-        // Badge update
-        function updateNotificationBadge() {
-            fetch('/notifications/', {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
-                },
-                credentials: 'same-origin'
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        return;
-                    }
-                    const contentType = response.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        return;
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const badge = document.getElementById('notificationBadge');
-                    if (data.count > 0) {
-                        badge.textContent = data.count;
-                        badge.style.display = 'flex';
-                    } else {
-                        badge.style.display = 'none';
-                    }
-                });
-        }
-        updateNotificationBadge();
-        setInterval(updateNotificationBadge, 300000);
-
-        // Function to clear individual notification
-        function clearNotification(notificationId) {
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-            
-            fetch(`/notifications/${notificationId}/clear/`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': csrfToken
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Refresh the notification dropdown
-                    showNotificationDropdown();
-                    // Update the badge
-                    updateNotificationBadge();
-                } else {
-                    console.error('Error clearing notification:', data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error clearing notification:', error);
-            });
-        }
-
-        // Function to clear all notifications
-        function clearAllNotifications() {
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-            
-            fetch('/notifications/clear-all/', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': csrfToken
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Refresh the notification dropdown
-                    showNotificationDropdown();
-                    // Update the badge
-                    updateNotificationBadge();
-                } else {
-                    console.error('Error clearing all notifications:', data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error clearing all notifications:', error);
-            });
-        }
-
-        // Profile dropdown functionality
-        document.getElementById('profile-img').addEventListener('click', function(e) {
-            e.stopPropagation();
-            const dropdown = document.getElementById('profile-dropdown');
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-        });
-
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function() {
-            document.getElementById('profile-dropdown').style.display = 'none';
-        });
-
-        // Profile picture upload functionality
-        function uploadProfilePicture(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                
-                // Validate file type
-                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-                if (!allowedTypes.includes(file.type)) {
-                    alert('Please select a valid image file (JPEG, PNG, or GIF).');
-                    return;
-                }
-                
-                // Validate file size (5MB max)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('File size must be less than 5MB.');
-                    return;
-                }
-                
-                // Create FormData and send request
-                const formData = new FormData();
-                formData.append('profile_picture', file);
-                
-                // Get CSRF token
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-                
-                fetch('/profile/', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': csrfToken
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Update the profile picture
-                        document.getElementById('profilePicture').src = data.image_url;
-                        // Also update the header profile picture
-                        document.getElementById('profile-img').src = data.image_url;
-                        alert('Profile picture updated successfully!');
-                    } else {
-                        alert('Error: ' + (data.error || 'Failed to upload image'));
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while uploading the image');
-                });
-            }
-        }
-
-        // Modal functions
-        function openEditModal() {
-            document.getElementById('editModal').style.display = 'flex';
-        }
-
-        function closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-        }
-
-        // Form submission
-        document.getElementById('editProfileForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get form data
-            const formData = new FormData(this);
-            
-            // Send AJAX request
-            fetch(this.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Profile updated successfully!');
-                    location.reload(); // Refresh to show changes
-                } else {
-                    alert('Error: ' + (data.error || 'Failed to update profile'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while updating profile');
-            });
-        });
-
-        // Close modal when clicking outside
-        window.addEventListener('click', function(e) {
-            if (e.target === document.getElementById('editModal')) {
-                closeEditModal();
-            }
-        });
-        document.addEventListener('DOMContentLoaded', function() {
-    // Sort appointments by status (optional)
-    const appointmentSection = document.querySelector('.appointments-section');
-    if (appointmentSection) {
-        const cards = Array.from(appointmentSection.querySelectorAll('.appointment-card'));
-        
-        cards.sort((a, b) => {
-            const statusA = a.querySelector('.appointment-status').textContent.toLowerCase();
-            const statusB = b.querySelector('.appointment-status').textContent.toLowerCase();
-            
-            // Define sorting order
-            const order = ['pending', 'confirmed', 'completed', 'cancelled'];
-            return order.indexOf(statusA) - order.indexOf(statusB);
-        });
-        
-        // Re-append sorted cards
-        cards.forEach(card => appointmentSection.appendChild(card));
-    }
-});
-    </script>
-</body>
-</html>
+                                <i class='bx ${notif.type === 'appointment' ? 'bxs-calendar' : notif.type === 'report' ? 'bxs-report' : 'bxs-bell'}' style='color:#27ae60;font-size
