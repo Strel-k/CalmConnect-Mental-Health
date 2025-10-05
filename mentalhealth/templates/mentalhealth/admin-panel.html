@@ -234,7 +234,7 @@
       flex: 1;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto 1fr;
+      grid-template-rows: auto auto auto;
       gap: 2rem;
       height: fit-content;
     }
@@ -550,6 +550,38 @@
           </div>
         </div>
         {% endfor %}
+      </div>
+
+      <div class="summary-cards" style="grid-column: 1 / -1;">
+        <div class="summary-card yellow">
+          <div class="card-icon">
+            <i class="bx bxs-error-alt"></i>
+          </div>
+          <h3>Critical Cases</h3>
+          {% if critical_cases %}
+            <ul style="list-style: none; padding-left: 0; max-height: 200px; overflow-y: auto; margin-top: 1rem;">
+              {% for case in critical_cases|slice:":10" %}
+              <li style="margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                <strong>{{ case.user.full_name }}</strong><br>
+                <small>
+                  {% if case.depression_severity %}
+                    Depression: {{ case.depression_severity }}{% if case.anxiety_severity or case.stress_severity %} • {% endif %}
+                  {% endif %}
+                  {% if case.anxiety_severity %}
+                    Anxiety: {{ case.anxiety_severity }}{% if case.stress_severity %} • {% endif %}
+                  {% endif %}
+                  {% if case.stress_severity %}
+                    Stress: {{ case.stress_severity }}
+                  {% endif %}
+                </small><br>
+                <small style="color: #999;">Test taken: {{ case.date_taken|date:"M j, Y" }}</small>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>No critical cases found</p>
+          {% endif %}
+        </div>
       </div>
     </main>
   </div>
