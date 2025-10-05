@@ -1458,53 +1458,26 @@
   {% csrf_token %}
 </head>
 <body>
-    <!-- Welcome Modal with AI Consent -->
-    <div id="welcomeModal" style="display:flex;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:3000;">
-      <div style="background:#fff;padding:2.5rem;border-radius:20px;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 15px 50px rgba(0,0,0,0.2);text-align:left;position:relative;border-left:4px solid #2ecc71;">
-       <button id="welcomeCloseBtn" style="position:absolute;top:15px;right:15px;background:none;border:none;font-size:24px;cursor:pointer;color:#999;">&times;</button>
-
-        <!-- Welcome Header -->
-        <div style="text-align:center;margin-bottom:2rem;">
-          <div style="background:linear-gradient(135deg,#2ecc71,#27ae60);color:white;border-radius:50%;width:80px;height:80px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2rem;">🧠</div>
-          <h2 style="color:#2c3e50;margin:0;font-size:1.8rem;font-weight:600;">Welcome to Your Mental Health Assessment</h2>
-          <p style="color:#666;margin:0.5rem 0 0;font-size:1rem;">Take the first step towards understanding your well-being</p>
+    <!-- ML Consent Modal -->
+    <div id="mlConsentModal" style="display:flex;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:3000;">
+      <div style="background:#fff;padding:2rem;border-radius:12px;max-width:500px;box-shadow:0 8px 32px rgba(0,0,0,0.2);text-align:left;position:relative;border-left:4px solid #f39c12;">
+       <button id="mlConsentCloseBtn" style="position:absolute;top:10px;right:15px;background:none;border:none;font-size:20px;cursor:pointer;color:#999;">&times;</button>
+        <div style="display:flex;align-items:center;margin-bottom:1rem;">
+          <i style="font-size:24px;color:#f39c12;margin-right:10px;">⚠️</i>
+          <h3 style="color:#2c3e50;margin:0;font-size:1.3rem;">Important Disclaimer</h3>
         </div>
-
-        <!-- Test Information -->
-        <div style="background:rgba(46,204,113,0.1);padding:1.5rem;border-radius:12px;margin-bottom:2rem;border-left:4px solid #2ecc71;">
-          <h3 style="color:#2c3e50;margin:0 0 1rem;font-size:1.2rem;display:flex;align-items:center;">
-            <i class="bx bx-info-circle" style="margin-right:8px;color:#2ecc71;"></i>
-            About the DASS-21 Test
-          </h3>
-          <p style="margin:0;color:#555;line-height:1.6;font-size:0.95rem;">
-            The DASS-21 is a scientifically validated assessment that measures three key areas: Depression, Anxiety, and Stress.
-            This 21-question test takes about 5-10 minutes to complete and provides valuable insights into your current mental state.
-          </p>
-        </div>
-
-        <!-- AI Consent Section -->
-        <div style="background:rgba(241,196,15,0.1);padding:1.5rem;border-radius:12px;margin-bottom:2rem;border-left:4px solid #f39c12;">
-          <h3 style="color:#2c3e50;margin:0 0 1rem;font-size:1.2rem;display:flex;align-items:center;">
-            <i style="margin-right:8px;color:#f39c12;">⚠️</i>
-            AI-Powered Personalized Feedback
-          </h3>
-          <p style="margin:0 0 1rem;color:#555;line-height:1.6;font-size:0.95rem;">
-            <strong>Optional Enhancement:</strong> Your responses can be analyzed by AI to provide personalized insights and coping strategies tailored to your results.
-          </p>
-          <div style="background:white;padding:1rem;border-radius:8px;border:1px solid #eee;">
-            <p style="margin:0 0 0.5rem;color:#666;font-size:0.9rem;"><strong>Privacy & Security:</strong></p>
-            <ul style="margin:0;padding-left:1.2rem;color:#666;font-size:0.9rem;line-height:1.5;">
-              <li>Data is processed securely through OpenAI's servers</li>
-              <li>Your information remains confidential and is not shared</li>
-              <li>This tool supplements, but does not replace, professional care</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div style="display:flex;gap:15px;justify-content:flex-end;">
-          <button id="welcomeSkipBtn" style="background:#95a5a6;color:#fff;padding:0.8rem 1.5rem;border:none;border-radius:8px;font-size:0.95rem;cursor:pointer;font-weight:500;">Take Test Without AI</button>
-          <button id="welcomeStartBtn" style="background:linear-gradient(135deg,#2ecc71,#27ae60);color:#fff;padding:0.8rem 1.5rem;border:none;border-radius:8px;font-size:0.95rem;cursor:pointer;font-weight:500;" title="By clicking this button, you consent to your data being processed by OpenAI to provide personalized AI feedback.">I Understand and Start Test with AI Insights</button>
+        <p style="font-size:1rem;margin-bottom:1rem;color:#555;line-height:1.5;">
+          <strong>AI-Powered Feedback:</strong> This assessment uses OpenAI technology to provide personalized mental health insights. Your DASS21 results will be processed by OpenAI's servers to generate supportive, tailored advice.
+        </p>
+        <p style="font-size:1rem;margin-bottom:1rem;color:#555;line-height:1.5;">
+          <strong>Privacy & Security:</strong> Your data is protected and will not be shared outside CalmConnect and OpenAI. All processing is done securely and confidentially.
+        </p>
+        <p style="font-size:1rem;margin-bottom:1.5rem;color:#555;line-height:1.5;">
+          <strong>Medical Disclaimer:</strong> This tool is for informational purposes only and does not replace professional medical advice, diagnosis, or treatment.
+        </p>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="mlConsentCloseBtn2" style="background:#95a5a6;color:#fff;padding:0.6rem 1.2rem;border:none;border-radius:6px;font-size:0.9rem;cursor:pointer;">Dismiss</button>
+          <button id="mlConsentContinueBtn" style="background:linear-gradient(135deg,#2ecc71,#27ae60);color:#fff;padding:0.6rem 1.2rem;border:none;border-radius:6px;font-size:0.9rem;cursor:pointer;">I Understand</button>
         </div>
       </div>
     </div>
@@ -1919,7 +1892,7 @@
         ];
 
         let currentQuestion = 0;
-        let answers = {};
+        let answers = [];
         let scores = { depression: 0, anxiety: 0, stress: 0 };
 
         // DASS Scoring
@@ -1935,65 +1908,10 @@
         const resultsContainer = document.getElementById('resultsContainer');
         const dassTest = document.querySelector('.dass21-test');
 
-        // Initialize welcome modal
-        function initWelcomeModal() {
-            const welcomeModal = document.getElementById('welcomeModal');
-            const welcomeStartBtn = document.getElementById('welcomeStartBtn');
-            const welcomeSkipBtn = document.getElementById('welcomeSkipBtn');
-            const welcomeCloseBtn = document.getElementById('welcomeCloseBtn');
-
-            // Hide the test content initially
-            const dassTest = document.querySelector('.dass21-test');
-            if (dassTest) dassTest.style.display = 'none';
-
-            // Show the welcome modal
-            if (welcomeModal) {
-                welcomeModal.style.display = 'flex';
-            }
-
-            // Handle start with AI button
-            if (welcomeStartBtn) {
-                welcomeStartBtn.addEventListener('click', function() {
-                    userConsentedToAI = true;
-                    if (welcomeModal) welcomeModal.style.display = 'none';
-                    initTest();
-                });
-            }
-
-            // Handle skip AI button
-            if (welcomeSkipBtn) {
-                welcomeSkipBtn.addEventListener('click', function() {
-                    userConsentedToAI = false;
-                    if (welcomeModal) welcomeModal.style.display = 'none';
-                    initTest();
-                });
-            }
-
-            // Handle close button - skip AI
-            if (welcomeCloseBtn) {
-                welcomeCloseBtn.addEventListener('click', function() {
-                    userConsentedToAI = false;
-                    if (welcomeModal) welcomeModal.style.display = 'none';
-                    initTest();
-                });
-            }
-
-            // Close when clicking outside the modal - skip AI
-            if (welcomeModal) {
-                welcomeModal.addEventListener('click', function(e) {
-                    if (e.target === welcomeModal) {
-                        userConsentedToAI = false;
-                        welcomeModal.style.display = 'none';
-                        initTest();
-                    }
-                });
-            }
-        }
-
         // Initialize
         function initTest() {
             currentQuestion = 0;
-            answers = {};
+            answers = [];
             scores = { depression: 0, anxiety: 0, stress: 0 };
             showQuestion();
             if (dassTest) dassTest.style.display = 'block';
@@ -2012,15 +1930,18 @@
 
         function handleAnswer(value) {
             console.log('handleAnswer called with value:', value, 'currentQuestion:', currentQuestion);
-            answers[(currentQuestion + 1).toString()] = value;
+            answers.push(value);
             currentQuestion++;
             showQuestion();
         }
 
         function calculateScores() {
-            scores.depression = depressionQuestions.reduce((sum, qNum) => sum + (answers[qNum.toString()] || 0), 0) * 2;
-            scores.anxiety = anxietyQuestions.reduce((sum, qNum) => sum + (answers[qNum.toString()] || 0), 0) * 2;
-            scores.stress = stressQuestions.reduce((sum, qNum) => sum + (answers[qNum.toString()] || 0), 0) * 2;
+            scores.depression = answers.filter((answer, index) => 
+                depressionQuestions.includes(index + 1)).reduce((sum, answer) => sum + answer, 0) * 2;
+            scores.anxiety = answers.filter((answer, index) => 
+                anxietyQuestions.includes(index + 1)).reduce((sum, answer) => sum + answer, 0) * 2;
+            scores.stress = answers.filter((answer, index) => 
+                stressQuestions.includes(index + 1)).reduce((sum, answer) => sum + answer, 0) * 2;
         }
 
         function showResults() {
@@ -2668,8 +2589,8 @@
             });
         }
 
-        // Initialize the welcome modal first
-        initWelcomeModal();
+        // Initialize the test
+        initTest();
         
         // AI Feedback functionality
         let userConsentedToAI = false;
