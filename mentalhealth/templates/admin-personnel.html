@@ -603,7 +603,7 @@
                         <td>{{ counselor.unit }}</td>
                         <td>{{ counselor.rank }}</td>
                         <td>
-                            <button class="action-btn edit-btn" onclick="openEditModal({{ counselor.id }}, '{{ counselor.name }}', '{{ counselor.email }}', '{{ counselor.unit }}', '{{ counselor.rank }}')">
+                            <button class="action-btn edit-btn" onclick="openEditModal({{ counselor.id }}, '{{ counselor.name }}', '{{ counselor.email }}', '{{ counselor.unit }}', '{{ counselor.rank }}', '{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static "mentalhealth/img/default.jpg" %}{% endif %}')">
                                 <i class="bx bx-edit"></i>
                             </button>
                             <button class="action-btn archive-btn" onclick="archiveCounselor({{ counselor.id }}, '{{ counselor.name }}')">
@@ -616,7 +616,7 @@
             </table>
         </div>
     </main>
-
+    
     <!-- Add/Edit Counselor Modal -->
     <div class="modal" id="counselorModal">
         <div class="modal-content">
@@ -667,6 +667,7 @@
                             </label>
                             <div id="fileName" class="file-name"></div>
                         </div>
+                        <img id="photoPreview" src="{% static 'mentalhealth/img/default.jpg' %}" alt="Photo Preview" class="counselor-photo" style="display:block; margin-top:10px; max-width:100px; max-height:100px;">
                     </div>
                 </form>
             </div>
@@ -704,10 +705,11 @@
             document.getElementById('counselorId').value = '';
             document.getElementById('fileName').textContent = '';
             document.getElementById('alertContainer').innerHTML = '';
+            document.getElementById('photoPreview').src = '{% static "mentalhealth/img/default.jpg" %}';
             document.getElementById('counselorModal').style.display = 'block';
         }
 
-        function openEditModal(id, name, email, unit, rank) {
+        function openEditModal(id, name, email, unit, rank, imageUrl) {
             document.getElementById('modalTitle').textContent = 'Edit Counselor';
             document.getElementById('submitText').textContent = 'Update Counselor';
             document.getElementById('counselorId').value = id;
@@ -717,6 +719,7 @@
             document.getElementById('counselorRank').value = rank;
             document.getElementById('fileName').textContent = '';
             document.getElementById('alertContainer').innerHTML = '';
+            document.getElementById('photoPreview').src = imageUrl || '{% static "mentalhealth/img/default.jpg" %}';
             document.getElementById('counselorModal').style.display = 'block';
         }
 
@@ -726,8 +729,20 @@
 
         // File input handling
         document.getElementById('counselorPhoto').addEventListener('change', function(e) {
-            const fileName = e.target.files[0] ? e.target.files[0].name : '';
+            const file = e.target.files[0];
+            const fileName = file ? file.name : '';
             document.getElementById('fileName').textContent = fileName;
+
+            // Update photo preview
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('photoPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                document.getElementById('photoPreview').src = '{% static "mentalhealth/img/default.jpg" %}';
+            }
         });
 
         // Submit counselor form
@@ -748,12 +763,13 @@
                 const url = isEdit ? `/api/counselors/${formData.get('counselor_id')}/` : '/api/counselors/';
                 const method = isEdit ? 'PUT' : 'POST';
 
+                // Add CSRF token to form data for multipart requests
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
                 const response = await fetch(url, {
                     method: method,
                     body: formData,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
+                    credentials: 'same-origin'
                 });
 
                 let data;

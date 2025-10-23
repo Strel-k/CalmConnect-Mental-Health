@@ -1,55 +1,9 @@
-# DASS Security Integration Plan
+# TODO: Fix Admin Personnel Page Photo Preview and Modal Handling
 
-## Phase 1: Core Security Infrastructure ✅
-- [x] Create secure models with encryption (models_secure.py)
-- [x] Implement data validation and consent management (utils.py)
-- [x] Create secure serializers with access control (serializers_secure.py)
-- [x] Implement custom permissions for DASS data (permissions.py)
-
-## Phase 2: View Integration 🔄
-- [ ] Update `save_dass_results` view with security features
-  - [ ] Add consent validation before saving
-  - [ ] Use secure model for data storage
-  - [ ] Implement audit logging
-  - [ ] Add rate limiting
-- [ ] Update `index` view for secure data display
-  - [ ] Use secure serializer for DASS scores
-  - [ ] Implement access control
-- [ ] Update `user_profile` view
-  - [ ] Secure DASS results pagination
-  - [ ] Add permission checks
-- [ ] Update `ai_feedback` API endpoint
-  - [ ] Secure data access for AI processing
-  - [ ] Add validation and audit logging
-
-## Phase 3: API Endpoints 🔄
-- [ ] Create secure DASS API endpoints
-  - [ ] List user's DASS results (with access control)
-  - [ ] Get specific DASS result details
-  - [ ] Update DASS result (admin/counselor only)
-- [ ] Add consent management endpoints
-  - [ ] Check consent status
-  - [ ] Record consent
-  - [ ] Withdraw consent
-
-## Phase 4: Testing & Validation 🔄
-- [ ] Test encryption/decryption functionality
-- [ ] Test access control permissions
-- [ ] Test audit logging
-- [ ] Test consent validation
-- [ ] Performance testing with encrypted data
-
-## Phase 5: Migration & Deployment 🔄
-- [ ] Create data migration for existing DASS results
-- [ ] Update database schema
-- [ ] Test migration with real data
-- [ ] Deploy with rollback plan
-
-## Security Features Implemented:
-- ✅ Data encryption at rest
-- ✅ Access control based on ownership/staff/counselor relationship
-- ✅ Consent management
-- ✅ Audit logging for all DASS operations
-- ✅ Data validation and sanitization
-- ✅ Rate limiting protection
-- ✅ Secure serializers with field-level access control
+## Steps to Complete:
+- [x] Add photo preview `<img>` element in the modal's photo form-group.
+- [x] Update `openAddModal` function to set the preview to the default image.
+- [x] Update `openEditModal` function to accept an image URL parameter and set the preview accordingly.
+- [x] Update the edit button's onclick attribute in the table to pass the counselor's image URL to `openEditModal`.
+- [x] Add an event listener for the file input (`counselorPhoto`) to update the photo preview when a new file is selected.
+- [x] Test the modal for add/edit modes, ensure photo preview works, form submits correctly, and page reloads after success.

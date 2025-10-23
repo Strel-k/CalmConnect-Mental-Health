@@ -76,6 +76,9 @@ urlpatterns = [
 
     # API Endpoints
     path('api/welcome/', views.welcome_api, name='welcome_api'),
+    path('api/welcome-logging/', views.welcome_with_logging, name='welcome_with_logging'),
+    path('api/welcome-logged/', views.welcome, name='welcome_logged'),
+    path('api/welcome-new/', views.welcome_new, name='welcome_new'),
     path('api/health/', views.health_check, name='health_check'),
     path('api/appointments/', appointment_list, name='appointment-list'),
     path('api/appointments/<int:pk>/', appointment_detail,

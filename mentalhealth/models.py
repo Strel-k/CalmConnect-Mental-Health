@@ -580,6 +580,144 @@ class SessionMessage(models.Model):
         default='text'
     )
     timestamp = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['timestamp']
+
+
+class UserBehaviorLog(models.Model):
+    """Track user behavior patterns for AI personalization"""
+    BEHAVIOR_TYPES = [
+        ('login', 'User Login'),
+        ('logout', 'User Logout'),
+        ('dass_test', 'DASS21 Test Completion'),
+        ('exercise', 'Relaxation Exercise'),
+        ('appointment_booked', 'Appointment Booked'),
+        ('appointment_attended', 'Appointment Attended'),
+        ('appointment_cancelled', 'Appointment Cancelled'),
+        ('feedback_submitted', 'Feedback Submitted'),
+        ('profile_updated', 'Profile Updated'),
+        ('notification_read', 'Notification Read'),
+        ('page_view', 'Page View'),
+        ('session_start', 'Live Session Start'),
+        ('session_end', 'Live Session End'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    behavior_type = models.CharField(max_length=30, choices=BEHAVIOR_TYPES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    metadata = models.JSONField(default=dict, help_text="Additional context data")
+    session_id = models.CharField(max_length=100, blank=True, help_text="Session identifier for grouping related actions")
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['user', 'behavior_type', 'timestamp']),
+            models.Index(fields=['user', 'timestamp']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.behavior_type} at {self.timestamp}"
+
+
+class MoodPrediction(models.Model):
+    """Store AI-generated mood predictions and trend analysis"""
+    PREDICTION_TYPES = [
+        ('short_term', 'Short Term (1-7 days)'),
+        ('medium_term', 'Medium Term (1-4 weeks)'),
+        ('long_term', 'Long Term (1-3 months)'),
+    ]
+
+    CONFIDENCE_LEVELS = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    prediction_date = models.DateTimeField(auto_now_add=True)
+    prediction_type = models.CharField(max_length=20, choices=PREDICTION_TYPES)
+    confidence_level = models.CharField(max_length=10, choices=CONFIDENCE_LEVELS)
+
+    # Predicted scores
+    predicted_depression = models.FloatField(help_text="Predicted depression score (0-42)")
+    predicted_anxiety = models.FloatField(help_text="Predicted anxiety score (0-42)")
+    predicted_stress = models.FloatField(help_text="Predicted stress score (0-42)")
+
+    # Trend analysis
+    depression_trend = models.CharField(max_length=20, choices=[
+        ('improving', 'Improving'),
+        ('stable', 'Stable'),
+        ('worsening', 'Worsening'),
+        ('unknown', 'Unknown'),
+    ], default='unknown')
+
+    anxiety_trend = models.CharField(max_length=20, choices=[
+        ('improving', 'Improving'),
+        ('stable', 'Stable'),
+        ('worsening', 'Worsening'),
+        ('unknown', 'Unknown'),
+    ], default='unknown')
+
+    stress_trend = models.CharField(max_length=20, choices=[
+        ('improving', 'Improving'),
+        ('stable', 'Stable'),
+        ('worsening', 'Worsening'),
+        ('unknown', 'Unknown'),
+    ], default='unknown')
+
+    # Prediction reasoning and insights
+    prediction_reasoning = models.TextField(help_text="AI reasoning for the prediction")
+    behavioral_insights = models.JSONField(default=dict, help_text="Key behavioral patterns identified")
+    risk_factors = models.JSONField(default=list, help_text="Identified risk factors")
+    protective_factors = models.JSONField(default=list, help_text="Identified protective factors")
+
+    # Recommendations
+    recommended_actions = models.JSONField(default=list, help_text="Suggested actions based on prediction")
+    follow_up_date = models.DateField(help_text="Suggested date for follow-up assessment")
+
+    # Metadata
+    based_on_data_points = models.IntegerField(default=0, help_text="Number of data points used for prediction")
+    prediction_model = models.CharField(max_length=50, default='ai_feedback', help_text="Model/version used for prediction")
+
+    class Meta:
+        ordering = ['-prediction_date']
+        indexes = [
+            models.Index(fields=['user', 'prediction_date']),
+            models.Index(fields=['user', 'prediction_type']),
+        ]
+
+    def __str__(self):
+        return f"Mood Prediction for {self.user.username} - {self.prediction_type} ({self.prediction_date.date()})"
+
+    @property
+    def overall_risk_level(self):
+        """Calculate overall risk level based on predicted scores"""
+        avg_score = (self.predicted_depression + self.predicted_anxiety + self.predicted_stress) / 3
+
+        if avg_score >= 30:
+            return 'high'
+        elif avg_score >= 20:
+            return 'moderate'
+        elif avg_score >= 10:
+            return 'mild'
+        else:
+            return 'low'
+
+    @property
+    def trend_summary(self):
+        """Summarize overall trend across all dimensions"""
+        trends = [self.depression_trend, self.anxiety_trend, self.stress_trend]
+        improving_count = trends.count('improving')
+        worsening_count = trends.count('worsening')
+
+        if improving_count >= 2:
+            return 'generally_improving'
+        elif worsening_count >= 2:
+            return 'generally_worsening'
+        elif improving_count == 1 and worsening_count == 0:
+            return 'mixed_improving'
+        elif worsening_count == 1 and improving_count == 0:
+            return 'mixed_worsening'
+        else:
+            return 'stable'
