@@ -532,6 +532,7 @@ optgroup option {
               <th>Name</th>
               <th>Email</th>
               <th>Department</th>
+              <th>College</th>
               <th>Rank</th>
               <th>Actions</th>
             </tr>
@@ -546,6 +547,7 @@ optgroup option {
                 <td>{{ counselor.name }}</td>
                 <td>{{ counselor.email }}</td>
                 <td>{{ counselor.unit }}</td>
+                <td>{{ counselor.user.get_college_display }}</td>
                 <td>{{ counselor.rank }}</td>
                 <td>
                     <button onclick="openEditModal(this)">Edit</button>
@@ -570,7 +572,19 @@ optgroup option {
 
         <input type="text" id="nameInput" placeholder="Full Name" required />
         <input type="email" id="emailInput" placeholder="Email Address" required />
-        <input type="text" id="unitInput" placeholder="Department/Unit" required />
+        <select id="unitInput" required>
+            <option value="" disabled selected>Select Department/Unit</option>
+            <option value="Guidance Services Unit">Guidance Services Unit</option>
+            <option value="Career Development & Employment Services Unit">Career Development & Employment Services Unit</option>
+            <option value="Information Management and Publication">Information Management and Publication</option>
+            <option value="Student Organizations Unit">Student Organizations Unit</option>
+        </select>
+        <select id="collegeInput" required>
+            <option value="" disabled selected>Select College</option>
+            {% for code, name in colleges %}
+                <option value="{{ code }}">{{ name }}</option>
+            {% endfor %}
+        </select>
         <select id="rankInput" required>
     <option value="" disabled selected>Select Academic Rank</option>
     <optgroup label="Instructor">
@@ -667,13 +681,23 @@ function closeSuccessModal() {
     const name = cells[1].textContent;
     const email = cells[2].textContent;
     const unit = cells[3].textContent;
-    const rank = cells[4].textContent;
+    const college = cells[4].textContent;
+    const rank = cells[5].textContent;
 
     document.getElementById('modal-title').textContent = 'Edit Counselor';
     document.getElementById('photoPreview').src = img.src;
     document.getElementById('nameInput').value = name;
     document.getElementById('emailInput').value = email;
     document.getElementById('unitInput').value = unit;
+
+    // Set college dropdown by matching display text
+    const collegeInput = document.getElementById('collegeInput');
+    for (const opt of collegeInput.options) {
+        if (opt.textContent.trim() === college.trim()) {
+            collegeInput.value = opt.value;
+            break;
+        }
+    }
     
     // Set the rank dropdown value
     const rankInput = document.getElementById('rankInput');
@@ -722,7 +746,8 @@ function confirmArchive() {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrftoken')
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({}),
+        credentials: 'same-origin'
     })
     .then(response => response.json())
     .then(data => {
@@ -801,6 +826,7 @@ function handleFormSubmit(event) {
     formData.append('email', document.getElementById('emailInput').value);
     formData.append('unit', document.getElementById('unitInput').value);
     formData.append('rank', document.getElementById('rankInput').value);
+    formData.append('college', document.getElementById('collegeInput').value);
     
     if (photoFile) {
         formData.append('photo', photoFile);
@@ -815,7 +841,8 @@ function handleFormSubmit(event) {
         headers: {
             'X-CSRFToken': getCookie('csrftoken')
         },
-        body: formData
+        body: formData,
+        credentials: 'same-origin'
     })
     .then(response => {
         if (!response.ok) {
@@ -875,7 +902,8 @@ function updateCounselorRow(row, counselorData) {
     cells[1].textContent = counselorData.name;
     cells[2].textContent = counselorData.email;
     cells[3].textContent = counselorData.unit;
-    cells[4].textContent = counselorData.rank;
+    cells[4].textContent = counselorData.college_display || '';
+    cells[5].textContent = counselorData.rank;
 }
 
 function addNewCounselorRow(counselorData) {
@@ -894,6 +922,7 @@ function addNewCounselorRow(counselorData) {
         <td>${counselorData.name || ''}</td>
         <td>${counselorData.email || ''}</td>
         <td>${counselorData.unit || ''}</td>
+        <td>${counselorData.college_display || ''}</td>
         <td>${counselorData.rank || ''}</td>
         <td>
             <button onclick="openEditModal(this)">Edit</button>

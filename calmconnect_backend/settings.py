@@ -51,6 +51,24 @@ ALLOWED_HOSTS = env_config(
     cast=Csv()
 )
 
+# DRF configuration to ensure browser session auth works for API endpoints
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+# Allow localhost origins for CSRF in development
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost',
+    'http://localhost:8000',
+    'http://127.0.0.1',
+    'http://127.0.0.1:8000',
+]
+
 # --- SECURITY: HTTPS and cookies ---
 # Enable security settings in production
 SECURE_SSL_REDIRECT = not DEBUG  # Force HTTPS in production
@@ -72,9 +90,10 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire sessions on browser close
 SESSION_SAVE_EVERY_REQUEST = True  # Update session on every request
 
 # CSRF Security
-CSRF_COOKIE_HTTPONLY = True  # Prevent JavaScript access to CSRF tokens
+# In development, allow JS to read the CSRF cookie so AJAX can send X-CSRFToken
+CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Strict'
-CSRF_USE_SESSIONS = True  # Store CSRF tokens in sessions instead of cookies
+CSRF_USE_SESSIONS = False
 
 # Additional Security Headers
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'

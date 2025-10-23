@@ -317,119 +317,117 @@ def home(request):
 
 def register(request):
     if request.method == 'POST':
-        # Add detailed debugging
-        print(f"POST data received: {request.POST}")
+        print(f"DEBUG: POST data received: {request.POST}")
+        print(f"DEBUG: Is AJAX: {request.headers.get('X-Requested-With') == 'XMLHttpRequest'}")
+
         form = CustomUserRegistrationForm(request.POST)
-        print(f"Form is valid: {form.is_valid()}")
+        print(f"DEBUG: Form is valid: {form.is_valid()}")
+
         if not form.is_valid():
-            print(f"Form errors: {form.errors}")
-        if form.is_valid():
-            try:
-                print("Form is valid, creating user...")
-                user = form.save(commit=False)
-                user.is_active = False
-                if not user.verification_token:
-                    user.verification_token = get_random_string(64)
-                print(f"Saving user with email: {user.email}")
-                user.save()
-                print("User saved successfully")
-
-                verification_link = request.build_absolute_uri(
-                    reverse('verify_email', kwargs={'token': user.verification_token})
-                )
-                print(f"Verification link: {verification_link}")
-                
-                # Send verification email
-                try:
-                    html_message = render_to_string('mentalhealth/verification-email.html', {
-                        'user': user,
-                        'verification_link': verification_link
-                    })
-                    
-                    plain_message = f"""Verify Your Email for CalmConnect\n\nHello {user.full_name},\n\nPlease click this link to verify your email: {verification_link}\n\nThank you!"""
-                    
-                    print(f"Sending email to: {user.email}")
-                    send_mail(
-                        'Verify Your Email for CalmConnect',
-                        plain_message,
-                        settings.DEFAULT_FROM_EMAIL,
-                        [user.email],
-                        html_message=html_message,
-                        fail_silently=True,  # Changed to True to prevent email errors from breaking registration
-                    )
-                    print("Email sent successfully")
-                except Exception as email_error:
-                    print(f"Email sending failed: {email_error}")
-                    # Continue without email for now - user can still verify manually
-                    pass
-
-                # For development, if email fails, make user active anyway
-                if not settings.DEBUG:
-                    # In production, require email verification
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({
-                            'success': True,
-                            'email': user.email,
-                            'redirect_url': reverse('verify_prompt')
-                        })
-                    return redirect('verify_prompt')
-                else:
-                    # In development, make user active even if email fails
-                    user.is_active = True
-                    user.email_verified = True
-                    user.save()
-                    print("User activated for development")
-                    
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({
-                            'success': True,
-                            'email': user.email,
-                            'redirect_url': reverse('index')
-                        })
-                    return redirect('index')
-                    
-            except Exception as e:
-                print(f"Exception in registration: {e}")
-                import traceback
-                traceback.print_exc()
-                
-                # If user was created but email failed, handle gracefully
-                if 'user' in locals() and user and user.pk:
-                    print("User was created but email verification failed")
-                    if settings.DEBUG:
-                        # In development, activate user anyway
-                        user.is_active = True
-                        user.email_verified = True
-                        user.save()
-                        print("User activated for development despite email failure")
-                        
-                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                            return JsonResponse({
-                                'success': True,
-                                'email': user.email,
-                                'redirect_url': reverse('index'),
-                                'message': 'Registration successful! Email verification skipped in development.'
-                            })
-                        return redirect('index')
-                
-                error_msg = str(e)
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({
-                        'success': False,
-                        'error': error_msg
-                    }, status=400)
-                messages.error(request, error_msg)
-        else:
-            # Add debugging for form errors
-            print(f"Form errors: {form.errors}")
+            print(f"DEBUG: Form errors: {form.errors}")
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': False,
                     'errors': form.errors.get_json_data()
                 }, status=400)
             messages.error(request, "Please correct the errors below.")
-    
-    # GET request or form invalid with non-AJAX submission
+            return render(request, 'register.html', {'form': form})
+
+        # Form is valid, create user
+        try:
+            print("DEBUG: Creating user...")
+            user = form.save(commit=False)
+            user.is_active = False
+            user.verification_token = get_random_string(64)
+            user.save()
+            print(f"DEBUG: User created successfully with ID: {user.id}, email: {user.email}")
+
+            # Create verification link
+            verification_link = request.build_absolute_uri(
+                reverse('verify_email', kwargs={'token': user.verification_token})
+            )
+            print(f"DEBUG: Verification link: {verification_link}")
+
+            # Send verification email
+            try:
+                html_message = render_to_string('mentalhealth/verification-email.html', {
+                    'user': user,
+                    'verification_link': verification_link
+                })
+
+                plain_message = f"""Verify Your Email for CalmConnect
+
+Hello {user.full_name},
+
+Please click this link to verify your email: {verification_link}
+
+Thank you!"""
+
+                print(f"DEBUG: Sending email to: {user.email}")
+                send_mail(
+                    'Verify Your Email for CalmConnect',
+                    plain_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    html_message=html_message,
+                    fail_silently=False,
+                )
+                print("DEBUG: Email sent successfully")
+                email_sent = True
+            except Exception as email_error:
+                print(f"DEBUG: Email sending failed: {email_error}")
+                email_sent = False
+
+            # Handle response based on environment and request type
+            if settings.DEBUG:
+                # In development, activate user immediately
+                user.is_active = True
+                user.email_verified = True
+                user.save()
+                print("DEBUG: User activated for development")
+
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'email': user.email,
+                        'redirect_url': reverse('index'),
+                        'message': 'Registration successful! You are now logged in.'
+                    })
+                return redirect('index')
+            else:
+                # In production, require email verification
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'email': user.email,
+                        'redirect_url': reverse('verify_prompt'),
+                        'email_sent': email_sent
+                    })
+                return redirect('verify_prompt')
+
+        except Exception as e:
+            print(f"DEBUG: Exception during user creation: {e}")
+            import traceback
+            traceback.print_exc()
+
+            # Clean up partial user if created
+            if 'user' in locals() and hasattr(user, 'pk') and user.pk:
+                try:
+                    user.delete()
+                    print("DEBUG: Cleaned up partial user creation")
+                except:
+                    pass
+
+            error_msg = f"Registration failed: {str(e)}"
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                }, status=400)
+            messages.error(request, error_msg)
+            return render(request, 'register.html', {'form': form})
+
+    # GET request
     form = CustomUserRegistrationForm()
     return render(request, 'register.html', {'form': form})
 
@@ -1490,9 +1488,10 @@ def admin_appointments(request):
 
 @staff_member_required
 def admin_personnel(request):
-    counselors = Counselor.objects.filter(is_active=True)
+    counselors = Counselor.objects.filter(is_active=True).select_related('user')
     return render(request, 'admin-personnel.html', {
         'counselors': counselors,
+        'colleges': CustomUser.COLLEGE_CHOICES,
         'total_appointments': Appointment.objects.count(),
         'high_risk_cases': DASSResult.objects.filter(
             Q(depression_severity__icontains='Severe') | 
@@ -1508,6 +1507,8 @@ def admin_personnel(request):
 @staff_member_required
 @require_http_methods(["POST"])
 def add_counselor(request):
+    if not request.user.is_staff:
+        return Response({'success': False, 'error': 'Permission denied'}, status=403)
     try:
         # Handle both form data and JSON requests
         if request.content_type == 'multipart/form-data':
@@ -1524,7 +1525,7 @@ def add_counselor(request):
                 }, status=400)
 
         # Validate required fields
-        required_fields = ['name', 'email', 'unit', 'rank']
+        required_fields = ['name', 'email', 'unit', 'rank', 'college']
         missing_fields = [field for field in required_fields if not data.get(field)]
         
         if missing_fields:
@@ -1566,7 +1567,7 @@ def add_counselor(request):
                 student_id=f"staff-{get_random_string(8)}",
                 age=0,
                 gender='Prefer not to say',
-                college='CBA',
+                college=data['college'],
                 program='Staff',
                 year_level='4'
             )
@@ -1640,7 +1641,9 @@ def add_counselor(request):
                     'email': counselor.email,
                     'unit': counselor.unit,
                     'rank': counselor.rank,
-                    'image_url': image_url
+                    'image_url': image_url,
+                    'college': user.college,
+                    'college_display': user.get_college_display()
                 },
                 'message': 'Counselor added successfully. Setup email sent.'
             })
@@ -1668,7 +1671,7 @@ def add_counselor(request):
         }, status=400)
 
 @staff_member_required
-@require_http_methods(["POST"])
+@require_http_methods(["POST", "PATCH"])
 def update_counselor(request, counselor_id):
     try:
         counselor = Counselor.objects.get(id=counselor_id)
@@ -1691,6 +1694,9 @@ def update_counselor(request, counselor_id):
         counselor.email = data.get('email', counselor.email)
         counselor.unit = data.get('unit', counselor.unit)
         counselor.rank = data.get('rank', counselor.rank)
+        if data.get('college'):
+            counselor.user.college = data.get('college')
+            counselor.user.save()
         
         # Handle image upload if present
         if files and 'photo' in files:
@@ -1716,7 +1722,9 @@ def update_counselor(request, counselor_id):
                 'email': counselor.email,
                 'unit': counselor.unit,
                 'rank': counselor.rank,
-                'image_url': image_url
+                'image_url': image_url,
+                'college': counselor.user.college,
+                'college_display': counselor.user.get_college_display()
             },
             'message': 'Counselor updated successfully'
         })
@@ -3610,7 +3618,7 @@ def get_user_personalization_data(user):
     """Gather comprehensive user data for personalization"""
     # Get all DASS results for trend analysis
     dass_results = DASSResult.objects.filter(user=user).order_by('-date_taken')
-    
+
     # Get user's test history
     test_count = dass_results.count()
     if test_count > 1:
@@ -3619,20 +3627,26 @@ def get_user_personalization_data(user):
         trend_analysis = analyze_dass_trends(recent_results)
     else:
         trend_analysis = None
-    
+
     # Get academic context
     academic_context = get_academic_context(user)
-    
+
     # Get relaxation exercise history
     relaxation_history = RelaxationLog.objects.filter(user=user).order_by('-timestamp')
     exercise_preferences = analyze_exercise_preferences(relaxation_history)
-    
+
+    # Get behavior patterns and mood predictions
+    behavior_patterns = analyze_behavior_patterns(user)
+    mood_predictions = get_latest_mood_prediction(user)
+
     return {
         'test_count': test_count,
         'trend_analysis': trend_analysis,
         'academic_context': academic_context,
         'exercise_preferences': exercise_preferences,
-        'recent_results': list(dass_results[:3]) if test_count > 0 else []
+        'recent_results': list(dass_results[:3]) if test_count > 0 else [],
+        'behavior_patterns': behavior_patterns,
+        'mood_predictions': mood_predictions
     }
 
 def analyze_dass_trends(results):
@@ -3727,12 +3741,39 @@ def welcome_api(request):
     })
 
 @api_view(['GET'])
+def welcome_with_logging(request):
+    """API endpoint that logs request metadata and returns a welcome message"""
+    logger.info(f"Request received: {request.method} {request.path}")
+    return Response({
+        'message': 'Welcome to the CalmConnect API Service!',
+        'status': 'success'
+    })
+
+@api_view(['GET'])
+def welcome(request):
+    """API endpoint that logs request metadata and returns a welcome message"""
+    logger.info(f"Request received: {request.method} {request.path}")
+    return Response({
+        'message': 'Welcome to the CalmConnect API Service!',
+        'status': 'success'
+    })
+
+@api_view(['GET'])
 def health_check(request):
     """API endpoint for health check"""
     return Response({
         'status': 'healthy',
         'service': 'CalmConnect API',
         'timestamp': timezone.now().isoformat()
+    })
+
+@api_view(['GET'])
+def welcome_new(request):
+    """New API endpoint that logs request metadata and returns a welcome message"""
+    logger.info(f"Request received: {request.method} {request.path}")
+    return Response({
+        'message': 'Welcome to the CalmConnect API Service!',
+        'status': 'success'
     })
 
 # Follow-up Session Views
