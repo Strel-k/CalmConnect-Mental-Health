@@ -6686,6 +6686,7 @@ def reset_settings_api(request):
 
 
 # TEMPORARY: Create superuser endpoint (remove after use)
+@csrf_exempt
 def create_superuser_endpoint(request):
     """TEMPORARY endpoint to create a superuser - REMOVE AFTER USE"""
     if request.method == 'POST':
