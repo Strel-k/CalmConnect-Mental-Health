@@ -165,13 +165,31 @@ WSGI_APPLICATION = 'calmconnect_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
 # Database configuration
 DATABASE_URL = os.environ.get('DATABASE_URL') or env_config('DATABASE_URL', default='')
 print(f"DATABASE_URL from os.environ: {os.environ.get('DATABASE_URL', 'Not found')}")
 print(f"DATABASE_URL from env_config: {env_config('DATABASE_URL', default='Not found')}")
 print(f"Final DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
-if DATABASE_URL:
+
+# Temporary hardcoded Railway database connection (from error logs)
+# TODO: Remove this once DATABASE_URL detection is fixed
+if not DATABASE_URL:
+    print("Using hardcoded Railway database connection")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'railway',
+            'USER': 'postgres',
+            'PASSWORD': 'QfaJsYXZONmMlyUHpdrGXwbwchagTLQs',
+            'HOST': 'ballast.proxy.rlwy.net',
+            'PORT': 42908,
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
+    }
+    print("Database configured via hardcoded Railway connection")
+elif DATABASE_URL:
     print(f"Using DATABASE_URL: {DATABASE_URL[:50]}...")
 else:
     print("Falling back to individual DB settings")
