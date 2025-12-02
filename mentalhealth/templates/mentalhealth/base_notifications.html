@@ -1,12 +1,18 @@
 {% load static %}
 <!-- Real-time Notification System -->
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     // Set user authentication status for notification system
-    document.body.dataset.userAuthenticated = '{{ user.is_authenticated|yesno:"true,false" }}';
+    if (document.body) {
+        document.body.dataset.userAuthenticated = '{{ user.is_authenticated|yesno:"true,false" }}';
+        document.body.dataset.userIsCounselor = '{% if user.counselor_profile and user.counselor_profile.is_active %}true{% else %}false{% endif %}';
+        document.body.dataset.userIsAdmin = '{% if user.is_superuser or user.is_staff %}true{% else %}false{% endif %}';
+    }
+});
 </script>
 
 <!-- Include notification JavaScript -->
-<script src="{% static 'mentalhealth/js/notifications.js' %}"></script>
+<script src="{% static 'mentalhealth/js/notifications.js' %}?v=1.2.0"></script>
 
 <!-- Enhanced Notification Bell with Real-time Updates -->
 <style>
@@ -285,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="bx bx-bell"></i> Notifications
                     </div>
                     <div class="notification-dropdown-actions">
-                        <button class="notification-action-btn" onclick="markAllNotificationsRead()">
+                        <button type="button" class="notification-action-btn" onclick="markAllNotificationsRead()">
                             Mark all read
                         </button>
                     </div>
@@ -326,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="notification-dropdown-actions">
                         ${unreadCount > 0 ? '<button class="notification-action-btn" onclick="markAllNotificationsRead()">Mark all read</button>' : ''}
-                        <button class="notification-action-btn" onclick="refreshNotifications()">
+                        <button type="button" class="notification-action-btn" onclick="refreshNotifications()">
                             <i class="bx bx-refresh"></i>
                         </button>
                     </div>
@@ -351,12 +357,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const icon = getNotificationIcon(notification.type);
                 const isUnread = !notification.read;
                 const isUrgent = notification.priority === 'urgent';
-                
+
                 return `
-                    <div class="notification-item ${isUnread ? 'unread' : ''} ${isUrgent ? 'urgent' : ''}" 
-                         data-notification-id="${notification.id}"
-                         onclick="handleNotificationClick(${notification.id}, '${notification.action_url || notification.url || '#'}')">
-                        <button class="notification-close" onclick="event.stopPropagation(); clearNotification(${notification.id})">&times;</button>
+                    <div class="notification-item ${isUnread ? 'unread' : ''} ${isUrgent ? 'urgent' : ''}"
+                          data-notification='${JSON.stringify(notification).replace(/'/g, "'")}'
+                          data-notification-id="${notification.id}"
+                          onclick="handleNotificationClick(this)">
+                        <button type="button" class="notification-close" onclick="event.stopPropagation(); clearNotification(${notification.id})">&times;</button>
                         <div class="notification-content">
                             <div class="notification-icon ${isUrgent ? 'urgent' : ''}">
                                 <i class="bx ${icon}"></i>
@@ -369,9 +376,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                                 ${notification.action_url ? `
                                     <div class="notification-actions">
-                                        <a href="${notification.action_url}" class="notification-action" onclick="event.stopPropagation();">
+                                        <button type="button" class="notification-action" onclick="event.stopPropagation(); handleNotificationClick(this)">
                                             ${notification.action_text || 'View'}
-                                        </a>
+                                        </button>
                                     </div>
                                 ` : ''}
                             </div>
@@ -397,15 +404,255 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Global functions for notification management
-        window.handleNotificationClick = function(notificationId, url) {
-            // Mark as read
-            if (window.notificationManager) {
-                window.notificationManager.markAsRead(notificationId);
+        window.handleNotificationClick = function(element) {
+            console.log('🔗 handleNotificationClick called with element:', element);
+
+            // Check if notification manager is available
+            if (!window.notificationManager) {
+                console.error('❌ Notification manager not available');
+                alert('Notification system not ready. Please refresh the page and try again.');
+                return;
             }
-            
-            // Navigate if URL provided
+
+            // Parse the full notification object from the data attribute
+            let notification;
+            try {
+                notification = JSON.parse(element.dataset.notification.replace(/'/g, "'"));
+                console.log('🔗 Handling dropdown notification click:', notification);
+            } catch (e) {
+                console.error('❌ Failed to parse notification data:', e);
+                alert('Invalid notification data. Please refresh the page.');
+                return;
+            }
+
+            // Mark as read
+            try {
+                window.notificationManager.markAsRead(notification.id);
+            } catch (e) {
+                console.warn('⚠️ Failed to mark notification as read:', e);
+            }
+
+            // Handle follow-up notifications - always show modal
+            if (notification.type === 'followup') {
+                console.log('📋 Handling follow-up notification');
+
+                // Parse metadata if it's a string
+                let metadata = notification.metadata || {};
+                console.log('📋 Initial metadata from notification:', metadata, 'type:', typeof metadata);
+                if (typeof metadata === 'string') {
+                    try {
+                        metadata = JSON.parse(metadata);
+                        console.log('📋 Parsed metadata from string:', metadata);
+                    } catch (e) {
+                        console.warn('Failed to parse notification metadata:', e);
+                        metadata = {};
+                    }
+                }
+
+                // Check user roles
+                const isCounselor = document.body.dataset.userIsCounselor === 'true';
+                const isAdmin = document.body.dataset.userIsAdmin === 'true';
+                console.log('🔍 User roles - counselor:', isCounselor, 'admin:', isAdmin);
+                console.log('📋 Final metadata for routing:', metadata);
+                console.log('📋 Full notification object:', notification);
+
+                // Admin users get redirected to admin follow-up requests page
+                if (isAdmin) {
+                    console.log('👨‍💼 Admin follow-up notification - navigating to admin follow-up requests page');
+                    window.location.href = '/admin-followup-requests/';
+                    return;
+                }
+
+                // Prioritize user_type over action_url for determining notification type
+                const isStudentNotification = metadata.user_type === 'student' || (!metadata.user_type && (!notification.action_url || notification.action_url === '#'));
+                const hasAppointment = metadata.appointment_id || (metadata.scheduled_date && metadata.scheduled_time);
+
+                console.log('📋 Routing decision:', {
+                    isStudentNotification,
+                    hasAppointment,
+                    user_type: metadata.user_type,
+                    appointment_id: metadata.appointment_id,
+                    scheduled_date: metadata.scheduled_date,
+                    scheduled_time: metadata.scheduled_time
+                });
+
+                if (isStudentNotification) {
+                    // Student notification - show consent modal
+                    console.log('🎯 Student follow-up notification - showing consent modal');
+                    try {
+                        // Extract followup request ID from metadata or URL
+                        let followupRequestId = null;
+                        if (metadata.followup_request_id) {
+                            followupRequestId = metadata.followup_request_id;
+                        } else {
+                            // Try to extract from actionUrl
+                            const actionUrl = notification.action_url || notification.url || '#';
+                            const urlMatch = actionUrl.match(/\/followup\/(\d+)\//);
+                            followupRequestId = urlMatch ? urlMatch[1] : null;
+                        }
+
+                        if (followupRequestId) {
+                            console.log('✅ Using followup request ID:', followupRequestId);
+                            try {
+                                window.notificationManager.showFollowupConsentModal(followupRequestId);
+                            } catch (error) {
+                                console.error('❌ Error calling showFollowupConsentModal:', error);
+                                alert('Notification system not ready. Please refresh the page.');
+                            }
+                        } else {
+                            console.log('⚠️ No followupRequestId found, using fallback method');
+                            try {
+                                window.notificationManager.showFollowupConsentModal({
+                                    action_url: notification.action_url || notification.url,
+                                    id: notification.id,
+                                    action_text: notification.action_text,
+                                    type: notification.type,
+                                    metadata: metadata
+                                });
+                            } catch (error) {
+                                console.error('❌ Error calling showFollowupConsentModal:', error);
+                                alert('Notification system not ready. Please refresh the page.');
+                            }
+                        }
+                        return; // Prevent navigation
+                    } catch (error) {
+                        console.error('❌ Error showing follow-up modal:', error);
+                        alert('Failed to load follow-up details. Please try again.');
+                        return;
+                    }
+                } else if (isCounselor && hasAppointment) {
+                    // Counselor notification for scheduled follow-up - show details modal
+                    console.log('📅 Counselor follow-up notification - showing scheduled session details');
+                    try {
+                        // Extract followup request ID from metadata
+                        let followupRequestId = null;
+                        if (metadata.followup_request_id) {
+                            followupRequestId = metadata.followup_request_id;
+                        } else {
+                            // Try to extract from actionUrl
+                            const actionUrl = notification.action_url || notification.url || '#';
+                            const urlMatch = actionUrl.match(/\/followup\/(\d+)\//);
+                            followupRequestId = urlMatch ? urlMatch[1] : null;
+                        }
+
+                        if (followupRequestId) {
+                            console.log('✅ Using followup request ID for details:', followupRequestId);
+                            console.log('🔍 Checking notificationManager methods:', Object.getOwnPropertyNames(window.notificationManager.__proto__));
+                            console.log('🔍 notificationManager has showScheduledFollowupModal:', typeof window.notificationManager.showScheduledFollowupModal);
+                            try {
+                                if (typeof window.notificationManager.showScheduledFollowupModal === 'function') {
+                                    window.notificationManager.showScheduledFollowupModal(followupRequestId, metadata);
+                                } else {
+                                    console.error('❌ showScheduledFollowupModal method not found on notificationManager');
+                                    console.error('❌ Available methods:', Object.getOwnPropertyNames(window.notificationManager.__proto__));
+                                    alert('showScheduledFollowupModal method not found. Please refresh the page.');
+                                }
+                            } catch (error) {
+                                console.error('❌ Error calling showScheduledFollowupModal:', error);
+                                alert('Notification system not ready. Please refresh the page.');
+                            }
+                        } else {
+                            console.error('❌ Could not extract followup request ID for details');
+                            alert('Invalid follow-up notification. Please refresh the page.');
+                        }
+                        return; // Prevent default navigation
+                    } catch (error) {
+                        console.error('❌ Error showing scheduled follow-up modal:', error);
+                        alert('Failed to load follow-up session details. Please try again.');
+                        return;
+                    }
+                } else if (isCounselor && !hasAppointment) {
+                    // Counselor notification for unscheduled follow-up - show scheduling modal
+                    console.log('📅 Counselor follow-up notification - showing scheduling modal');
+                    try {
+                        // Extract followup request ID from metadata or URL
+                        let followupRequestId = null;
+                        if (metadata.followup_request_id) {
+                            followupRequestId = metadata.followup_request_id;
+                        } else {
+                            // Try to extract from actionUrl
+                            const actionUrl = notification.action_url || notification.url || '#';
+                            const urlMatch = actionUrl.match(/\/followup\/(\d+)\//);
+                            followupRequestId = urlMatch ? urlMatch[1] : null;
+                        }
+
+                        if (followupRequestId) {
+                            console.log('✅ Using followup request ID for scheduling:', followupRequestId);
+                            try {
+                                window.notificationManager.showFollowupSchedulingModal(followupRequestId);
+                            } catch (error) {
+                                console.error('❌ Error calling showFollowupSchedulingModal:', error);
+                                alert('Notification system not ready. Please refresh the page.');
+                            }
+                        } else {
+                            console.error('❌ Could not extract followup request ID');
+                            alert('Invalid follow-up notification. Please refresh the page.');
+                        }
+                        return; // Prevent default navigation
+                    } catch (error) {
+                        console.error('❌ Error showing follow-up scheduling modal:', error);
+                        alert('Failed to load follow-up scheduling details. Please try again.');
+                        return;
+                    }
+                } else {
+                    // Fallback - should not happen with proper metadata
+                    console.log('⚠️ Unknown follow-up notification type, defaulting to consent modal');
+                    try {
+                        // Extract followup request ID from metadata or URL
+                        let followupRequestId = null;
+                        if (metadata.followup_request_id) {
+                            followupRequestId = metadata.followup_request_id;
+                        } else {
+                            // Try to extract from actionUrl
+                            const actionUrl = notification.action_url || notification.url || '#';
+                            const urlMatch = actionUrl.match(/\/followup\/(\d+)\//);
+                            followupRequestId = urlMatch ? urlMatch[1] : null;
+                        }
+
+                        if (followupRequestId) {
+                            try {
+                                window.notificationManager.showFollowupConsentModal(followupRequestId);
+                            } catch (error) {
+                                console.error('❌ Error calling showFollowupConsentModal:', error);
+                                alert('Notification system not ready. Please refresh the page.');
+                            }
+                        } else {
+                            console.log('⚠️ No followupRequestId found, using fallback method');
+                            try {
+                                window.notificationManager.showFollowupConsentModal({
+                                    action_url: notification.action_url || notification.url,
+                                    id: notification.id,
+                                    action_text: notification.action_text,
+                                    type: notification.type,
+                                    metadata: metadata
+                                });
+                            } catch (error) {
+                                console.error('❌ Error calling showFollowupConsentModal:', error);
+                                alert('Notification system not ready. Please refresh the page.');
+                            }
+                        }
+                        return; // Prevent navigation
+                    } catch (error) {
+                        console.error('❌ Error showing follow-up modal:', error);
+                        alert('Failed to load follow-up details. Please try again.');
+                        return;
+                    }
+                }
+            }
+
+            // For non-followup notifications, check if there's a valid URL to navigate to
+            const url = notification.url || '#';
             if (url && url !== '#') {
+                // Prevent navigation to current page (refresh)
+                const currentUrl = window.location.pathname;
+                if (url === currentUrl || url === window.location.href) {
+                    console.log('🚫 Preventing refresh to current page');
+                    return;
+                }
+                console.log('🌐 Navigating to URL from dropdown:', url);
                 window.location.href = url;
+            } else {
+                console.log('📋 No valid URL for notification, staying on page');
             }
         };
         
@@ -518,7 +765,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize the enhanced dropdown
     initializeNotificationDropdown();
-    
+
+    // Prevent navigation for links inside notification items
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.notification-item a')) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Trigger the notification click handler
+            const item = e.target.closest('.notification-item');
+            if (item && typeof handleNotificationClick === 'function') {
+                handleNotificationClick(item);
+            }
+        }
+    });
+
     // Update connection indicator based on WebSocket status
     if (window.notificationManager) {
         const indicator = document.getElementById('connection-indicator');

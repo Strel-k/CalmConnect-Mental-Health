@@ -68,6 +68,8 @@ class CustomUser(AbstractUser):
 
     email_verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=64, blank=True, null=True)
+    password_reset_token = models.CharField(max_length=64, blank=True, null=True)
+    password_reset_expires = models.DateTimeField(blank=True, null=True)
     student_id = models.CharField(max_length=20, unique=True, blank=True, null=True)
 
     def generate_verification_token(self):
@@ -155,6 +157,17 @@ class DASSResult(models.Model):
     stress_severity = models.CharField(max_length=50)
     # Store all answers as JSON
     answers = models.JSONField()
+
+    # Follow-up assessment fields
+    is_followup = models.BooleanField(default=False, help_text="Whether this is a follow-up assessment")
+    followup_appointment = models.ForeignKey(
+        'Appointment',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='followup_assessments',
+        help_text="The follow-up appointment this assessment is for"
+    )
 
     def __str__(self):
         return (
@@ -298,6 +311,113 @@ class Report(models.Model):
         )
 
 
+class FollowupRequest(models.Model):
+    """Model for follow-up session requests from reports"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending Admin Approval'),
+        ('approved', 'Approved'),
+        ('denied', 'Denied'),
+        ('scheduled', 'Scheduled'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    REQUESTER_CHOICES = [
+        ('counselor', 'Counselor'),
+        ('student', 'Student'),
+    ]
+
+    # Relationships
+    report = models.ForeignKey(
+        Report,
+        on_delete=models.CASCADE,
+        related_name='followup_requests'
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='followup_requests_made'
+    )
+    requester_type = models.CharField(
+        max_length=10,
+        choices=REQUESTER_CHOICES
+    )
+
+    # Request details
+    reason = models.TextField(help_text="Reason for requesting follow-up")
+    requested_date = models.DateField(null=True, blank=True, help_text="Preferred date for follow-up")
+    requested_time = models.TimeField(null=True, blank=True, help_text="Preferred time for follow-up")
+
+    # Admin approval
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+    admin_notes = models.TextField(blank=True, help_text="Admin review notes")
+    approved_denied_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='followup_requests_reviewed'
+    )
+    approved_denied_at = models.DateTimeField(null=True, blank=True)
+
+    # Final scheduling (set by counselor after approval)
+    scheduled_date = models.DateField(null=True, blank=True)
+    scheduled_time = models.TimeField(null=True, blank=True)
+    session_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('face_to_face', 'Face-to-Face'),
+            ('remote', 'Remote/Online'),
+        ],
+        default='face_to_face'
+    )
+
+    # Resulting appointment (created after scheduling)
+    resulting_appointment = models.OneToOneField(
+        'Appointment',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='followup_request'
+    )
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Follow-up Request'
+        verbose_name_plural = 'Follow-up Requests'
+
+    def __str__(self):
+        return f"Follow-up request for {self.report.title} by {self.requested_by.full_name}"
+
+    @property
+    def student(self):
+        """Get the student involved in this follow-up request"""
+        return self.report.user
+
+    @property
+    def counselor(self):
+        """Get the counselor involved in this follow-up request"""
+        return self.report.counselor
+
+    @property
+    def can_be_scheduled(self):
+        """Check if this request can be scheduled (approved but not yet scheduled)"""
+        return self.status == 'approved' and not self.scheduled_date
+
+    @property
+    def can_be_approved_denied(self):
+        """Check if this request can be approved/denied by admin"""
+        return self.status == 'pending'
+
+
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ('appointment', 'Appointment'),
@@ -305,6 +425,7 @@ class Notification(models.Model):
         ('system', 'System'),
         ('reminder', 'Reminder'),
         ('feedback', 'Feedback'),
+        ('followup', 'Follow-up'),
         ('general', 'General'),
     ]
     
@@ -620,6 +741,141 @@ class UserBehaviorLog(models.Model):
         return f"{self.user.username} - {self.behavior_type} at {self.timestamp}"
 
 
+class MentalHealthTipsCache(models.Model):
+    """Cache AI-generated mental health tips to reduce API calls and handle rate limits"""
+
+    # Cache key components
+    depression_severity = models.CharField(max_length=20)
+    anxiety_severity = models.CharField(max_length=20)
+    stress_severity = models.CharField(max_length=20)
+    risk_level = models.CharField(max_length=20)
+    college = models.CharField(max_length=10, blank=True)
+    year_level = models.CharField(max_length=2, blank=True)
+
+    # Cached content
+    tips_content = models.TextField()
+    tips_title = models.CharField(max_length=100, default='💡 Mental Health Tips')
+    source = models.CharField(max_length=20, default='openai')
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    usage_count = models.IntegerField(default=0)
+    last_used = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['depression_severity', 'anxiety_severity', 'stress_severity',
+                          'risk_level', 'college', 'year_level']
+        indexes = [
+            models.Index(fields=['depression_severity', 'anxiety_severity', 'stress_severity']),
+            models.Index(fields=['risk_level', 'college', 'year_level']),
+            models.Index(fields=['last_used', 'usage_count']),
+        ]
+
+    def __str__(self):
+        return f"Tips cache: {self.depression_severity}/{self.anxiety_severity}/{self.stress_severity} - {self.risk_level}"
+
+    def increment_usage(self):
+        """Increment usage count when tip is retrieved"""
+        self.usage_count += 1
+        self.save(update_fields=['usage_count', 'last_used'])
+
+
+
+class UserSettings(models.Model):
+    """User settings for application preferences and accessibility"""
+
+    # User reference
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='settings')
+
+    # Theme and appearance
+    dark_mode = models.BooleanField(default=False, help_text="Enable dark mode theme")
+    font_size = models.CharField(
+        max_length=20,
+        choices=[
+            ('small', 'Small'),
+            ('medium', 'Medium'),
+            ('large', 'Large'),
+            ('extra_large', 'Extra Large'),
+        ],
+        default='medium',
+        help_text="Preferred font size"
+    )
+
+    # Notification preferences
+    notification_preferences = models.JSONField(
+        default=dict,
+        help_text="Notification preferences with frequency settings"
+    )
+
+    # Language and localization
+    language = models.CharField(
+        max_length=10,
+        choices=[
+            ('en', 'English'),
+            ('es', 'Spanish'),
+            ('fr', 'French'),
+        ],
+        default='en',
+        help_text="Preferred application language"
+    )
+
+    # Accessibility options
+    high_contrast = models.BooleanField(default=False, help_text="Enable high contrast mode")
+    screen_reader = models.BooleanField(default=False, help_text="Optimize for screen readers")
+    reduced_motion = models.BooleanField(default=False, help_text="Reduce animations and transitions")
+
+    # Data privacy settings
+    analytics_tracking = models.BooleanField(default=True, help_text="Allow analytics tracking")
+    profile_visibility = models.CharField(
+        max_length=20,
+        choices=[
+            ('public', 'Public'),
+            ('counselors_only', 'Counselors Only'),
+            ('private', 'Private'),
+        ],
+        default='counselors_only',
+        help_text="Profile visibility to other users"
+    )
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'User Settings'
+        verbose_name_plural = 'User Settings'
+        db_table = 'user_settings'
+
+    def __str__(self):
+        return f"Settings for {self.user.username}"
+
+    def get_notification_setting(self, notification_type, default=True):
+        """Get notification preference for a specific type"""
+        return self.notification_preferences.get(notification_type, default)
+
+    def set_notification_setting(self, notification_type, enabled, frequency='daily'):
+        """Set notification preference for a specific type"""
+        if not self.notification_preferences:
+            self.notification_preferences = {}
+        self.notification_preferences[notification_type] = {
+            'enabled': enabled,
+            'frequency': frequency
+        }
+        self.save()
+
+    @property
+    def default_notification_preferences(self):
+        """Get default notification preferences structure"""
+        return {
+            'assignment_reminders': {'enabled': True, 'frequency': 'daily'},
+            'grade_updates': {'enabled': True, 'frequency': 'weekly'},
+            'study_session_alerts': {'enabled': True, 'frequency': 'daily'},
+            'appointment_reminders': {'enabled': True, 'frequency': 'daily'},
+            'followup_notifications': {'enabled': True, 'frequency': 'weekly'},
+        }
+
+
 class MoodPrediction(models.Model):
     """Store AI-generated mood predictions and trend analysis"""
     PREDICTION_TYPES = [
@@ -689,6 +945,90 @@ class MoodPrediction(models.Model):
 
     def __str__(self):
         return f"Mood Prediction for {self.user.username} - {self.prediction_type} ({self.prediction_date.date()})"
+
+
+class UserSettings(models.Model):
+    """User settings for application customization and preferences"""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    # Appearance settings
+    dark_mode = models.BooleanField(default=False, help_text="Enable dark mode theme")
+    font_size = models.CharField(
+        max_length=20,
+        choices=[
+            ('small', 'Small'),
+            ('medium', 'Medium'),
+            ('large', 'Large'),
+            ('extra_large', 'Extra Large'),
+        ],
+        default='medium',
+        help_text="Text size preference"
+    )
+
+    # Language and localization
+    language = models.CharField(
+        max_length=10,
+        choices=[
+            ('en', 'English'),
+            ('es', 'Spanish'),
+            ('fr', 'French'),
+        ],
+        default='en',
+        help_text="Application language"
+    )
+
+    # Accessibility settings
+    high_contrast = models.BooleanField(default=False, help_text="Enable high contrast mode")
+    screen_reader = models.BooleanField(default=False, help_text="Optimize for screen readers")
+    reduced_motion = models.BooleanField(default=False, help_text="Reduce animations and transitions")
+
+    # Privacy settings
+    analytics_tracking = models.BooleanField(default=True, help_text="Allow analytics tracking")
+    profile_visibility = models.CharField(
+        max_length=20,
+        choices=[
+            ('public', 'Public'),
+            ('counselors_only', 'Counselors Only'),
+            ('private', 'Private'),
+        ],
+        default='counselors_only',
+        help_text="Profile visibility settings"
+    )
+
+    # Notification preferences (stored as JSON)
+    notification_preferences = models.JSONField(
+        default=dict,
+        help_text="User notification preferences with frequency settings"
+    )
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'User Settings'
+        verbose_name_plural = 'User Settings'
+        db_table = 'user_settings'
+
+    def __str__(self):
+        return f"Settings for {self.user.username}"
+
+    def get_default_notification_preferences(self):
+        """Get default notification preferences structure"""
+        return {
+            'assignment_reminders': {'enabled': True, 'frequency': 'daily'},
+            'grade_updates': {'enabled': True, 'frequency': 'weekly'},
+            'study_session_alerts': {'enabled': True, 'frequency': 'daily'},
+            'appointment_reminders': {'enabled': True, 'frequency': 'daily'},
+            'followup_notifications': {'enabled': True, 'frequency': 'weekly'}
+        }
+
+    def save(self, *args, **kwargs):
+        """Ensure notification preferences have default structure"""
+        if not self.notification_preferences:
+            self.notification_preferences = self.get_default_notification_preferences()
+        super().save(*args, **kwargs)
 
     @property
     def overall_risk_level(self):

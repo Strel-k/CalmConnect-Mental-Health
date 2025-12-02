@@ -1,0 +1,7 @@
+OpenAI API Key loaded: Yes
+DATABASE_URL from os.environ: Not found
+DATABASE_URL from env_config: Not found
+Final DATABASE_URL: Not set
+EXECUTING: Using hardcoded Railway database connection
+Database configured via hardcoded Railway connection
+[

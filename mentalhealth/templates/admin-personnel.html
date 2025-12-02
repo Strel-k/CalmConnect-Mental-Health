@@ -1,5 +1,7 @@
+<!-- Updated: 2025-11-17 15:13 - Fixed department dropdown options -->
 <!DOCTYPE html>
 {% load static %}
+{% load custom_filters %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,8 +9,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" />
+    <link rel="stylesheet" href="{% static '/css/admin-panel.css' %}">
+    <link rel="stylesheet" href="{% static '/css/admin-panel-enhanced.css' %}">
     <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+    <link rel="stylesheet" href="{% static '/css/profile-dropdown.css' %}">
     <title>Admin Personnel | CalmConnect</title>
 
     <style>
@@ -119,6 +124,13 @@
         }
 
         /* Main Content */
+        .admin-options {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
         .main-bdy {
             max-width: 1400px;
             margin: 0 auto;
@@ -194,8 +206,26 @@
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 2rem;
+            padding: 2.5rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .personnel-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+        }
+
+        .personnel-container:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
 
         .personnel-header {
@@ -207,7 +237,34 @@
 
         .personnel-header h3 {
             color: #2c3e50;
-            font-size: 1.8rem;
+            margin-bottom: 2rem;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .search-input {
+            padding: 0.8rem 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            width: 300px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
+        .search-icon {
+            color: #666;
+            font-size: 1.2rem;
         }
 
         .add-btn {
@@ -230,24 +287,44 @@
         .personnel-table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 0.95rem;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             margin-top: 1rem;
         }
 
         .personnel-table th,
         .personnel-table td {
-            padding: 1rem;
+            padding: 1rem 0.75rem;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0f0f0;
         }
 
         .personnel-table th {
-            background-color: rgba(46, 204, 113, 0.1);
-            color: #2c3e50;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.85rem;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
         }
 
-        .personnel-table tr:hover {
-            background-color: rgba(233, 249, 241, 0.5);
+        .personnel-table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .personnel-table tbody tr:hover {
+            background: rgba(46, 204, 113, 0.05);
+            transform: scale(1.01);
+        }
+
+        .personnel-table tbody tr:last-child td {
+            border-bottom: none;
         }
 
         .counselor-photo {
@@ -259,29 +336,47 @@
         }
 
         .action-btn {
-            background: none;
             border: none;
             cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 5px;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
             margin-right: 0.5rem;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
         }
 
         .edit-btn {
-            color: #3498db;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
         }
 
         .edit-btn:hover {
-            background-color: rgba(52, 152, 219, 0.1);
+            background: linear-gradient(135deg, #2980b9, #21618c);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .edit-btn i {
+            font-size: 1rem;
         }
 
         .archive-btn {
-            color: #e74c3c;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
         }
 
         .archive-btn:hover {
-            background-color: rgba(231, 76, 60, 0.1);
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+
+        .archive-btn i {
+            font-size: 1rem;
         }
 
         /* Modal Styles */
@@ -304,8 +399,11 @@
             border-radius: 20px;
             width: 90%;
             max-width: 500px;
+            max-height: 80vh;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             animation: modalFadeIn 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
         }
 
         @keyframes modalFadeIn {
@@ -344,6 +442,8 @@
 
         .modal-body {
             padding: 2rem;
+            flex: 1;
+            overflow-y: auto;
         }
 
         .form-group {
@@ -521,7 +621,7 @@
 <body>
     <header>
         <div class="hdr">
-            <div class="hdr-logo"><a href="{% url 'admin-dashboard' %}"><h2>CalmConnect</h2></a></div>
+            <div class="hdr-logo"><a href="{% url 'admin_dashboard' %}"><h2>CalmConnect</h2></a></div>
             <div class="hdr-btns">
                 <div class="prfl-bell" id="notif-bell">
                     <i class="bx bxs-bell" id="bell-icon"></i>
@@ -534,7 +634,7 @@
                          alt="Profile Picture" id="profile-img"
                          onerror="this.src='{% static 'mentalhealth/img/default.jpg' %}'">
                     <div class="dropdown-menu" id="profile-dropdown">
-                        <a href="{% url 'admin-dashboard' %}">Dashboard</a>
+                        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
                         <a href="{% url 'logout' %}">Log out</a>
                     </div>
                 </div>
@@ -542,81 +642,71 @@
         </div>
     </header>
 
-    <main class="main-bdy">
-        <div class="bdy-upper">
-            <div class="upper-txt">
-                <h2>Personnel Management</h2>
-                <p>Manage counselors and staff members</p>
-            </div>
-        </div>
+    <div class="admin-dashboard">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><h3>Admin Panel</h3></div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'admin_dashboard' %}"><i class="bx bxs-dashboard"></i> Dashboard</a>
+                <a href="{% url 'admin_data' %}"><i class='bx bxs-data'></i> Data</a>
+                <a href="{% url 'admin_appointments' %}"><i class='bx bxs-calendar'></i> Appointments</a>
+                <a href="{% url 'admin_archive' %}"><i class='bx bxs-user'></i> Archives</a>
+                <a href="{% url 'admin_personnel' %}" class="active"><i class='bx bxs-user-badge'></i> Personnel</a>
+                <a href="{% url 'logout' %}"><i class="bx bx-log-out"></i> Logout</a>
+            </nav>
+        </aside>
 
-        <!-- Stats Cards -->
-        <div class="stats-container">
-            <div class="stat-card">
-                <i class="bx bxs-user-check"></i>
-                <h3>{{ active_counselors }}</h3>
-                <p>Active Counselors</p>
-            </div>
-            <div class="stat-card">
-                <i class="bx bxs-calendar-event"></i>
-                <h3>{{ total_appointments }}</h3>
-                <p>Total Appointments</p>
-            </div>
-            <div class="stat-card">
-                <i class="bx bxs-error-circle"></i>
-                <h3>{{ high_risk_cases }}</h3>
-                <p>High Risk Cases</p>
-            </div>
-        </div>
+        <main class="admin-options">
+            <div class="personnel-container">
+                <h3>Counselor Management</h3>
+                <div class="personnel-header">
+                    <button onclick="openAddModal()" class="add-btn">
+                        <i class="bx bx-plus"></i> Add Counselor
+                    </button>
+                </div>
 
-        <!-- Personnel Table -->
-        <div class="personnel-container">
-            <div class="personnel-header">
-                <h3>Counselors</h3>
-                <button class="add-btn" onclick="openAddModal()">
-                    <i class="bx bx-plus"></i> Add New Counselor
-                </button>
+                <table class="personnel-table">
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>College</th>
+                            <th>Rank</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="counselor-list">
+                        {% for counselor in counselors %}
+                        <tr data-counselor-id="{{ counselor.id }}">
+                            <td>
+                                <img src="{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}"
+                                     class="counselor-photo" alt="{{ counselor.name }}" />
+                            </td>
+                            <td>{{ counselor.name }}</td>
+                            <td>{{ counselor.email }}</td>
+                            <td>{{ counselor.unit }}</td>
+                            <td>{{ counselor.user.get_college_display }}</td>
+                            <td>{{ counselor.rank }}</td>
+                            <td>
+                                <button onclick="openEditModal({{ counselor.id }}, '{{ counselor.name }}', '{{ counselor.email }}', '{{ counselor.unit }}', '{{ counselor.rank }}', '{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static "mentalhealth/img/default.jpg" %}{% endif %}')" class="action-btn edit-btn">
+                                    <i class="bx bx-edit"></i> Edit
+                                </button>
+                                <button onclick="archiveCounselor('{{ counselor.id }}', '{{ counselor.name }}')" class="action-btn archive-btn">
+                                    <i class="bx bx-archive"></i> Archive
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+        </main>
+    </div>
 
-            <table class="personnel-table">
-                <thead>
-                    <tr>
-                        <th>Photo</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Unit</th>
-                        <th>Rank</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="counselorsTableBody">
-                    {% for counselor in counselors %}
-                    <tr data-counselor-id="{{ counselor.id }}">
-                        <td>
-                            <img src="{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}"
-                                 alt="{{ counselor.name }}"
-                                 class="counselor-photo"
-                                 onerror="this.src='{% static 'mentalhealth/img/default.jpg' %}'">
-                        </td>
-                        <td>{{ counselor.name }}</td>
-                        <td>{{ counselor.email }}</td>
-                        <td>{{ counselor.unit }}</td>
-                        <td>{{ counselor.rank }}</td>
-                        <td>
-                            <button class="action-btn edit-btn" onclick="openEditModal({{ counselor.id }}, '{{ counselor.name }}', '{{ counselor.email }}', '{{ counselor.unit }}', '{{ counselor.rank }}', '{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static "mentalhealth/img/default.jpg" %}{% endif %}')">
-                                <i class="bx bx-edit"></i>
-                            </button>
-                            <button class="action-btn archive-btn" onclick="archiveCounselor({{ counselor.id }}, '{{ counselor.name }}')">
-                                <i class="bx bx-archive"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </main>
-    
+    <!-- CSRF token for AJAX requests -->
+    {% csrf_token %}
+
     <!-- Add/Edit Counselor Modal -->
     <div class="modal" id="counselorModal">
         <div class="modal-content">
@@ -640,20 +730,41 @@
                         <input type="email" id="counselorEmail" name="email" required>
                     </div>
 
+
                     <div class="form-group">
                         <label for="counselorUnit">Unit</label>
-                        <input type="text" id="counselorUnit" name="unit" required>
+                        <select id="counselorUnit" name="unit" required>
+                            <option value="">Select Unit</option>
+                            <option value="Career Guidance & Employment Services Unit">Career Guidance & Employment Services Unit</option>
+                            <option value="Guidance Services Unit">Guidance Services Unit</option>
+                            <option value="Information Management & Publication">Information Management & Publication</option>
+                            <option value="Student Organizations Unit">Student Organizations Unit</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
                         <label for="counselorRank">Rank</label>
                         <select id="counselorRank" name="rank" required>
                             <option value="">Select Rank</option>
-                            <option value="Counselor">Counselor</option>
-                            <option value="Senior Counselor">Senior Counselor</option>
-                            <option value="Psychologist">Psychologist</option>
-                            <option value="Clinical Psychologist">Clinical Psychologist</option>
-                            <option value="Therapist">Therapist</option>
+                            <option value="Instructor I">Instructor I</option>
+                            <option value="Instructor II">Instructor II</option>
+                            <option value="Instructor III">Instructor III</option>
+                            <option value="Assistant Professor I">Assistant Professor I</option>
+                            <option value="Assistant Professor II">Assistant Professor II</option>
+                            <option value="Assistant Professor III">Assistant Professor III</option>
+                            <option value="Assistant Professor IV">Assistant Professor IV</option>
+                            <option value="Associate Professor I">Associate Professor I</option>
+                            <option value="Associate Professor II">Associate Professor II</option>
+                            <option value="Associate Professor III">Associate Professor III</option>
+                            <option value="Associate Professor IV">Associate Professor IV</option>
+                            <option value="Associate Professor V">Associate Professor V</option>
+                            <option value="Professor I">Professor I</option>
+                            <option value="Professor II">Professor II</option>
+                            <option value="Professor III">Professor III</option>
+                            <option value="Professor IV">Professor IV</option>
+                            <option value="Professor V">Professor V</option>
+                            <option value="Professor VI">Professor VI</option>
+                            <option value="University Professor">University Professor</option>
                         </select>
                     </div>
 
@@ -663,10 +774,11 @@
                             <input type="file" id="counselorPhoto" name="image" accept="image/*" class="file-input">
                             <label for="counselorPhoto" class="file-input-label">
                                 <i class="bx bx-upload"></i>
-                                <span>Choose Photo</span>
+                                <span id="photoLabelText">Choose Photo</span>
                             </label>
                             <div id="fileName" class="file-name"></div>
                         </div>
+                        <div id="imageNote" style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;"></div>
                         <img id="photoPreview" src="{% static 'mentalhealth/img/default.jpg' %}" alt="Photo Preview" class="counselor-photo" style="display:block; margin-top:10px; max-width:100px; max-height:100px;">
                     </div>
                 </form>
@@ -676,6 +788,22 @@
                 <button class="btn btn-primary" id="submitBtn" onclick="submitCounselorForm()">
                     <span id="submitText">Add Counselor</span>
                     <span id="submitSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-body" style="text-align: center; padding: 3rem 2rem;">
+                <div style="font-size: 4rem; color: #2ecc71; margin-bottom: 1rem;">
+                    <i class="bx bx-check-circle"></i>
+                </div>
+                <h3 style="color: #2c3e50; margin-bottom: 1rem; font-size: 1.5rem;">Success!</h3>
+                <p id="successMessage" style="color: #666; margin-bottom: 2rem; font-size: 1rem;">Operation completed successfully.</p>
+                <button class="btn btn-primary" onclick="closeSuccessModal()" style="padding: 0.8rem 2rem;">
+                    OK
                 </button>
             </div>
         </div>
@@ -706,25 +834,81 @@
             document.getElementById('fileName').textContent = '';
             document.getElementById('alertContainer').innerHTML = '';
             document.getElementById('photoPreview').src = '{% static "mentalhealth/img/default.jpg" %}';
+            document.getElementById('photoLabelText').textContent = 'Choose Photo';
+            document.getElementById('imageNote').textContent = '';
             document.getElementById('counselorModal').style.display = 'block';
         }
 
         function openEditModal(id, name, email, unit, rank, imageUrl) {
+            // Clear alerts first
+            document.getElementById('alertContainer').innerHTML = '';
+
+            // Set modal title and button text
             document.getElementById('modalTitle').textContent = 'Edit Counselor';
             document.getElementById('submitText').textContent = 'Update Counselor';
+
+            // Set form values
             document.getElementById('counselorId').value = id;
             document.getElementById('counselorName').value = name;
             document.getElementById('counselorEmail').value = email;
-            document.getElementById('counselorUnit').value = unit;
+
+            // Set unit dropdown - ensure exact match with option values
+            const unitSelect = document.getElementById('counselorUnit');
+            console.log('Setting unit value:', unit);
+            console.log('Available options:', Array.from(unitSelect.options).map(opt => opt.value));
+
+            // Try to find exact match first
+            let optionFound = false;
+            for (let option of unitSelect.options) {
+                if (option.value === unit) {
+                    unitSelect.value = unit;
+                    optionFound = true;
+                    console.log('Found exact match for unit:', unit);
+                    break;
+                }
+            }
+
+            // If no exact match, try partial matches for backward compatibility
+            if (!optionFound) {
+                const normalizedUnit = unit.toLowerCase().trim();
+                for (let option of unitSelect.options) {
+                    if (option.value.toLowerCase().includes(normalizedUnit) ||
+                        normalizedUnit.includes(option.value.toLowerCase())) {
+                        unitSelect.value = option.value;
+                        optionFound = true;
+                        console.log('Found partial match, setting to:', option.value);
+                        break;
+                    }
+                }
+            }
+
+            // If still no match, set to first option and log error
+            if (!optionFound) {
+                console.error('No matching unit option found for:', unit);
+                unitSelect.value = unitSelect.options[0].value;
+            }
+
             document.getElementById('counselorRank').value = rank;
+
+            // Reset file input
+            document.getElementById('counselorPhoto').value = '';
             document.getElementById('fileName').textContent = '';
-            document.getElementById('alertContainer').innerHTML = '';
+
+            // Set photo preview
             document.getElementById('photoPreview').src = imageUrl || '{% static "mentalhealth/img/default.jpg" %}';
+            document.getElementById('photoLabelText').textContent = 'Change Photo (Optional)';
+            document.getElementById('imageNote').textContent = 'Leave empty to keep current photo.';
+
+            // Show modal
             document.getElementById('counselorModal').style.display = 'block';
         }
 
         function closeModal() {
             document.getElementById('counselorModal').style.display = 'none';
+            // Reset form completely when closing
+            document.getElementById('counselorForm').reset();
+            document.getElementById('counselorId').value = '';
+            document.getElementById('alertContainer').innerHTML = '';
         }
 
         // File input handling
@@ -740,8 +924,6 @@
                     document.getElementById('photoPreview').src = e.target.result;
                 };
                 reader.readAsDataURL(file);
-            } else {
-                document.getElementById('photoPreview').src = '{% static "mentalhealth/img/default.jpg" %}';
             }
         });
 
@@ -749,27 +931,37 @@
         async function submitCounselorForm() {
             const form = document.getElementById('counselorForm');
             const formData = new FormData(form);
-            const isEdit = formData.get('counselor_id') !== '';
+            const counselorId = document.getElementById('counselorId').value;
+            const isEdit = counselorId !== '';
+
+            // If editing and no new image selected, remove the image field
+            if (isEdit && !document.getElementById('counselorPhoto').files[0]) {
+                formData.delete('image');
+            }
 
             // Show loading state
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('submitSpinner').style.display = 'inline-block';
-            document.getElementById('submitText').textContent = isEdit ? 'Updating...' : 'Adding...';
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const submitSpinner = document.getElementById('submitSpinner');
+
+            submitBtn.disabled = true;
+            submitSpinner.style.display = 'inline-block';
+            submitText.textContent = isEdit ? 'Updating...' : 'Adding...';
 
             // Clear previous alerts
             document.getElementById('alertContainer').innerHTML = '';
 
             try {
-                const url = isEdit ? `/api/counselors/${formData.get('counselor_id')}/` : '/api/counselors/';
-                const method = isEdit ? 'PUT' : 'POST';
-
-                // Add CSRF token to form data for multipart requests
-                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                const url = isEdit ? `/api/counselors/${counselorId}/` : '/api/counselors/';
+                const method = 'POST';  // Use POST for both create and update
 
                 const response = await fetch(url, {
                     method: method,
                     body: formData,
-                    credentials: 'same-origin'
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
                 });
 
                 let data;
@@ -777,21 +969,25 @@
                 if (contentType && contentType.includes('application/json')) {
                     data = await response.json();
                 } else {
-                    // Handle non-JSON responses (e.g., HTML error pages)
                     const text = await response.text();
+                    console.error('Non-JSON response:', text);
                     data = { error: 'Server returned an unexpected response. Please try again.' };
                 }
 
                 if (response.ok) {
                     // Success
-                    showAlert('success', data.message || `Counselor ${isEdit ? 'updated' : 'added'} successfully!`);
-                    setTimeout(() => {
-                        closeModal();
-                        location.reload(); // Refresh to show updated data
-                    }, 1500);
+                    showSuccessModal(data.message || `Counselor ${isEdit ? 'updated' : 'added'} successfully!`);
                 } else {
                     // Error
-                    const errorMessage = data.error || data.message || 'An error occurred. Please try again.';
+                    let errorMessage = 'An error occurred. Please try again.';
+                    if (data.error) {
+                        errorMessage = data.error;
+                    } else if (data.message) {
+                        errorMessage = data.message;
+                    } else if (data.errors) {
+                        // Handle validation errors
+                        errorMessage = Object.values(data.errors).flat().join(', ');
+                    }
                     showAlert('error', errorMessage);
                 }
             } catch (error) {
@@ -799,9 +995,9 @@
                 showAlert('error', 'Network error. Please check your connection and try again.');
             } finally {
                 // Reset loading state
-                document.getElementById('submitBtn').disabled = false;
-                document.getElementById('submitSpinner').style.display = 'none';
-                document.getElementById('submitText').textContent = isEdit ? 'Update Counselor' : 'Add Counselor';
+                submitBtn.disabled = false;
+                submitSpinner.style.display = 'none';
+                submitText.textContent = isEdit ? 'Update Counselor' : 'Add Counselor';
             }
         }
 
@@ -817,7 +1013,8 @@
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    credentials: 'same-origin'
                 });
 
                 if (response.ok) {
@@ -827,6 +1024,7 @@
                         row.remove();
                     }
                     alert(`${name} has been archived successfully.`);
+                    location.reload(); // Refresh stats
                 } else {
                     const data = await response.json();
                     alert(data.error || 'Failed to archive counselor.');
@@ -848,11 +1046,36 @@
             }, 5000);
         }
 
+        // Show success modal
+        function showSuccessModal(message) {
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successModal').style.display = 'block';
+
+            // Auto-close after 3 seconds and refresh
+            setTimeout(() => {
+                closeSuccessModal();
+            }, 3000);
+        }
+
+        // Close success modal
+        function closeSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+            closeModal(); // Close the main modal too
+            location.reload(); // Refresh to show updated data
+        }
+
+        // Search functionality removed - no search input element present
+
         // Close modal when clicking outside
         window.addEventListener('click', function(event) {
             const modal = document.getElementById('counselorModal');
             if (event.target === modal) {
                 closeModal();
+            }
+
+            const successModal = document.getElementById('successModal');
+            if (event.target === successModal) {
+                closeSuccessModal();
             }
         });
     </script>

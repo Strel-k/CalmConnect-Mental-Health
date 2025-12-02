@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import openai
 from django.conf import settings
 
-from .models import CustomUser, DASSResult, RelaxationLog, Appointment, Feedback
+from .models import CustomUser, DASSResult, RelaxationLog, Appointment, Feedback, MentalHealthTipsCache
 
 logger = logging.getLogger(__name__)
 
@@ -507,60 +507,66 @@ class AIFeedbackService:
         return "\n".join(steps)
 
     def _generate_tips_box(self, user: CustomUser, dass_data: Dict[str, Any],
-                          user_context: UserContext, dass_analysis: DASSAnalysis) -> Dict[str, Any]:
-        """Generate tips in a separate box/section after key concerns"""
-        # Check if tips should be generated
-        moderate_normal_severities = ['normal', 'mild', 'moderate']
-        has_moderate_normal = (
-            dass_data.get('depression_severity') in moderate_normal_severities or
-            dass_data.get('anxiety_severity') in moderate_normal_severities or
-            dass_data.get('stress_severity') in moderate_normal_severities
-        )
+                           user_context: UserContext, dass_analysis: DASSAnalysis) -> Dict[str, Any]:
+        """Generate tips in a separate box/section after key concerns with caching and rate limiting"""
 
-        if not has_moderate_normal:
+        # Generate tips for ALL severity levels now (not just moderate/normal)
+        depression_severity = dass_data.get('depression_severity', 'normal')
+        anxiety_severity = dass_data.get('anxiety_severity', 'normal')
+        stress_severity = dass_data.get('stress_severity', 'normal')
+        risk_level = dass_analysis.risk_level
+        college = getattr(user, 'college', '') or ''
+        year_level = getattr(user, 'year_level', '') or ''
+
+        # Try to get cached tips first
+        cached_tips = self._get_cached_tips(depression_severity, anxiety_severity,
+                                          stress_severity, risk_level, college, year_level)
+        if cached_tips:
+            cached_tips.increment_usage()
             return {
-                'tips_content': None,
-                'tips_title': None,
-                'source': 'not_generated',
-                'reason': 'high_severity_scores'
+                'tips_content': cached_tips.tips_content,
+                'tips_title': cached_tips.tips_title,
+                'source': 'cache',
+                'cached_entry_id': cached_tips.id,
+                'generated_for': f"{depression_severity}/{anxiety_severity}/{stress_severity}"
             }
 
+        # If not cached, generate new tips
         if not self.openai_available:
+            tips_content = self._generate_fallback_tips(user, dass_data, user_context, dass_analysis)
+            tips_title = self._get_tips_title_for_risk_level(risk_level)
             return {
-                'tips_content': self._generate_fallback_tips(user, dass_data, user_context, dass_analysis),
-                'tips_title': '💡 Additional Tips for Wellness',
+                'tips_content': tips_content,
+                'tips_title': tips_title,
                 'source': 'fallback',
-                'generated_for': 'moderate_normal'
+                'generated_for': f"{depression_severity}/{anxiety_severity}/{stress_severity}"
             }
 
         try:
-            prompt = self._build_tips_prompt(user, dass_data, user_context, dass_analysis)
+            # Generate tips with rate limiting and retry logic
+            tips_content = self._generate_ai_tips_with_retry(user, dass_data, user_context, dass_analysis)
+            tips_title = self._get_tips_title_for_risk_level(risk_level)
 
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a supportive mental health assistant specializing in university student wellness. Provide practical, evidence-based tips for maintaining mental health and preventing escalation of symptoms."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=400,
-                temperature=0.7,
-            )
+            # Cache the generated tips
+            self._cache_tips(depression_severity, anxiety_severity, stress_severity,
+                           risk_level, college, year_level, tips_content, tips_title)
 
-            tips = response.choices[0].message['content'].strip()
             return {
-                'tips_content': tips,
-                'tips_title': '💡 Additional Tips for Wellness',
+                'tips_content': tips_content,
+                'tips_title': tips_title,
                 'source': 'openai',
-                'generated_for': 'moderate_normal'
+                'generated_for': f"{depression_severity}/{anxiety_severity}/{stress_severity}"
             }
 
         except Exception as e:
             logger.error(f"Tips box generation failed for user {user.id}: {str(e)}")
+            tips_content = self._generate_fallback_tips(user, dass_data, user_context, dass_analysis)
+            tips_title = self._get_tips_title_for_risk_level(risk_level)
             return {
-                'tips_content': self._generate_fallback_tips(user, dass_data, user_context, dass_analysis),
-                'tips_title': '💡 Additional Tips for Wellness',
+                'tips_content': tips_content,
+                'tips_title': tips_title,
                 'source': 'fallback',
-                'generated_for': 'moderate_normal'
+                'generated_for': f"{depression_severity}/{anxiety_severity}/{stress_severity}"
             }
 
     def _generate_personalized_feedback(self, user: CustomUser, dass_data: Dict[str, Any],
@@ -798,20 +804,32 @@ Focus on validation, practical strategies, and appropriate professional referral
 
 
     def _build_tips_prompt(self, user: CustomUser, dass_data: Dict[str, Any],
-                          user_context: UserContext, dass_analysis: DASSAnalysis) -> str:
-        """Build prompt for mental health tips generation"""
+                           user_context: UserContext, dass_analysis: DASSAnalysis) -> str:
+        """Build prompt for mental health tips generation for all severity levels"""
         prompt_parts = []
 
+        depression_severity = dass_data.get('depression_severity', 'normal')
+        anxiety_severity = dass_data.get('anxiety_severity', 'normal')
+        stress_severity = dass_data.get('stress_severity', 'normal')
+        risk_level = dass_analysis.risk_level
+
         prompt_parts.append(f"Generate 5-7 practical, actionable mental health tips for a university student with DASS21 scores: "
-                          f"Depression: {dass_data['depression']} ({dass_data.get('depression_severity', 'unknown')}), "
-                          f"Anxiety: {dass_data['anxiety']} ({dass_data.get('anxiety_severity', 'unknown')}), "
-                          f"Stress: {dass_data['stress']} ({dass_data.get('stress_severity', 'unknown')}).")
+                           f"Depression: {dass_data['depression']} ({depression_severity}), "
+                           f"Anxiety: {dass_data['anxiety']} ({anxiety_severity}), "
+                           f"Stress: {dass_data['stress']} ({stress_severity}). "
+                           f"Overall risk level: {risk_level}.")
 
         # Add specific concerns
         if dass_analysis.primary_concerns:
             prompt_parts.append("Key concerns from their responses:")
             for concern in dass_analysis.primary_concerns[:3]:
                 prompt_parts.append(f"- {concern['question']}")
+
+        # Add coping patterns and triggers
+        if dass_analysis.coping_patterns:
+            prompt_parts.append(f"Coping challenges: {', '.join(dass_analysis.coping_patterns)}.")
+        if dass_analysis.specific_triggers:
+            prompt_parts.append(f"Specific triggers: {', '.join(dass_analysis.specific_triggers)}.")
 
         # Add personalization
         if user_context.academic_context:
@@ -826,75 +844,214 @@ Focus on validation, practical strategies, and appropriate professional referral
             pref = user_context.exercise_preferences
             prompt_parts.append(f"They've completed {pref['total_sessions']} relaxation sessions, preferring {pref['preferred_exercise']}.")
 
-        prompt_parts.append("""
+        # Customize prompt based on risk level
+        if risk_level == 'high':
+            prompt_parts.append("""
 Generate tips that are:
-1. Specific to their DASS21 scores and concerns
-2. Tailored to university student life
-3. Practical and immediately actionable
-4. Focused on prevention and maintenance for moderate/normal mental health
-5. Include a mix of academic, social, and self-care strategies
+1. Specific to their severe DASS21 symptoms and concerns
+2. Include immediate coping strategies for crisis situations
+3. Strongly encourage professional help and support seeking
+4. Focus on safety and stabilization
+5. Include emergency resources and when to seek immediate help
+6. Number them 1-7 and keep each tip concise (1-2 sentences)
+7. Use supportive, urgent language appropriate for high-risk situations
+8. Include both immediate actions and longer-term strategies
+Format as a bulleted list with <b>bold</b> key actions and ⚠️ for urgent items.
+""")
+        elif risk_level == 'moderate':
+            prompt_parts.append("""
+Generate tips that are:
+1. Specific to their moderate DASS21 symptoms and concerns
+2. Include strategies for managing symptoms and preventing escalation
+3. Encourage professional consultation while providing self-help strategies
+4. Focus on building resilience and coping skills
+5. Include academic, social, and self-care strategies
 6. Number them 1-7 and keep each tip concise (1-2 sentences)
 7. Use encouraging, supportive language
-8. Avoid medical advice or diagnosis
+8. Balance immediate relief with longer-term wellness
+Format as a bulleted list with <b>bold</b> key actions.
+""")
+        else:  # low risk
+            prompt_parts.append("""
+Generate tips that are:
+1. Specific to maintaining mental health with their current DASS21 scores
+2. Focus on prevention and wellness maintenance
+3. Include proactive strategies for stress management
+4. Tailored to university student life and academic demands
+5. Include a mix of academic, social, and self-care strategies
+6. Number them 1-7 and keep each tip concise (1-2 sentences)
+7. Use encouraging, positive language
+8. Emphasize building healthy habits and resilience
 Format as a bulleted list with <b>bold</b> key actions.
 """)
 
         return " ".join(prompt_parts)
 
     def _generate_fallback_tips(self, user: CustomUser, dass_data: Dict[str, Any],
-                               user_context: UserContext, dass_analysis: DASSAnalysis) -> str:
-        """Generate fallback tips when OpenAI is unavailable"""
+                                user_context: UserContext, dass_analysis: DASSAnalysis) -> str:
+        """Generate fallback tips when OpenAI is unavailable for all severity levels"""
         tips = []
 
         depression_severity = dass_data.get('depression_severity', 'normal')
         anxiety_severity = dass_data.get('anxiety_severity', 'normal')
         stress_severity = dass_data.get('stress_severity', 'normal')
+        risk_level = dass_analysis.risk_level
 
-        # Depression tips
-        if depression_severity in ['mild', 'moderate', 'normal']:
+        if risk_level == 'high':
+            # High-risk tips - focus on immediate safety and professional help
             tips.extend([
-                "1. <b>Maintain a consistent sleep schedule</b> of 7-9 hours per night to support emotional regulation.",
-                "2. <b>Practice daily gratitude</b> by noting 3 things you're thankful for each evening.",
-                "3. <b>Stay connected with friends</b> through regular social activities, even small ones like coffee chats."
+                "<b>Contact your university counseling center immediately</b> for professional support and crisis intervention.",
+                "<b>Reach out to a trusted friend, family member, or counselor</b> to talk about how you're feeling right now.",
+                "<b>Practice grounding techniques</b>: name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, 1 you can taste.",
+                "<b>If you're in immediate danger</b>, call emergency services (911) or go to the nearest emergency room.",
+                "<b>Consider speaking with a mental health professional</b> for personalized support and treatment options.",
+                "<b>Limit access to means of self-harm</b> and focus on your immediate safety.",
+                "<b>Remember that seeking help is a sign of strength</b>, not weakness."
+            ])
+        elif risk_level == 'moderate':
+            # Moderate-risk tips - balance self-help with professional consultation
+            tips.extend([
+                "<b>Schedule an appointment with a counselor</b> to discuss your symptoms and develop coping strategies.",
+                "<b>Practice daily relaxation exercises</b> like deep breathing or progressive muscle relaxation.",
+                "<b>Maintain regular sleep, eating, and exercise patterns</b> to support your mental health.",
+                "<b>Break overwhelming tasks into smaller, manageable steps</b> to reduce anxiety and build momentum.",
+                "<b>Stay connected with your support network</b> - talk to friends or family about how you're feeling.",
+                "<b>Consider mindfulness or meditation apps</b> for daily mental health support.",
+                "<b>Track your mood and symptoms</b> to identify patterns and triggers."
+            ])
+        else:
+            # Low-risk tips - focus on prevention and wellness maintenance
+            tips.extend([
+                "<b>Maintain a consistent sleep schedule</b> of 7-9 hours per night to support emotional regulation.",
+                "<b>Practice daily gratitude</b> by noting 3 things you're thankful for each evening.",
+                "<b>Stay connected with friends</b> through regular social activities, even small ones like coffee chats.",
+                "<b>Use the 4-7-8 breathing technique</b>: inhale for 4 counts, hold for 7, exhale for 8 when feeling anxious.",
+                "<b>Try the Pomodoro Technique</b>: 25 minutes focused work followed by 5-minute breaks.",
+                "<b>Incorporate short walks</b> between classes to clear your mind and reduce stress.",
+                "<b>Set boundaries</b> around study time and leisure time to maintain work-life balance."
             ])
 
-        # Anxiety tips
-        if anxiety_severity in ['mild', 'moderate', 'normal']:
-            tips.extend([
-                "4. <b>Use the 4-7-8 breathing technique</b>: inhale for 4 counts, hold for 7, exhale for 8 when feeling anxious.",
-                "5. <b>Break tasks into smaller steps</b> to reduce overwhelm and build momentum.",
-                "6. <b>Practice progressive muscle relaxation</b> for 10 minutes daily to release physical tension."
-            ])
-
-        # Stress tips
-        if stress_severity in ['mild', 'moderate', 'normal']:
-            tips.extend([
-                "7. <b>Try the Pomodoro Technique</b>: 25 minutes focused work followed by 5-minute breaks.",
-                "8. <b>Incorporate short walks</b> between classes to clear your mind and reduce stress.",
-                "9. <b>Set boundaries</b> around study time and leisure time to maintain work-life balance."
-            ])
+        # Add severity-specific tips
+        if depression_severity in ['moderate', 'severe', 'extremely-severe']:
+            tips.append("<b>Try engaging in activities you once enjoyed</b>, even if it's just for a few minutes each day.")
+        if anxiety_severity in ['moderate', 'severe', 'extremely-severe']:
+            tips.append("<b>Practice deep breathing exercises</b> when you notice anxiety symptoms building.")
+        if stress_severity in ['moderate', 'severe', 'extremely-severe']:
+            tips.append("<b>Take short breaks during study sessions</b> to prevent burnout and maintain focus.")
 
         # Academic-specific tips
         if user_context.academic_context:
             context = user_context.academic_context
             if 'college_stressors' in context:
                 if 'engineering' in context['college_stressors'].lower():
-                    tips.append("10. <b>For technical coursework</b>, schedule regular review sessions to prevent last-minute stress.")
+                    tips.append("<b>For technical coursework</b>, schedule regular review sessions to prevent last-minute stress.")
                 elif 'business' in context['college_stressors'].lower():
-                    tips.append("10. <b>For case studies</b>, try discussing complex topics with classmates to gain different perspectives.")
+                    tips.append("<b>For case studies</b>, try discussing complex topics with classmates to gain different perspectives.")
                 elif 'arts' in context['college_stressors'].lower():
-                    tips.append("10. <b>For creative projects</b>, try free-writing or sketching to unlock creative blocks.")
+                    tips.append("<b>For creative projects</b>, try free-writing or sketching to unlock creative blocks.")
 
         # Year-level specific advice
         if user_context.academic_context:
             context = user_context.academic_context
             if 'year_challenges' in context:
                 if '1st' in context['year_challenges']:
-                    tips.append("11. <b>As a first-year student</b>, focus on building good study habits and finding your support network.")
+                    tips.append("<b>As a first-year student</b>, focus on building good study habits and finding your support network.")
                 elif '4th' in context['year_challenges']:
-                    tips.append("11. <b>As a graduating student</b>, remember to celebrate your achievements while managing thesis stress.")
+                    tips.append("<b>As a graduating student</b>, remember to celebrate your achievements while managing thesis stress.")
 
-        return "\n".join(tips)
+        # Number the tips
+        numbered_tips = []
+        for i, tip in enumerate(tips[:7], 1):  # Limit to 7 tips
+            numbered_tips.append(f"{i}. {tip}")
+
+        return "\n".join(numbered_tips)
+
+    def _get_cached_tips(self, depression_severity: str, anxiety_severity: str,
+                        stress_severity: str, risk_level: str, college: str, year_level: str):
+        """Retrieve cached tips for similar user profiles"""
+        try:
+            return MentalHealthTipsCache.objects.get(
+                depression_severity=depression_severity,
+                anxiety_severity=anxiety_severity,
+                stress_severity=stress_severity,
+                risk_level=risk_level,
+                college=college,
+                year_level=year_level
+            )
+        except MentalHealthTipsCache.DoesNotExist:
+            return None
+
+    def _get_tips_title_for_risk_level(self, risk_level: str) -> str:
+        """Get appropriate title based on risk level"""
+        titles = {
+            'high': 'Important Support Strategies',
+            'moderate': 'Strategies for Better Wellness',
+            'low': 'Tips for Maintaining Wellness'
+        }
+        return titles.get(risk_level, 'Mental Health Tips')
+
+    def _generate_ai_tips_with_retry(self, user: CustomUser, dass_data: Dict[str, Any],
+                                   user_context: UserContext, dass_analysis: DASSAnalysis,
+                                   max_retries: int = 3) -> str:
+        """Generate AI tips with rate limiting and retry logic"""
+        prompt = self._build_tips_prompt(user, dass_data, user_context, dass_analysis)
+
+        for attempt in range(max_retries):
+            try:
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are a supportive mental health assistant specializing in university student wellness. Provide practical, evidence-based tips for maintaining mental health and preventing escalation of symptoms."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=400,
+                    temperature=0.7,
+                )
+
+                tips = response.choices[0].message['content'].strip()
+                logger.info(f"AI tips generated for user {user.id} on attempt {attempt + 1}")
+                return tips
+
+            except Exception as e:
+                # Handle rate limiting - check if it's a rate limit error
+                if "rate limit" in str(e).lower() or "429" in str(e):
+                    if attempt < max_retries - 1:
+                        # Exponential backoff: wait 2^attempt seconds
+                        wait_time = 2 ** attempt
+                        logger.warning(f"Rate limit hit for user {user.id}, attempt {attempt + 1}, waiting {wait_time}s")
+                        import time
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Rate limit exceeded for user {user.id} after {max_retries} attempts")
+                        raise e
+                else:
+                    logger.error(f"AI tips generation failed for user {user.id} on attempt {attempt + 1}: {str(e)}")
+                    if attempt < max_retries - 1:
+                        continue
+                    raise e
+
+        # This should not be reached, but just in case
+        raise Exception("Failed to generate AI tips after all retries")
+
+    def _cache_tips(self, depression_severity: str, anxiety_severity: str, stress_severity: str,
+                   risk_level: str, college: str, year_level: str, tips_content: str, tips_title: str):
+        """Cache generated tips for future use"""
+        try:
+            MentalHealthTipsCache.objects.create(
+                depression_severity=depression_severity,
+                anxiety_severity=anxiety_severity,
+                stress_severity=stress_severity,
+                risk_level=risk_level,
+                college=college,
+                year_level=year_level,
+                tips_content=tips_content,
+                tips_title=tips_title,
+                source='openai'
+            )
+            logger.info(f"Cached tips for profile: {depression_severity}/{anxiety_severity}/{stress_severity} - {risk_level}")
+        except Exception as e:
+            logger.error(f"Failed to cache tips: {str(e)}")
 
     def _serialize_dass_analysis(self, analysis: DASSAnalysis) -> Dict[str, Any]:
         """Serialize DASS analysis for JSON response"""

@@ -17,7 +17,7 @@ def get_status_class(status):
 def get_risk_level(result):
     """Returns risk level and color based on DASS21 scores"""
     max_score = max(result.depression_score, result.anxiety_score, result.stress_score)
-    
+
     if max_score >= 28:  # Extremely severe
         return ("Extremely Severe", "#c0392b")
     elif max_score >= 21:  # Severe
@@ -28,3 +28,10 @@ def get_risk_level(result):
         return ("Mild", "#f1c40f")
     else:  # Normal
         return ("Normal", "#2ecc71")
+
+@register.filter(name='get_college_display')
+def get_college_display(college_code):
+    """Returns the full college name for a given college code"""
+    from ..models import CustomUser
+    college_dict = dict(CustomUser.COLLEGE_CHOICES)
+    return college_dict.get(college_code, college_code)

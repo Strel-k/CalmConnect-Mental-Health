@@ -9,6 +9,7 @@
   <meta name="description" content="Personal schedule for counselors to manage their appointments and availability">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+  {% include 'mentalhealth/base_notifications.html' %}
   <style>
     :root {
       --primary-color: #2ecc71;
@@ -1127,7 +1128,7 @@
     }
   </style>
 </head>
-<body>
+<body data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}" data-user-is-counselor="{% if user.counselor_profile %}true{% else %}false{% endif %}">
   <header>
     <div class="hdr">
       <div class="hdr-logo"><h2>CalmConnect</h2></div>
@@ -2298,201 +2299,25 @@
         const appointmentId = document.getElementById('appointmentModal').dataset.appointmentId;
         window.location.href = `/reports/create/?appointment=${appointmentId}`;
       });
+
     });
-    // Unified notification dropdown logic
-    function showNotificationDropdown() {
-        const dropdown = document.getElementById('notificationDropdown');
-        dropdown.innerHTML = '<div style="text-align:center;padding:1.5rem 0;"><span class="ai-spinner" style="width:22px;height:22px;"></span> Loading...</div>';
-        dropdown.style.display = 'block';
-        
-        fetch('/notifications/', {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => {
-            if (!response.ok) {
-                if (response.status === 401) {
-                    window.location.href = '/login/';
-                    return;
-                }
-                throw new Error(`HTTP ${response.status}`);
-            }
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                window.location.href = '/login/';
-                return;
-            }
-            return response.json();
-        })
-        .then(data => {
-            dropdown.innerHTML = '';
-            if (data.success && data.notifications && data.notifications.length > 0) {
-                data.notifications.forEach(notif => {
-                    const item = document.createElement('div');
-                    item.className = 'notification-item';
-                    item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
-                    
-                    const content = document.createElement('a');
-                    content.href = notif.url;
-                    content.style.cssText = 'flex:1;display:flex;align-items:center;gap:0.7rem;text-decoration:none;color:inherit;';
-                    content.innerHTML = `
-                        <i class='bx ${notif.type === 'appointment' ? 'bxs-calendar' : notif.type === 'report' ? 'bxs-report' : 'bxs-bell'}' style='color:#27ae60;font-size:1.2rem;'></i>
-                        <span>${notif.message}</span>
-                        <span style='margin-left:auto;font-size:0.85em;color:#888;'>${notif.time}</span>
-                    `;
-                    
-                    const clearBtn = document.createElement('button');
-                    clearBtn.innerHTML = '<i class="bx bx-x"></i>';
-                    clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
-                    clearBtn.title = 'Clear notification';
-                    clearBtn.onclick = function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        clearNotification(notif.id);
-                    };
-                    
-                    item.appendChild(content);
-                    item.appendChild(clearBtn);
-                    dropdown.appendChild(item);
-                });
-                
-                // Add clear all button
-                const clearAllDiv = document.createElement('div');
-                clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
-                
-                const clearAllBtn = document.createElement('button');
-                clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
-                clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
-                clearAllBtn.onclick = function(e) {
-                    e.preventDefault();
-                    if (confirm('Clear all notifications?')) {
-                        clearAllNotifications();
-                    }
-                };
-                
-                clearAllDiv.appendChild(clearAllBtn);
-                dropdown.appendChild(clearAllDiv);
-            } else {
-                dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#888;"><i class="bx bxs-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
-            }
-        })
-        .catch((error) => {
-            console.error('Notification error:', error);
-            dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
-        });
-    }
-    
-    const bellIcon = document.getElementById('bell-icon');
-    if (bellIcon) {
-        bellIcon.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const dropdown = document.getElementById('notificationDropdown');
-            if (dropdown.style.display === 'block') {
-                dropdown.style.display = 'none';
-            } else {
-                showNotificationDropdown();
-            }
-        });
-    }
-    
-    document.addEventListener('click', function() {
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        if (notificationDropdown) {
-            notificationDropdown.style.display = 'none';
+    // Profile dropdown toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileToggle = document.getElementById('profileDropdownToggle');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        if (profileToggle && profileDropdown) {
+            profileToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+            });
+
+            // Close profile dropdown when clicking outside
+            document.addEventListener('click', function() {
+                profileDropdown.style.display = 'none';
+            });
         }
     });
-
-    // Function to clear individual notification
-    function clearNotification(notificationId) {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
-        
-        fetch(`/notifications/${notificationId}/clear/`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrfToken
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Refresh the notification dropdown
-                showNotificationDropdown();
-                // Update the badge
-                updateNotificationBadge();
-            } else {
-                console.error('Error clearing notification:', data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error clearing notification:', error);
-        });
-    }
-
-    // Function to clear all notifications
-    function clearAllNotifications() {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
-        
-        fetch('/notifications/clear-all/', {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrfToken
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Refresh the notification dropdown
-                showNotificationDropdown();
-                // Update the badge
-                updateNotificationBadge();
-            } else {
-                console.error('Error clearing all notifications:', data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error clearing all notifications:', error);
-        });
-    }
-
-    // Function to update notification badge
-    function updateNotificationBadge() {
-        fetch('/notifications/', {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}'
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => {
-            if (!response.ok) {
-                return;
-            }
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                return;
-            }
-            return response.json();
-        })
-        .then(data => {
-            const badge = document.getElementById('notificationBadge');
-            if (badge && data && data.count > 0) {
-                badge.textContent = data.count;
-                badge.style.display = 'flex';
-            } else if (badge) {
-                badge.style.display = 'none';
-            }
-        })
-        .catch(error => {
-            console.error('Error updating notification badge:', error);
-        });
-    }
   </script>
   <!-- Place this at the very end of the body -->
   <script>

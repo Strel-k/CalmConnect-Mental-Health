@@ -1,0 +1,528 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follow-up Session Consent | CalmConnect</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .hdr {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hdr-logo h2 {
+            color: #2ecc71;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .hdr-logo a {
+            text-decoration: none;
+        }
+
+        /* Main Content */
+        .main-bdy {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Hero Section */
+        .bdy-upper {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            text-align: center;
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 15px 35px rgba(46, 204, 113, 0.3);
+        }
+
+        .upper-txt h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .upper-txt p {
+            font-size: 1.2rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        /* Consent Container */
+        .consent-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .consent-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .consent-title h2 {
+            color: #2c3e50;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .consent-title p {
+            color: #666;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Follow-up Details */
+        .followup-details {
+            background: rgba(233, 249, 241, 0.7);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #2ecc71;
+        }
+
+        .counselor-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .counselor-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #2ecc71;
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+        }
+
+        .counselor-details h3 {
+            color: #2c3e50;
+            margin-bottom: 0.3rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .counselor-details p {
+            color: #666;
+            margin-bottom: 0.2rem;
+            font-size: 0.95rem;
+        }
+
+        .appointment-details {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .appointment-details h4 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .detail-value.date {
+            color: #2ecc71;
+        }
+
+        /* Consent Question */
+        .consent-question {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .consent-question h3 {
+            color: #2c3e50;
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .consent-question p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .consent-btn, .decline-btn {
+            padding: 1.2rem 3rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            min-width: 160px;
+        }
+
+        .consent-btn {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        .decline-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .consent-btn:hover, .decline-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .consent-btn:active, .decline-btn:active {
+            transform: translateY(-1px);
+        }
+
+        /* Result Message */
+        .result-message {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            border-radius: 16px;
+            margin-top: 2rem;
+        }
+
+        .result-message.success {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid #2ecc71;
+        }
+
+        .result-message.error {
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid #e74c3c;
+        }
+
+        .result-message h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-message.success h3 {
+            color: #27ae60;
+        }
+
+        .result-message.error h3 {
+            color: #c0392b;
+        }
+
+        .result-message p {
+            color: #2c3e50;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-message.success .result-icon {
+            color: #2ecc71;
+        }
+
+        .result-message.error .result-icon {
+            color: #e74c3c;
+        }
+
+        /* Loading State */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading .consent-btn::after,
+        .loading .decline-btn::after {
+            content: " Processing...";
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .counselor-info {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .consent-btn, .decline-btn {
+                width: 100%;
+            }
+
+            .detail-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="hdr">
+            <div class="hdr-logo"><a href="{% url 'index' %}"><h2>CalmConnect</h2></a></div>
+        </div>
+    </header>
+
+    <main class="main-bdy">
+        <div class="bdy-upper">
+            <div class="upper-txt">
+                <h2>Follow-up Session</h2>
+                <p>Review and confirm your follow-up appointment</p>
+            </div>
+        </div>
+
+        <div class="consent-container" id="consentContainer">
+            <div class="consent-title">
+                <h2>Follow-up Session Details</h2>
+                <p>Please review the details below and confirm your participation</p>
+            </div>
+
+            <div class="followup-details">
+                <div class="counselor-info">
+                    <img src="{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}"
+                         alt="{{ counselor.name }}"
+                         class="counselor-avatar">
+                    <div class="counselor-details">
+                        <h3>{{ counselor.name }}</h3>
+                        <p>{{ counselor.unit }}</p>
+                        <p>{{ counselor.rank }}</p>
+                    </div>
+                </div>
+
+                <div class="appointment-details">
+                    <h4>Appointment Information</h4>
+                    <div class="detail-row">
+                        <span class="detail-label">Date:</span>
+                        <span class="detail-value date">{{ appointment.date|date:"F j, Y" }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Time:</span>
+                        <span class="detail-value">{{ appointment.time|time:"g:i A" }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Session Type:</span>
+                        <span class="detail-value">{{ appointment.get_session_type_display }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Services:</span>
+                        <span class="detail-value">{{ appointment.services|join:", " }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Reason:</span>
+                        <span class="detail-value">{{ appointment.reason }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="consent-question">
+                <h3>Do you consent to this follow-up session?</h3>
+                <p>Your participation will help continue your counseling journey and support your mental health goals.</p>
+            </div>
+
+            <form method="post" id="consentForm">
+                {% csrf_token %}
+                <input type="hidden" name="consent_given" id="consentInput" value="">
+                <div class="action-buttons">
+                    <button type="button" class="consent-btn" id="consentBtn">
+                        <i class="bx bx-check"></i> Yes, I Consent
+                    </button>
+                    <button type="button" class="decline-btn" id="declineBtn">
+                        <i class="bx bx-x"></i> No, Decline
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="result-message" id="resultMessage">
+            <i class="bx bxs-check-circle result-icon"></i>
+            <h3>Thank You</h3>
+            <p>Your response has been recorded successfully.</p>
+        </div>
+    </main>
+
+    <script>
+        // Get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Handle consent button
+        document.getElementById('consentBtn').addEventListener('click', function() {
+            processConsent(true);
+        });
+
+        // Handle decline button
+        document.getElementById('declineBtn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to decline this follow-up session? You can always request a new session if needed.')) {
+                processConsent(false);
+            }
+        });
+
+        function processConsent(consentGiven) {
+            const form = document.getElementById('consentForm');
+            const container = document.getElementById('consentContainer');
+            const resultMessage = document.getElementById('resultMessage');
+
+            // Set the hidden input value
+            document.getElementById('consentInput').value = consentGiven;
+
+            // Show loading state
+            container.classList.add('loading');
+
+            // Submit the form using fetch to handle the response properly
+            const formData = new FormData(form);
+
+            fetch(window.location.pathname, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: formData
+            })
+            .then(response => {
+                // Check if it's a redirect (302) or JSON response
+                if (response.redirected) {
+                    // Handle redirect response
+                    window.location.href = response.url;
+                    return;
+                }
+
+                // Try to parse as JSON
+                return response.json().then(data => ({ response, data }));
+            })
+            .then(result => {
+                if (!result) return; // Redirect was handled
+
+                const { response, data } = result;
+                container.classList.remove('loading');
+
+                if (data.success) {
+                    // Hide consent container and show success message
+                    container.style.display = 'none';
+                    resultMessage.style.display = 'block';
+                    resultMessage.className = 'result-message success';
+
+                    if (consentGiven) {
+                        resultMessage.querySelector('h3').textContent = 'Consent Given';
+                        resultMessage.querySelector('p').textContent = 'Thank you for consenting to this follow-up session. Your appointment remains confirmed.';
+                    } else {
+                        resultMessage.querySelector('h3').textContent = 'Follow-up Declined';
+                        resultMessage.querySelector('p').textContent = 'Your follow-up session has been cancelled. You can always request a new session if needed.';
+                    }
+
+                    // Scroll to result message
+                    resultMessage.scrollIntoView({ behavior: 'smooth' });
+
+                    // Redirect after a delay
+                    setTimeout(() => {
+                        window.location.href = '{% url "user-profile" %}';
+                    }, 3000);
+                } else {
+                    // Show error
+                    container.style.display = 'none';
+                    resultMessage.style.display = 'block';
+                    resultMessage.className = 'result-message error';
+                    resultMessage.querySelector('h3').textContent = 'Error';
+                    resultMessage.querySelector('p').textContent = data.error || 'An error occurred while processing your response.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                container.classList.remove('loading');
+
+                // For fetch errors, submit the form normally as fallback
+                form.submit();
+            });
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            // Add any initialization code here if needed
+        });
+    </script>
+</body>
+</html>

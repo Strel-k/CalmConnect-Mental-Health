@@ -460,15 +460,17 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             user_id=user_id,
             dismissed=False
         ).order_by('-created_at')[:10]
-        
+
         return [{
             'id': notif.id,
             'message': notif.message,
             'type': notif.type,
-            'url': notif.url,
+            'url': '#',  # Always disable navigation to prevent redirects
             'read': notif.read,
             'created_at': notif.created_at.isoformat(),
-            'priority': getattr(notif, 'priority', 'normal')
+            'priority': getattr(notif, 'priority', 'normal'),
+            'action_text': getattr(notif, 'action_text', None),
+            'metadata': getattr(notif, 'metadata', {})
         } for notif in notifications]
 
     @database_sync_to_async

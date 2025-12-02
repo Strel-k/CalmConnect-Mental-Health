@@ -174,11 +174,32 @@ class CounselorProfileForm(forms.ModelForm):
         ("Counselor", "Counselor"),
     ]
 
+    # Use COLLEGE_CHOICES from CustomUser model for unit field
+    unit = forms.ChoiceField(
+        choices=CustomUser.COLLEGE_CHOICES,
+        required=True,
+        label="Unit/Department"
+    )
+
     rank = forms.ChoiceField(
         choices=RANK_CHOICES,
-        required=True,
+        required=False,  # Make it not required by default
         label="Rank/Title"
     )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        # Only include rank field for superusers
+        if self.user and not self.user.is_superuser:
+            # Remove rank from fields and make it not required
+            if 'rank' in self.fields:
+                del self.fields['rank']
+        else:
+            # For superusers, make rank required
+            if 'rank' in self.fields:
+                self.fields['rank'].required = True
 
     class Meta:
         model = Counselor
@@ -208,3 +229,54 @@ class ReportForm(forms.ModelForm):
             'user': forms.HiddenInput(),
             'appointment': forms.HiddenInput(),
         }
+
+
+class PasswordResetRequestForm(forms.Form):
+    email = forms.EmailField(
+        max_length=254,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your email address',
+            'required': True
+        }),
+        label="Email Address"
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if not CustomUser.objects.filter(email=email).exists():
+            raise forms.ValidationError("No account found with this email address.")
+        return email
+
+
+class SetNewPasswordForm(forms.Form):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter new password',
+            'required': True
+        }),
+        label="New Password",
+        min_length=12,
+        help_text="Password must be at least 12 characters long."
+    )
+
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirm new password',
+            'required': True
+        }),
+        label="Confirm New Password"
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+
+        if password and confirm_password:
+            if password != confirm_password:
+                raise forms.ValidationError("Passwords do not match.")
+
+        return cleaned_data

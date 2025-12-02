@@ -15,13 +15,14 @@ from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.db.models import Avg, OuterRef, Q
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.timezone import now
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -33,22 +34,26 @@ from .forms import AppointmentStatusForm
 from .forms import CounselorProfileForm
 from .forms import CustomLoginForm
 from .forms import CustomUserRegistrationForm
+from .forms import PasswordResetRequestForm
 from .forms import ReportForm
+from .forms import SetNewPasswordForm
 from .models import Appointment
 from .models import Counselor
 from .models import CustomUser
 from .models import DASSResult
 from .models import Feedback
+from .models import FollowupRequest
 from .models import LiveSession
 from .models import Notification
 from .models import RelaxationLog
 from .models import Report
 from .models import SessionMessage
 from .models import SessionParticipant
+from .models import UserSettings
 from .models_secure import SecureDASSResult
 from .serializers import AppointmentSerializer
 from .serializers_secure import SecureDASSResultSerializer
-from .templates.mentalhealth.decorators import verified_required
+from .decorators import verified_required
 
 # Import ratelimit with fallback
 try:
@@ -279,7 +284,12 @@ def user_profile(request):
                 # Save the new profile picture
                 user.profile_picture = profile_picture
                 user.save()
-                
+
+                # Also update counselor image if user is a counselor
+                if hasattr(user, 'counselor_profile') and user.counselor_profile:
+                    user.counselor_profile.image = profile_picture
+                    user.counselor_profile.save()
+
                 return JsonResponse({
                     'success': True,
                     'message': 'Profile picture updated successfully!',
@@ -596,10 +606,20 @@ def login_view(request):
             
             # If we get here, the user can log in
             login(request, user)
-            
+
             if not request.POST.get('remember_me'):
                 request.session.set_expiry(0)
-            
+
+            # Check for 'next' parameter (from @login_required redirects)
+            next_url = request.POST.get('next') or request.GET.get('next')
+            if next_url and next_url.startswith('/') and not next_url.startswith('//'):
+                # Ensure it's a safe internal redirect (not external)
+                # Remove any potential query parameters that could be malicious
+                from urllib.parse import urlparse
+                parsed = urlparse(next_url)
+                if not parsed.netloc and not parsed.scheme:  # Only relative URLs
+                    return redirect(next_url)
+
             # Check if user is a counselor
             if hasattr(user, 'counselor_profile'):
                 # Check if this is a new counselor with default password
@@ -1418,49 +1438,103 @@ def appointment_list(request):
         return Response({'error': 'Permission denied'}, status=403)
     
     upcoming = request.GET.get('upcoming', 'false').lower() == 'true'
-    queryset = Appointment.objects.all().select_related('user', 'counselor', 'dass_result')
-    
+    queryset = Appointment.objects.all().select_related('user', 'counselor', 'dass_result').order_by('-date', '-time')
+
     if upcoming:
         queryset = queryset.filter(
             status__in=['pending', 'confirmed'],
             date__gte=timezone.now().date()
         ).order_by('date', 'time')
-    
+
     print(f"Found {queryset.count()} appointments")
     serializer = AppointmentSerializer(queryset, many=True)
     return Response(serializer.data)
 
-@api_view(['GET', 'PATCH'])
-@permission_classes([IsAuthenticated])
+@login_required
+@counselor_required
+def appointment_detail_view(request, pk):
+    """HTML view for appointment details that redirects appropriately based on appointment type"""
+    try:
+        appointment = Appointment.objects.select_related('user', 'counselor').get(pk=pk)
+
+        # Check permissions - must be the counselor for this appointment
+        if appointment.counselor.user != request.user:
+            messages.error(request, 'Permission denied')
+            return redirect('counselor_dashboard')
+
+        # For counselors, always redirect to schedule view where they can see appointment details
+        # This provides a consistent experience for viewing appointment information
+        return redirect('counselor_schedule')
+
+    except Appointment.DoesNotExist:
+        messages.error(request, 'Appointment not found')
+        return redirect('counselor_dashboard')
+
+
+@csrf_exempt
 def appointment_detail(request, pk):
+    # Convert pk to int
+    try:
+        pk = int(pk)
+    except ValueError:
+        return HttpResponse(json.dumps({'error': 'Invalid appointment ID'}), status=400, content_type='application/json')
+
+    # Explicit authentication check
+    if not request.user.is_authenticated:
+        return HttpResponse(json.dumps({'error': 'Authentication required'}), status=401, content_type='application/json')
+
     # Check if user is staff (admin) or has counselor profile
     if not (request.user.is_staff or hasattr(request.user, 'counselor_profile')):
-        return Response({'error': 'Permission denied'}, status=403)
-    
+        return HttpResponse(json.dumps({'error': 'Permission denied'}), status=403, content_type='application/json')
+
     try:
         appointment = Appointment.objects.get(pk=pk)
     except Appointment.DoesNotExist:
-        return Response({'error': 'Appointment not found'}, status=404)
+        return HttpResponse(json.dumps({'error': 'Appointment not found'}), status=404, content_type='application/json')
+
+    if request.method == 'OPTIONS':
+        return HttpResponse(json.dumps({}), status=200, content_type='application/json')
 
     if request.method == 'GET':
-        serializer = AppointmentSerializer(appointment)
-        return Response(serializer.data)
+        try:
+            serializer = AppointmentSerializer(appointment)
+            return HttpResponse(json.dumps(serializer.data), content_type='application/json')
+        except Exception as e:
+            logger.error(f"Error serializing appointment {pk}: {e}")
+            return HttpResponse(json.dumps({'error': 'Failed to serialize appointment data'}), status=500, content_type='application/json')
 
     elif request.method == 'PATCH':
-        # Ensure status is lowercase to match choices
-        if 'status' in request.data and request.data['status']:
-            request.data['status'] = request.data['status'].lower()
-            
-        serializer = AppointmentSerializer(appointment, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        
-        # Format validation errors
-        errors = {}
-        for field, error_list in serializer.errors.items():
-            errors[field] = [str(error) for error in error_list]
-        return Response({'error': 'Validation failed', 'details': errors}, status=400)
+        try:
+            # Parse JSON data
+            data = json.loads(request.body)
+
+            # Ensure status is lowercase to match choices
+            if 'status' in data and data['status']:
+                data['status'] = data['status'].lower()
+
+            serializer = AppointmentSerializer(appointment, data=data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return HttpResponse(json.dumps(serializer.data), content_type='application/json')
+
+            # Format validation errors
+            errors = {}
+            for field, error_list in serializer.errors.items():
+                errors[field] = [str(error) for error in error_list]
+            return HttpResponse(json.dumps({'error': 'Validation failed', 'details': errors}), status=400, content_type='application/json')
+        except json.JSONDecodeError:
+            return HttpResponse(json.dumps({'error': 'Invalid JSON data'}), status=400, content_type='application/json')
+        except Exception as e:
+            logger.error(f"Error updating appointment {pk}: {e}")
+            return HttpResponse(json.dumps({'error': f'Failed to update appointment: {str(e)}'}), status=500, content_type='application/json')
+
+    return HttpResponse(json.dumps({'error': 'Method not allowed'}), status=405, content_type='application/json')
+
+
+@csrf_exempt
+def test_view(request):
+    logger.info("test_view called")
+    return HttpResponse(json.dumps({'test': 'ok', 'method': request.method}), content_type='application/json')
     
 
 @staff_member_required
@@ -1512,7 +1586,7 @@ def add_counselor(request):
     try:
         # Handle both form data and JSON requests
         if request.content_type == 'multipart/form-data':
-            data = request.POST
+            data = request.POST.copy()  # Make a mutable copy
             files = request.FILES
         else:
             try:
@@ -1525,14 +1599,30 @@ def add_counselor(request):
                 }, status=400)
 
         # Validate required fields
-        required_fields = ['name', 'email', 'unit', 'rank', 'college']
+        required_fields = ['name', 'email', 'unit', 'rank']
         missing_fields = [field for field in required_fields if not data.get(field)]
-        
+
         if missing_fields:
             return JsonResponse({
                 'success': False,
                 'error': f'Missing required fields: {", ".join(missing_fields)}'
             }, status=400)
+
+        # Validate unit to be one of the valid department names
+        if data.get('unit'):
+            valid_department_names = [
+                'Career Guidance & Employment Services Unit',
+                'Guidance Services Unit',
+                'Information Management & Publication',
+                'Student Organizations Unit'
+            ]
+
+            # Check if it's a valid department name
+            if data['unit'] not in valid_department_names:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Invalid department name. Must be one of: {", ".join(valid_department_names)}'
+                }, status=400)
 
         # Check if email already exists
         if Counselor.objects.filter(email=data['email']).exists():
@@ -1550,7 +1640,7 @@ def add_counselor(request):
         # Generate a secure random password and setup token
         setup_token = get_random_string(64)
         default_password = get_random_string(12)
-        
+
         try:
             # First create the user account (inactive by default)
             username = data['email'].split('@')[0]
@@ -1567,7 +1657,7 @@ def add_counselor(request):
                 student_id=f"staff-{get_random_string(8)}",
                 age=0,
                 gender='Prefer not to say',
-                college=data['college'],
+                college='CBA',  # Default college for counselors
                 program='Staff',
                 year_level='4'
             )
@@ -1583,8 +1673,8 @@ def add_counselor(request):
             )
             
             # Handle image upload if present
-            if files and 'photo' in files:
-                counselor.image = files['photo']
+            if files and 'image' in files:
+                counselor.image = files['image']
                 counselor.save()
 
             # Send setup email
@@ -1670,14 +1760,40 @@ def add_counselor(request):
             'error': str(e)
         }, status=400)
 
-@staff_member_required
-@require_http_methods(["POST", "PATCH"])
+@require_http_methods(["GET", "POST", "PATCH"])
 def update_counselor(request, counselor_id):
+    # Manual authentication check for AJAX compatibility
+    if not request.user.is_authenticated or not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+
     try:
         counselor = Counselor.objects.get(id=counselor_id)
-        
+
+        # Handle GET request - return counselor data
+        if request.method == 'GET':
+            image_url = counselor.image.url if counselor.image else None
+            if image_url:
+                image_url = request.build_absolute_uri(image_url)
+            else:
+                image_url = request.build_absolute_uri(settings.STATIC_URL + 'img/default.jpg')
+
+            # Return the unit as-is since it's now department names
+            response_data = {
+                'id': counselor.id,
+                'name': counselor.name,
+                'email': counselor.email,
+                'unit': counselor.unit,  # Return the department name directly
+                'rank': counselor.rank,
+                'image_url': image_url,
+            }
+
+            return JsonResponse({
+                'success': True,
+                'counselor': response_data
+            })
+
         if request.content_type == 'multipart/form-data':
-            data = request.POST
+            data = request.POST.copy()  # Make a mutable copy
             files = request.FILES
         else:
             try:
@@ -1689,24 +1805,44 @@ def update_counselor(request, counselor_id):
                     'error': 'Invalid JSON data'
                 }, status=400)
 
+        # Validate unit to be one of the valid department names
+        if data.get('unit'):
+            valid_department_names = [
+                'Career Guidance & Employment Services Unit',
+                'Guidance Services Unit',
+                'Information Management & Publication',
+                'Student Organizations Unit'
+            ]
+
+            # Check if it's a valid department name
+            if data['unit'] not in valid_department_names:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Invalid department name. Must be one of: {", ".join(valid_department_names)}'
+                }, status=400)
+
         # Update fields
         counselor.name = data.get('name', counselor.name)
         counselor.email = data.get('email', counselor.email)
         counselor.unit = data.get('unit', counselor.unit)
         counselor.rank = data.get('rank', counselor.rank)
-        if data.get('college'):
-            counselor.user.college = data.get('college')
+
+        # Update associated user if it exists
+        if counselor.user:
+            # Update user email if counselor email changed
+            if data.get('email') and data['email'] != counselor.user.email:
+                counselor.user.email = data['email']
             counselor.user.save()
-        
+
         # Handle image upload if present
-        if files and 'photo' in files:
+        if files and 'image' in files:
             # Delete old image if exists
             if counselor.image:
                 default_storage.delete(counselor.image.path)
-            counselor.image = files['photo']
-        
+            counselor.image = files['image']
+
         counselor.save()
-        
+
         # Build image URL
         image_url = counselor.image.url if counselor.image else None
         if image_url:
@@ -1714,21 +1850,22 @@ def update_counselor(request, counselor_id):
         else:
             image_url = request.build_absolute_uri(settings.STATIC_URL + 'img/default.jpg')
 
+        # Prepare response data
+        response_data = {
+            'id': counselor.id,
+            'name': counselor.name,
+            'email': counselor.email,
+            'unit': counselor.unit,
+            'rank': counselor.rank,
+            'image_url': image_url,
+        }
+
         return JsonResponse({
             'success': True,
-            'counselor': {
-                'id': counselor.id,
-                'name': counselor.name,
-                'email': counselor.email,
-                'unit': counselor.unit,
-                'rank': counselor.rank,
-                'image_url': image_url,
-                'college': counselor.user.college,
-                'college_display': counselor.user.get_college_display()
-            },
+            'counselor': response_data,
             'message': 'Counselor updated successfully'
         })
-        
+
     except Counselor.DoesNotExist:
         return JsonResponse({
             'success': False,
@@ -1767,7 +1904,7 @@ def archive_counselor(request, counselor_id):
 @staff_member_required
 def admin_archive(request):
     active_tab = request.GET.get('tab', 'appointments')
-    
+
     # Paginate appointments
     archived_appointments = Appointment.objects.filter(
         Q(status='completed') | Q(status='cancelled')
@@ -1788,11 +1925,12 @@ def admin_archive(request):
     counselors_page_number = request.GET.get('employees_page', 1)
     inactive_counselors_page = counselors_paginator.get_page(counselors_page_number)
 
-    # Paginate archived reports
+    # Paginate archived reports (include both archived and completed reports)
     archived_reports = Report.objects.filter(status__in=['archived', 'completed']).order_by('-created_at')
     reports_paginator = Paginator(archived_reports, 5)
     reports_page_number = request.GET.get('reports_page', 1)
     archived_reports_page = reports_paginator.get_page(reports_page_number)
+
 
     return render(request, 'admin-archive.html', {
         'archived_appointments_page': archived_appointments_page,
@@ -1949,11 +2087,10 @@ def counselor_dashboard(request):
         status__in=['pending', 'confirmed']
     ).order_by('date', 'time')
     
-    # Get pending reports
+    # Get recent reports (show recent reports regardless of status for counselor review)
     pending_reports = Report.objects.filter(
-        counselor=counselor,
-        status='pending'
-    ).order_by('-created_at')[:5]
+        counselor=counselor
+    ).exclude(status='archived').order_by('-created_at')[:5]
     
     # Get weekly session count
     weekly_sessions = Appointment.objects.filter(
@@ -1970,6 +2107,7 @@ def counselor_dashboard(request):
         'weekly_sessions_count': weekly_sessions,
         'week_start': start_of_week,
         'week_end': end_of_week,
+        'has_availability': len(counselor.available_days) > 0,
     }
     
     return render(request, 'counselor-panel.html', context)
@@ -2143,38 +2281,52 @@ def counselor_reports(request):
 
 @login_required
 def counselor_archive(request):
-    if not hasattr(request.user, 'counselor_profile'):
+    # Check if user has counselor profile first (prioritize counselor view)
+    if hasattr(request.user, 'counselor_profile') and request.user.counselor_profile.is_active:
+        counselor = request.user.counselor_profile
+    elif request.user.is_staff or request.user.is_superuser:
+        # If admin specifies a counselor ID, show that counselor's archive
+        counselor_id = request.GET.get('counselor_id')
+        if counselor_id:
+            try:
+                counselor = Counselor.objects.get(id=counselor_id, is_active=True)
+            except Counselor.DoesNotExist:
+                messages.error(request, 'Counselor not found.')
+                return redirect('admin_personnel')
+        else:
+            # Admin accessing archives - show all data
+            return admin_archive(request)
+    else:
         return redirect('index')
-    
-    counselor = request.user.counselor_profile
+
     # Completed sessions (appointments)
     completed_appointments = Appointment.objects.filter(
         counselor=counselor,
         status='completed'
     ).select_related('user').order_by('-date', '-time')
-    
+
     # Archived reports
     archived_reports = Report.objects.filter(
         counselor=counselor,
         status='archived'
     ).select_related('user').order_by('-created_at')
-    
+
     # Completed reports (for backward compatibility)
     completed_reports = Report.objects.filter(
         counselor=counselor,
         status='completed'
     ).select_related('user').order_by('-created_at')
-    
+
     # Combine all archived and completed reports
     all_archived_reports = list(archived_reports) + list(completed_reports)
-    
+
     context = {
         'counselor': counselor,
         'completed_appointments': completed_appointments,
         'archived_reports': all_archived_reports,
     }
-    
-    return render(request, 'counselor-archive.html', context)
+
+    return render(request, 'mentalhealth/counselor-archive.html', context)
 
 @login_required
 def counselor_profile(request):
@@ -2200,13 +2352,13 @@ def counselor_profile(request):
         overall_avg = round(total_rating / 4, 1)
     
     if request.method == 'POST':
-        form = CounselorProfileForm(request.POST, request.FILES, instance=counselor)
+        form = CounselorProfileForm(request.POST, request.FILES, instance=counselor, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, 'Profile updated successfully!')
             return redirect('counselor_profile')
     else:
-        form = CounselorProfileForm(instance=counselor)
+        form = CounselorProfileForm(instance=counselor, user=request.user)
     
     return render(request, 'counselor-profile.html', {
         'counselor': counselor,
@@ -2218,6 +2370,93 @@ def counselor_profile(request):
         'avg_helpfulness': avg_helpfulness,
         'avg_recommend': avg_recommend,
     })
+
+
+def forget_password(request):
+    """Handle password reset request"""
+    if request.method == 'POST':
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            user = CustomUser.objects.get(email=email)
+
+            # Generate reset token
+            reset_token = get_random_string(64)
+            user.password_reset_token = reset_token
+            user.password_reset_expires = timezone.now() + timedelta(hours=24)
+            user.save()
+
+            # Send reset email
+            reset_url = request.build_absolute_uri(
+                reverse('reset_password', kwargs={'token': reset_token})
+            )
+
+            html_message = render_to_string('mentalhealth/password-reset-email.html', {
+                'user': user,
+                'reset_url': reset_url,
+            })
+
+            plain_message = f"""
+            Password Reset Request - CalmConnect
+
+            Hello {user.full_name},
+
+            You have requested to reset your password for your CalmConnect account.
+
+            Please click the link below to reset your password:
+            {reset_url}
+
+            This link will expire in 24 hours. If you didn't request this password reset, please ignore this email.
+
+            The CalmConnect Team
+            """
+
+            try:
+                send_mail(
+                    'Password Reset Request - CalmConnect',
+                    plain_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    html_message=html_message,
+                    fail_silently=False,
+                )
+                messages.success(request, 'Password reset instructions have been sent to your email.')
+            except Exception as e:
+                messages.error(request, 'Failed to send reset email. Please try again later.')
+
+            return redirect('login')
+    else:
+        form = PasswordResetRequestForm()
+
+    return render(request, 'mentalhealth/forget-password.html', {'form': form})
+
+
+def reset_password(request, token):
+    """Handle password reset with token"""
+    try:
+        user = CustomUser.objects.get(
+            password_reset_token=token,
+            password_reset_expires__gt=timezone.now()
+        )
+    except CustomUser.DoesNotExist:
+        messages.error(request, 'Invalid or expired reset link.')
+        return redirect('forget_password')
+
+    if request.method == 'POST':
+        form = SetNewPasswordForm(request.POST)
+        if form.is_valid():
+            password = form.cleaned_data['password']
+            user.set_password(password)
+            user.password_reset_token = None
+            user.password_reset_expires = None
+            user.save()
+
+            messages.success(request, 'Your password has been reset successfully. You can now log in with your new password.')
+            return redirect('login')
+    else:
+        form = SetNewPasswordForm()
+
+    return render(request, 'mentalhealth/reset-password.html', {'form': form})
 
 @login_required
 def create_appointment(request):
@@ -2245,7 +2484,11 @@ def appointment_detail(request, pk):
         appointment = Appointment.objects.get(pk=pk)
         if not hasattr(request.user, 'counselor_profile') or appointment.counselor != request.user.counselor_profile:
             return redirect('index')
-            
+
+        # If this is a follow-up appointment, redirect to the follow-up session view
+        if appointment.session_type == 'followup':
+            return redirect('followup_session', appointment_id=appointment.id)
+
         if request.method == 'POST':
             form = AppointmentStatusForm(request.POST, instance=appointment)
             if form.is_valid():
@@ -2254,7 +2497,7 @@ def appointment_detail(request, pk):
                 return redirect('appointment_detail', pk=appointment.id)
         else:
             form = AppointmentStatusForm(instance=appointment)
-            
+
         return render(request, 'appointment-detail.html', {
             'appointment': appointment,
             'form': form
@@ -2290,8 +2533,8 @@ def create_report(request):
             report = form.save(commit=False)
             report.counselor = request.user.counselor_profile
             
-            # Always mark reports as completed when created
-            report.status = 'completed'
+            # Always mark reports as archived when created (completed reports are archived)
+            report.status = 'archived'
             
             if appointment or form.cleaned_data.get('appointment'):
                 # Use appointment from GET or from POST data
@@ -2340,18 +2583,138 @@ def report_detail(request, pk):
         report = Report.objects.get(pk=pk)
         if not hasattr(request.user, 'counselor_profile') or report.counselor != request.user.counselor_profile:
             return redirect('index')
-            
+
+        # Check if there's an existing follow-up request for this report
+        followup_request = FollowupRequest.objects.filter(report=report).first()
+
         return render(request, 'report-detail.html', {
-            'report': report
+            'report': report,
+            'followup_request': followup_request
         })
     except Report.DoesNotExist:
         return redirect('counselor_reports')
 
+
 @login_required
-@counselor_required
+def report_export(request, pk, format_type):
+    """Export individual report to PDF or DOC format"""
+    try:
+        report = Report.objects.select_related('user', 'counselor').get(pk=pk)
+        if not hasattr(request.user, 'counselor_profile') or report.counselor != request.user.counselor_profile:
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+
+        from django.http import HttpResponse
+        from io import BytesIO
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib import colors
+        from docx import Document
+        from docx.shared import Inches
+
+        if format_type == 'pdf':
+            # PDF Export
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="report_{report.id}.pdf"'
+
+            buffer = BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=letter)
+            styles = getSampleStyleSheet()
+            story = []
+
+            # Title
+            title = Paragraph(f"Session Report: {report.title}", styles['Title'])
+            story.append(title)
+            story.append(Spacer(1, 12))
+
+            # Report details
+            details_data = [
+                ['Student Name', report.user.full_name if report.user else 'N/A'],
+                ['Student ID', report.user.student_id if report.user else 'N/A'],
+                ['Report Type', report.get_report_type_display()],
+                ['Status', report.get_status_display()],
+                ['Created Date', report.created_at.strftime('%Y-%m-%d %H:%M')],
+                ['Last Modified', report.updated_at.strftime('%Y-%m-%d %H:%M')],
+            ]
+
+            details_table = Table(details_data, colWidths=[100, 300])
+            details_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+
+            story.append(details_table)
+            story.append(Spacer(1, 12))
+
+            # Description
+            desc_title = Paragraph("Report Description:", styles['Heading2'])
+            story.append(desc_title)
+            story.append(Spacer(1, 6))
+
+            description = Paragraph(report.description, styles['Normal'])
+            story.append(description)
+
+            doc.build(story)
+            pdf = buffer.getvalue()
+            buffer.close()
+            response.write(pdf)
+            return response
+
+        elif format_type == 'doc':
+            # DOC Export
+            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            response['Content-Disposition'] = f'attachment; filename="report_{report.id}.docx"'
+
+            document = Document()
+            document.add_heading(f'Session Report: {report.title}', 0)
+
+            # Report details
+            document.add_paragraph(f"Student Name: {report.user.full_name if report.user else 'N/A'}")
+            document.add_paragraph(f"Student ID: {report.user.student_id if report.user else 'N/A'}")
+            document.add_paragraph(f"Report Type: {report.get_report_type_display()}")
+            document.add_paragraph(f"Status: {report.get_status_display()}")
+            document.add_paragraph(f"Created Date: {report.created_at.strftime('%Y-%m-%d %H:%M')}")
+            document.add_paragraph(f"Last Modified: {report.updated_at.strftime('%Y-%m-%d %H:%M')}")
+            document.add_paragraph("")
+
+            # Description
+            document.add_heading('Report Description:', level=2)
+            document.add_paragraph(report.description)
+
+            # Save to response
+            buffer = BytesIO()
+            document.save(buffer)
+            buffer.seek(0)
+            response.write(buffer.getvalue())
+            buffer.close()
+            return response
+
+        else:
+            return JsonResponse({'error': 'Unsupported format'}, status=400)
+
+    except Report.DoesNotExist:
+        return JsonResponse({'error': 'Report not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def report_api(request, pk=None):
     """API endpoint for report CRUD operations"""
+    # Check authentication
+    if not request.user.is_authenticated:
+        return Response({'success': False, 'error': 'Authentication required'}, status=401)
+
+    # Check if user is a counselor
+    if not hasattr(request.user, 'counselor_profile'):
+        return Response({'success': False, 'error': 'Permission denied: counselor access required'}, status=403)
+
     counselor = request.user.counselor_profile
     
     if request.method == 'GET':
@@ -2578,9 +2941,10 @@ def get_notifications(request):
                 'id': notif.id,
                 'type': notif.type,
                 'message': notif.message,
-                'url': notif.url or '#',
+                'url': '#',  # Always disable navigation to prevent redirects
                 'time': notif.created_at.strftime('%Y-%m-%d %H:%M'),
-                'read': notif.read
+                'read': notif.read,
+                'metadata': notif.metadata  # Include metadata for modal handling
             })
         
         print(f"Total notifications: {len(notification_list)}")
@@ -2747,6 +3111,118 @@ def student_required(view_func):
 # Set up logger
 logger = logging.getLogger('dass21_ai_feedback')
 
+@login_required
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@ratelimit(key='user', rate='5/m', block=True)  # 5 requests per minute per user
+def generate_ai_tips(request):
+    """
+    Generate AI-powered personalized mental health tips based on DASS21 scores.
+    Expects JSON: { 'depression': int, 'anxiety': int, 'stress': int, 'depression_severity': str, 'anxiety_severity': str, 'stress_severity': str, 'answers': dict }
+    Strictly sanitizes data and enforces student-only access.
+    """
+    user = request.user
+    data = request.data
+
+    # Validate required fields
+    required_fields = ['depression', 'anxiety', 'stress', 'depression_severity', 'anxiety_severity', 'stress_severity']
+    for field in required_fields:
+        if field not in data:
+            return Response({'success': False, 'error': f'Missing required field: {field}'}, status=400)
+
+    depression = data.get('depression')
+    anxiety = data.get('anxiety')
+    stress = data.get('stress')
+    depression_severity = data.get('depression_severity')
+    anxiety_severity = data.get('anxiety_severity')
+    stress_severity = data.get('stress_severity')
+    answers = data.get('answers', {})
+
+    # Validate score ranges (0-42 for each scale)
+    if not all(isinstance(x, int) and 0 <= x <= 42 for x in [depression, anxiety, stress]):
+        logger.warning(f"Invalid DASS21 scores from user {user.id}")
+        return Response({'success': False, 'error': 'Invalid DASS21 scores. Must be integers between 0-42.'}, status=400)
+
+    # Get comprehensive user history for personalization
+    user_history = get_user_personalization_data(user)
+
+    # Analyze specific DASS21 responses for targeted tips
+    dass_analysis = analyze_dass21_responses(answers, depression, anxiety, stress)
+
+    # Compose personalized prompt for AI tips generation
+    prompt = build_dass21_tips_prompt(
+        user, depression, anxiety, stress,
+        depression_severity, anxiety_severity, stress_severity,
+        user_history, dass_analysis
+    )
+
+    try:
+        openai.api_key = getattr(settings, 'OPENAI_API_KEY', None)
+        logger.info(f"OpenAI API key status: {'Configured' if openai.api_key else 'Not configured'}")
+        if not openai.api_key:
+            logger.warning("OpenAI API key not configured. Using personalized fallback tips.")
+            # Provide personalized fallback tips when OpenAI is not configured
+            fallback_tips = generate_dass21_specific_fallback_tips(
+                user, depression, anxiety, stress,
+                depression_severity, anxiety_severity, stress_severity,
+                user_history, dass_analysis
+            )
+            return Response({
+                'success': True,
+                'tips': fallback_tips,
+                'source': 'fallback',
+                'personalization_level': 'high',
+                'dass_analysis': dass_analysis
+            })
+
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a compassionate mental health assistant specializing in student wellness. Generate 5-7 evidence-based, actionable mental health tips tailored to the student's specific DASS21 results, academic context, and personal circumstances. Focus on progressive strategies: self-help for milder symptoms, professional resources for severe symptoms. Ensure tips are culturally sensitive, inclusive, and aligned with WHO/NICE guidelines. Structure each tip with a clear title and detailed description."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=600,
+            temperature=0.7,
+        )
+        tips_text = response.choices[0].message['content'].strip()
+        logger.info(f"Personalized AI tips generated for user {user.id}")
+
+        # Parse tips into structured format
+        structured_tips = parse_ai_tips_response(tips_text)
+
+        return Response({
+            'success': True,
+            'tips': structured_tips,
+            'source': 'openai',
+            'personalization_level': 'high',
+            'dass_analysis': dass_analysis,
+            'context_used': {
+                'academic_context': bool(user_history['academic_context']),
+                'test_history': user_history['test_count'],
+                'exercise_preferences': bool(user_history['exercise_preferences']),
+                'trend_analysis': bool(user_history['trend_analysis']),
+                'dass_specific': True
+            }
+        })
+    except Exception as e:
+        logger.error(f"AI tips generation error for user {user.id}: {str(e)}")
+        # Provide personalized fallback tips on any error
+        fallback_tips = generate_dass21_specific_fallback_tips(
+            user, depression, anxiety, stress,
+            depression_severity, anxiety_severity, stress_severity,
+            user_history, dass_analysis
+        )
+        return Response({
+            'success': True,
+            'tips': fallback_tips,
+            'source': 'fallback',
+            'personalization_level': 'high',
+            'error': 'AI service temporarily unavailable',
+            'dass_analysis': dass_analysis
+        })
+
+
+@login_required
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @ratelimit(key='user', rate='5/m', block=True)  # 5 requests per minute per user
@@ -2766,9 +3242,21 @@ def ai_feedback(request):
     stress_severity = data.get('stress_severity')
     answers = data.get('answers', {})  # Individual question responses
 
+    # Convert scores to integers if they are numeric
+    try:
+        if depression is not None:
+            depression = int(float(depression))
+        if anxiety is not None:
+            anxiety = int(float(anxiety))
+        if stress is not None:
+            stress = int(float(stress))
+    except (ValueError, TypeError):
+        logger.warning(f"Invalid DASS21 input from user {user.id}: cannot convert to integers")
+        return Response({'success': False, 'error': 'Invalid DASS21 scores.'}, status=400)
+
     # Validate input
     if not all(isinstance(x, int) for x in [depression, anxiety, stress] if x is not None):
-        logger.warning(f"Invalid DASS21 input from user {user.id}")
+        logger.warning(f"Invalid DASS21 input from user {user.id}: scores are not integers after conversion")
         return Response({'success': False, 'error': 'Invalid DASS21 scores.'}, status=400)
     if depression is None or anxiety is None or stress is None:
         logger.warning(f"Missing DASS21 input from user {user.id}")
@@ -3128,32 +3616,282 @@ def generate_dass21_specific_fallback_feedback(user, depression, anxiety, stress
     
     return " ".join(feedback_parts)
 
+def build_dass21_tips_prompt(user, depression, anxiety, stress,
+                           depression_severity, anxiety_severity, stress_severity,
+                           user_history, dass_analysis):
+    """Build a DASS21-specific personalized prompt for AI tips generation"""
+
+    # Base prompt with current scores
+    prompt = f"Generate 5-7 personalized mental health tips for a university student with these DASS21 scores: "
+    prompt += f"Depression: {depression} ({depression_severity}), "
+    prompt += f"Anxiety: {anxiety} ({anxiety_severity}), "
+    prompt += f"Stress: {stress} ({stress_severity}). "
+
+    # Add specific DASS21 analysis
+    if dass_analysis['primary_concerns']:
+        prompt += f"\n\nSpecific concerns identified from their responses: "
+        for i, concern in enumerate(dass_analysis['primary_concerns'][:3], 1):
+            prompt += f"{i}. {concern['question']} (severity: {concern['severity']}) "
+
+    if dass_analysis['coping_patterns']:
+        prompt += f"\nCoping challenges: {', '.join(dass_analysis['coping_patterns'])}. "
+
+    if dass_analysis['specific_triggers']:
+        prompt += f"\nSpecific triggers: {', '.join(dass_analysis['specific_triggers'])}. "
+
+    # Add personalization context
+    personalization = []
+
+    # Academic context
+    if user_history['academic_context']:
+        context = user_history['academic_context']
+        if 'college_stressors' in context:
+            personalization.append(f"The student is in {user.get_college_display()} and faces challenges with {context['college_stressors']}.")
+        if 'year_challenges' in context:
+            personalization.append(f"As a {user.get_year_level_display()} student, they're dealing with {context['year_challenges']}.")
+        if 'age_context' in context:
+            personalization.append(f"They are in the {context['age_context']} phase of life.")
+
+    # Test history and trends
+    if user_history['test_count'] > 1:
+        personalization.append(f"This is their {user_history['test_count']}th DASS21 assessment.")
+        if user_history['trend_analysis']:
+            trends = user_history['trend_analysis']
+            trend_desc = []
+            for dimension, trend in trends.items():
+                if trend == 'improving':
+                    trend_desc.append(f"{dimension} scores are improving")
+                elif trend == 'worsening':
+                    trend_desc.append(f"{dimension} scores are worsening")
+            if trend_desc:
+                personalization.append(f"Trend analysis shows: {', '.join(trend_desc)}.")
+
+    # Exercise preferences
+    if user_history['exercise_preferences']:
+        pref = user_history['exercise_preferences']
+        personalization.append(f"They have completed {pref['total_sessions']} relaxation sessions, with {pref['preferred_exercise']} being their preferred exercise.")
+
+    # Add personalization to prompt
+    if personalization:
+        prompt += " ".join(personalization) + " "
+
+    # Add gender context if available
+    if hasattr(user, 'gender') and user.gender and user.gender != 'Prefer not to say':
+        prompt += f"The student identifies as {user.gender.lower()}. "
+
+    # Enhanced final instructions with DASS21-specific guidance
+    prompt += (
+        "Generate 5-7 evidence-based mental health tips specifically tailored to their DASS21 results and personal context. "
+        "Each tip should have: "
+        "1. A clear, actionable title "
+        "2. A detailed description explaining why it helps their specific symptoms "
+        "3. Progressive approach: self-help strategies for milder symptoms, professional resources for severe symptoms "
+        "4. Cultural sensitivity and inclusivity "
+        "5. Alignment with WHO/NICE mental health guidelines "
+        "6. Student-specific considerations (academic pressure, social isolation, time management) "
+        "Focus on practical, immediate actions they can take today. "
+        "Ensure tips are empathetic, encouraging, and avoid medicalizing language. "
+        "Format each tip as: **Title**\\nDescription\\n\\n"
+    )
+
+    return prompt
+
+
+def parse_ai_tips_response(tips_text):
+    """Parse AI-generated tips response into structured format"""
+    tips = []
+    sections = tips_text.split('\n\n')
+
+    for section in sections:
+        if '**' in section and section.strip():
+            lines = section.strip().split('\n')
+            if len(lines) >= 2:
+                title = lines[0].replace('**', '').strip()
+                description = ' '.join(lines[1:]).strip()
+                tips.append({
+                    'title': title,
+                    'description': description,
+                    'priority': len(tips) + 1  # Lower number = higher priority
+                })
+
+    # Ensure we have at least 5 tips, pad with defaults if needed
+    while len(tips) < 5:
+        default_tips = [
+            {
+                'title': 'Practice Daily Gratitude',
+                'description': 'Take a moment each day to note three things you\'re grateful for. This simple practice can help shift focus from negative thoughts to positive aspects of your life.',
+                'priority': len(tips) + 1
+            },
+            {
+                'title': 'Stay Connected',
+                'description': 'Reach out to friends, family, or classmates regularly. Social support is crucial for mental health, even brief check-ins can make a significant difference.',
+                'priority': len(tips) + 1
+            },
+            {
+                'title': 'Maintain Healthy Sleep Habits',
+                'description': 'Aim for 7-9 hours of quality sleep. Create a calming bedtime routine and avoid screens before bed to improve sleep quality.',
+                'priority': len(tips) + 1
+            },
+            {
+                'title': 'Incorporate Physical Activity',
+                'description': 'Engage in regular movement - take short walks, stretch, or do simple exercises. Physical activity releases endorphins and improves mood naturally.',
+                'priority': len(tips) + 1
+            },
+            {
+                'title': 'Practice Mindful Breathing',
+                'description': 'When feeling overwhelmed, try the 4-7-8 breathing technique: inhale for 4 seconds, hold for 7 seconds, exhale for 8 seconds.',
+                'priority': len(tips) + 1
+            }
+        ]
+        tips.extend(default_tips[len(tips)-5:])
+
+    return tips[:7]  # Return up to 7 tips
+
+
+def generate_dass21_specific_fallback_tips(user, depression, anxiety, stress,
+                                         depression_severity, anxiety_severity, stress_severity,
+                                         user_history, dass_analysis):
+    """Generate DASS21-specific personalized fallback tips when OpenAI is not available"""
+
+    tips = []
+
+    # Address specific DASS21 concerns first
+    if dass_analysis['primary_concerns']:
+        primary_concern = dass_analysis['primary_concerns'][0]
+        if 'positive feeling' in primary_concern['question'].lower():
+            tips.append({
+                'title': 'Cultivate Positive Moments',
+                'description': 'Make time for activities that bring joy, even if just for 5-10 minutes. Small positive experiences can help rebuild your capacity for enjoyment.',
+                'priority': 1
+            })
+        elif 'initiative' in primary_concern['question'].lower():
+            tips.append({
+                'title': 'Break Tasks into Small Steps',
+                'description': 'When feeling overwhelmed by tasks, break them into tiny, manageable steps. Celebrate completing each small step to build momentum.',
+                'priority': 1
+            })
+        elif 'panic' in primary_concern['question'].lower():
+            tips.append({
+                'title': 'Grounding Techniques for Panic',
+                'description': 'Use the 5-4-3-2-1 grounding technique: name 5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste.',
+                'priority': 1
+            })
+        elif 'worth' in primary_concern['question'].lower():
+            tips.append({
+                'title': 'Practice Self-Compassion',
+                'description': 'Treat yourself with the same kindness you would offer a friend. Remember that your value is not determined by your current struggles.',
+                'priority': 1
+            })
+        elif 'relax' in primary_concern['question'].lower():
+            tips.append({
+                'title': 'Progressive Muscle Relaxation',
+                'description': 'Practice tensing and releasing different muscle groups. Start with your toes and work up to your head, noticing the difference between tension and relaxation.',
+                'priority': 1
+            })
+
+    # Address coping patterns
+    if 'difficulty relaxing' in dass_analysis['coping_patterns']:
+        tips.append({
+            'title': 'Create a Relaxation Routine',
+            'description': 'Set aside 10-15 minutes daily for relaxation activities like deep breathing, gentle stretching, or listening to calming music.',
+            'priority': 2
+        })
+    if 'emotional reactivity' in dass_analysis['coping_patterns']:
+        tips.append({
+            'title': 'Pause Before Responding',
+            'description': 'When emotions run high, try the STOP technique: Stop, Take a breath, Observe your thoughts and feelings, Proceed mindfully.',
+            'priority': 2
+        })
+
+    # Academic context tips
+    if user_history['academic_context']:
+        context = user_history['academic_context']
+        if 'college_stressors' in context:
+            if 'engineering' in context['college_stressors'].lower():
+                tips.append({
+                    'title': 'Academic Study Breaks',
+                    'description': 'Use the Pomodoro technique: 25 minutes of focused study followed by a 5-minute break. This helps maintain concentration and prevents burnout.',
+                    'priority': 2
+                })
+            elif 'business' in context['college_stressors'].lower():
+                tips.append({
+                    'title': 'Balance Academic and Personal Time',
+                    'description': 'Create a weekly schedule that includes both study time and personal activities. Discuss complex topics with classmates to gain different perspectives.',
+                    'priority': 2
+                })
+
+    # Current severity-based tips
+    if depression_severity in ['moderate', 'severe', 'extremely-severe']:
+        tips.append({
+            'title': 'Seek Professional Support',
+            'description': 'Consider connecting with a counselor or mental health professional. They can provide personalized strategies and support for managing depression.',
+            'priority': 1
+        })
+
+    if anxiety_severity in ['moderate', 'severe', 'extremely-severe']:
+        tips.append({
+            'title': 'Anxiety Management Techniques',
+            'description': 'Practice cognitive restructuring: when anxious thoughts arise, ask yourself "Is this thought based on facts or fears?" Replace irrational worries with realistic perspectives.',
+            'priority': 1
+        })
+
+    if stress_severity in ['moderate', 'severe', 'extremely-severe']:
+        tips.append({
+            'title': 'Stress Reduction Strategies',
+            'description': 'Identify your main stressors and create an action plan. Break overwhelming tasks into smaller steps and prioritize what truly matters.',
+            'priority': 1
+        })
+
+    # Always include foundational tips
+    tips.extend([
+        {
+            'title': 'Maintain Social Connections',
+            'description': 'Stay connected with trusted friends, family, or classmates. Regular social interaction provides support and helps combat feelings of isolation.',
+            'priority': 3
+        },
+        {
+            'title': 'Healthy Sleep Habits',
+            'description': 'Aim for consistent sleep and wake times. Create a calming bedtime routine and limit screen time before bed to improve sleep quality.',
+            'priority': 3
+        },
+        {
+            'title': 'Physical Activity',
+            'description': 'Incorporate movement into your day through walking, stretching, or any enjoyable physical activity. Exercise naturally boosts mood and reduces stress.',
+            'priority': 3
+        }
+    ])
+
+    # Sort by priority and return top 7
+    tips.sort(key=lambda x: x['priority'])
+    return tips[:7]
+
+
 def generate_fallback_feedback(depression, anxiety, stress, depression_severity, anxiety_severity, stress_severity):
     """Generate basic feedback when OpenAI is not available"""
     feedback_parts = []
-    
+
     # Depression feedback
     if depression_severity in ['moderate', 'severe', 'extremely-severe']:
         feedback_parts.append("Your depression scores suggest you may be experiencing significant emotional challenges. <b>Consider reaching out to a mental health professional or counselor for support.</b>")
     elif depression_severity == 'mild':
         feedback_parts.append("You're showing some signs of depression. <b>Try engaging in activities you usually enjoy and maintain regular social connections.</b>")
-    
+
     # Anxiety feedback
     if anxiety_severity in ['moderate', 'severe', 'extremely-severe']:
         feedback_parts.append("Your anxiety levels appear elevated. <b>Practice deep breathing exercises and consider talking to a counselor about your concerns.</b>")
     elif anxiety_severity == 'mild':
         feedback_parts.append("You're experiencing some anxiety. <b>Try mindfulness techniques and regular exercise to help manage stress.</b>")
-    
+
     # Stress feedback
     if stress_severity in ['moderate', 'severe', 'extremely-severe']:
         feedback_parts.append("Your stress levels are quite high. <b>Prioritize self-care activities and consider seeking professional support to develop coping strategies.</b>")
     elif stress_severity == 'mild':
         feedback_parts.append("You're experiencing some stress. <b>Try time management techniques and regular breaks to help maintain balance.</b>")
-    
+
     # General encouragement
     if not feedback_parts:
         feedback_parts.append("Your scores are within normal ranges. <b>Continue practicing good mental health habits and reach out for support if needed.</b>")
-    
+
     return " ".join(feedback_parts)
 
 @login_required
@@ -3259,7 +3997,7 @@ def submit_feedback(request):
             user=request.user,
             status='completed'
         )
-        
+
         # Check if feedback already exists
         if Feedback.objects.filter(appointment=appointment, user=request.user).exists():
             return JsonResponse({
@@ -3635,18 +4373,12 @@ def get_user_personalization_data(user):
     relaxation_history = RelaxationLog.objects.filter(user=user).order_by('-timestamp')
     exercise_preferences = analyze_exercise_preferences(relaxation_history)
 
-    # Get behavior patterns and mood predictions
-    behavior_patterns = analyze_behavior_patterns(user)
-    mood_predictions = get_latest_mood_prediction(user)
-
     return {
         'test_count': test_count,
         'trend_analysis': trend_analysis,
         'academic_context': academic_context,
         'exercise_preferences': exercise_preferences,
-        'recent_results': list(dass_results[:3]) if test_count > 0 else [],
-        'behavior_patterns': behavior_patterns,
-        'mood_predictions': mood_predictions
+        'recent_results': list(dass_results[:3]) if test_count > 0 else []
     }
 
 def analyze_dass_trends(results):
@@ -3734,7 +4466,8 @@ def analyze_exercise_preferences(relaxation_history):
 
 @api_view(['GET'])
 def welcome_api(request):
-    """API endpoint that returns a welcome message"""
+    """API endpoint that logs request metadata and returns a welcome message"""
+    logger.info(f"Request received: {request.method} {request.path}")
     return Response({
         'message': 'Welcome to CalmConnect API',
         'status': 'success'
@@ -3770,6 +4503,30 @@ def health_check(request):
 @api_view(['GET'])
 def welcome_new(request):
     """New API endpoint that logs request metadata and returns a welcome message"""
+    logger.info(f"Request received: {request.method} {request.path}")
+    return Response({
+        'message': 'Welcome to the CalmConnect API Service!',
+        'status': 'success'
+    })
+
+@api_view(['GET'])
+def welcome_with_metadata(request):
+    """API endpoint that logs request metadata and returns a welcome message with metadata"""
+    logger.info(f"Request received: {request.method} {request.path}")
+    return Response({
+        'message': 'Welcome to the CalmConnect API Service!',
+        'status': 'success',
+        'metadata': {
+            'method': request.method,
+            'path': request.path,
+            'user_agent': request.META.get('HTTP_USER_AGENT'),
+            'remote_addr': request.META.get('REMOTE_ADDR')
+        }
+    })
+
+@api_view(['GET'])
+def welcome_with_method_path_logging(request):
+    """API endpoint that logs request method and path and returns a welcome message"""
     logger.info(f"Request received: {request.method} {request.path}")
     return Response({
         'message': 'Welcome to the CalmConnect API Service!',
@@ -3926,6 +4683,166 @@ def followup_sessions(request):
     }
 
     return render(request, 'mentalhealth/followup-sessions.html', context)
+
+
+@login_required
+@api_view(['GET', 'POST', 'PUT'])
+@permission_classes([IsAuthenticated])
+def user_settings_api(request):
+    """API endpoint for user settings management"""
+    try:
+        # Get or create user settings
+        settings_obj, created = UserSettings.objects.get_or_create(
+            user=request.user,
+            defaults={
+                'dark_mode': False,
+                'font_size': 'medium',
+                'language': 'en',
+                'high_contrast': False,
+                'screen_reader': False,
+                'reduced_motion': False,
+                'analytics_tracking': True,
+                'profile_visibility': 'counselors_only',
+                'notification_preferences': {
+                    'assignment_reminders': {'enabled': True, 'frequency': 'daily'},
+                    'grade_updates': {'enabled': True, 'frequency': 'weekly'},
+                    'study_session_alerts': {'enabled': True, 'frequency': 'daily'},
+                    'appointment_reminders': {'enabled': True, 'frequency': 'daily'},
+                    'followup_notifications': {'enabled': True, 'frequency': 'weekly'}
+                }
+            }
+        )
+
+        if request.method == 'GET':
+            return Response({
+                'success': True,
+                'settings': {
+                    'dark_mode': settings_obj.dark_mode,
+                    'font_size': settings_obj.font_size,
+                    'language': settings_obj.language,
+                    'high_contrast': settings_obj.high_contrast,
+                    'screen_reader': settings_obj.screen_reader,
+                    'reduced_motion': settings_obj.reduced_motion,
+                    'analytics_tracking': settings_obj.analytics_tracking,
+                    'profile_visibility': settings_obj.profile_visibility,
+                    'notification_preferences': settings_obj.notification_preferences
+                }
+            })
+
+        elif request.method in ['POST', 'PUT']:
+            data = request.data
+
+            # Update settings fields
+            if 'dark_mode' in data:
+                settings_obj.dark_mode = data['dark_mode']
+            if 'font_size' in data:
+                settings_obj.font_size = data['font_size']
+            if 'language' in data:
+                settings_obj.language = data['language']
+            if 'high_contrast' in data:
+                settings_obj.high_contrast = data['high_contrast']
+            if 'screen_reader' in data:
+                settings_obj.screen_reader = data['screen_reader']
+            if 'reduced_motion' in data:
+                settings_obj.reduced_motion = data['reduced_motion']
+            if 'analytics_tracking' in data:
+                settings_obj.analytics_tracking = data['analytics_tracking']
+            if 'profile_visibility' in data:
+                settings_obj.profile_visibility = data['profile_visibility']
+            if 'notification_preferences' in data:
+                settings_obj.notification_preferences = data['notification_preferences']
+
+            settings_obj.save()
+
+            return Response({
+                'success': True,
+                'message': 'Settings saved successfully',
+                'settings': {
+                    'dark_mode': settings_obj.dark_mode,
+                    'font_size': settings_obj.font_size,
+                    'language': settings_obj.language,
+                    'high_contrast': settings_obj.high_contrast,
+                    'screen_reader': settings_obj.screen_reader,
+                    'reduced_motion': settings_obj.reduced_motion,
+                    'analytics_tracking': settings_obj.analytics_tracking,
+                    'profile_visibility': settings_obj.profile_visibility,
+                    'notification_preferences': settings_obj.notification_preferences
+                }
+            })
+
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reset_user_settings(request):
+    """Reset user settings to defaults"""
+    try:
+        settings_obj, created = UserSettings.objects.get_or_create(
+            user=request.user,
+            defaults={
+                'dark_mode': False,
+                'font_size': 'medium',
+                'language': 'en',
+                'high_contrast': False,
+                'screen_reader': False,
+                'reduced_motion': False,
+                'analytics_tracking': True,
+                'profile_visibility': 'counselors_only',
+                'notification_preferences': {
+                    'assignment_reminders': {'enabled': True, 'frequency': 'daily'},
+                    'grade_updates': {'enabled': True, 'frequency': 'weekly'},
+                    'study_session_alerts': {'enabled': True, 'frequency': 'daily'},
+                    'appointment_reminders': {'enabled': True, 'frequency': 'daily'},
+                    'followup_notifications': {'enabled': True, 'frequency': 'weekly'}
+                }
+            }
+        )
+
+        # Reset to defaults
+        settings_obj.dark_mode = False
+        settings_obj.font_size = 'medium'
+        settings_obj.language = 'en'
+        settings_obj.high_contrast = False
+        settings_obj.screen_reader = False
+        settings_obj.reduced_motion = False
+        settings_obj.analytics_tracking = True
+        settings_obj.profile_visibility = 'counselors_only'
+        settings_obj.notification_preferences = {
+            'assignment_reminders': {'enabled': True, 'frequency': 'daily'},
+            'grade_updates': {'enabled': True, 'frequency': 'weekly'},
+            'study_session_alerts': {'enabled': True, 'frequency': 'daily'},
+            'appointment_reminders': {'enabled': True, 'frequency': 'daily'},
+            'followup_notifications': {'enabled': True, 'frequency': 'weekly'}
+        }
+        settings_obj.save()
+
+        return Response({
+            'success': True,
+            'message': 'Settings reset to defaults',
+            'settings': {
+                'dark_mode': settings_obj.dark_mode,
+                'font_size': settings_obj.font_size,
+                'language': settings_obj.language,
+                'high_contrast': settings_obj.high_contrast,
+                'screen_reader': settings_obj.screen_reader,
+                'reduced_motion': settings_obj.reduced_motion,
+                'analytics_tracking': settings_obj.analytics_tracking,
+                'profile_visibility': settings_obj.profile_visibility,
+                'notification_preferences': settings_obj.notification_preferences
+            }
+        })
+
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 
 @login_required
@@ -4153,4 +5070,1650 @@ def followup_sessions_api(request):
         'sessions': sessions_data,
         'total_count': len(sessions_data)
     })
+
+
+@counselor_required
+def export_reports(request):
+    """Export reports in various formats (CSV, PDF, DOC)"""
+    from django.http import HttpResponse
+    import csv
+    from io import BytesIO
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib import colors
+    from docx import Document
+    from docx.shared import Inches
+
+    # Get filter parameters
+    report_type = request.GET.get('report_type', '')
+    date_range = request.GET.get('date_range', '')
+    status = request.GET.get('status', '')
+    search = request.GET.get('search', '')
+    format_type = request.GET.get('format', 'csv')  # Default to CSV
+
+    # Base queryset - only reports for this counselor
+    reports = Report.objects.filter(counselor=request.user.counselor_profile)
+
+    # Apply filters
+    if report_type:
+        reports = reports.filter(report_type=report_type)
+
+    if status:
+        reports = reports.filter(status=status)
+
+    if date_range:
+        from datetime import datetime, timedelta
+        today = timezone.now().date()
+        if date_range == 'today':
+            reports = reports.filter(created_at__date=today)
+        elif date_range == 'week':
+            week_ago = today - timedelta(days=7)
+            reports = reports.filter(created_at__date__gte=week_ago)
+        elif date_range == 'month':
+            month_ago = today - timedelta(days=30)
+            reports = reports.filter(created_at__date__gte=month_ago)
+        elif date_range == 'quarter':
+            quarter_ago = today - timedelta(days=90)
+            reports = reports.filter(created_at__date__gte=quarter_ago)
+
+    if search:
+        reports = reports.filter(
+            Q(title__icontains=search) |
+            Q(description__icontains=search) |
+            Q(user__full_name__icontains=search)
+        )
+
+    # Order by creation date
+    reports = reports.select_related('user').order_by('-created_at')
+
+    if format_type == 'csv':
+        # CSV Export
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="counselor_reports.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Title', 'Student', 'Report Type', 'Status', 'Created Date', 'Last Modified', 'Description'])
+
+        for report in reports:
+            writer.writerow([
+                report.title,
+                report.user.full_name if report.user else 'N/A',
+                report.get_report_type_display(),
+                report.get_status_display(),
+                report.created_at.strftime('%Y-%m-%d %H:%M'),
+                report.updated_at.strftime('%Y-%m-%d %H:%M'),
+                report.description[:200] + '...' if len(report.description) > 200 else report.description
+            ])
+
+        return response
+
+    elif format_type == 'pdf':
+        # PDF Export
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="counselor_reports.pdf"'
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        story = []
+
+        # Title
+        title = Paragraph("Counselor Reports Export", styles['Title'])
+        story.append(title)
+        story.append(Spacer(1, 12))
+
+        # Summary
+        summary_text = f"Total Reports: {reports.count()}<br/>Generated on: {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+        summary = Paragraph(summary_text, styles['Normal'])
+        story.append(summary)
+        story.append(Spacer(1, 12))
+
+        # Table data
+        data = [['Title', 'Student', 'Type', 'Status', 'Created', 'Description']]
+        for report in reports:
+            data.append([
+                report.title,
+                report.user.full_name if report.user else 'N/A',
+                report.get_report_type_display(),
+                report.get_status_display(),
+                report.created_at.strftime('%Y-%m-%d'),
+                report.description[:100] + '...' if len(report.description) > 100 else report.description
+            ])
+
+        # Create table
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+
+        story.append(table)
+        doc.build(story)
+        pdf = buffer.getvalue()
+        buffer.close()
+        response.write(pdf)
+        return response
+
+    elif format_type == 'doc':
+        # DOC Export
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename="counselor_reports.docx"'
+
+        document = Document()
+        document.add_heading('Counselor Reports Export', 0)
+
+        # Summary
+        document.add_paragraph(f"Total Reports: {reports.count()}")
+        document.add_paragraph(f"Generated on: {timezone.now().strftime('%Y-%m-%d %H:%M')}")
+        document.add_paragraph("")
+
+        # Table
+        table = document.add_table(rows=1, cols=6)
+        hdr_cells = table.rows[0].cells
+        hdr_cells[0].text = 'Title'
+        hdr_cells[1].text = 'Student'
+        hdr_cells[2].text = 'Type'
+        hdr_cells[3].text = 'Status'
+        hdr_cells[4].text = 'Created'
+        hdr_cells[5].text = 'Description'
+
+        for report in reports:
+            row_cells = table.add_row().cells
+            row_cells[0].text = report.title
+            row_cells[1].text = report.user.full_name if report.user else 'N/A'
+            row_cells[2].text = report.get_report_type_display()
+            row_cells[3].text = report.get_status_display()
+            row_cells[4].text = report.created_at.strftime('%Y-%m-%d')
+            row_cells[5].text = report.description[:100] + '...' if len(report.description) > 100 else report.description
+
+        # Save to response
+        buffer = BytesIO()
+        document.save(buffer)
+        buffer.seek(0)
+        response.write(buffer.getvalue())
+        buffer.close()
+        return response
+
+    else:
+        return JsonResponse({'error': 'Unsupported format'}, status=400)
+
+
+# Archive API endpoints for the new frontend
+@counselor_required
+@api_view(['GET'])
+def archive_stats(request):
+    """Get archive statistics for the counselor"""
+    counselor = request.user.counselor_profile
+
+    # Calculate statistics
+    total_sessions = Appointment.objects.filter(
+        counselor=counselor,
+        status='completed'
+    ).count()
+
+    total_reports = Report.objects.filter(
+        counselor=counselor,
+        status__in=['archived', 'completed']
+    ).count()
+
+    total_assessments = SecureDASSResult.objects.filter(
+        user__in=Appointment.objects.filter(
+            counselor=counselor,
+            status='completed'
+        ).values_list('user', flat=True)
+    ).count()
+
+    # Monthly activity (last 30 days)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    monthly_sessions = Appointment.objects.filter(
+        counselor=counselor,
+        status='completed',
+        date__gte=thirty_days_ago
+    ).count()
+
+    monthly_reports = Report.objects.filter(
+        counselor=counselor,
+        status__in=['archived', 'completed'],
+        created_at__gte=thirty_days_ago
+    ).count()
+
+    return Response({
+        'success': True,
+        'stats': {
+            'total_sessions': total_sessions,
+            'total_reports': total_reports,
+            'total_assessments': total_assessments,
+            'monthly_sessions': monthly_sessions,
+            'monthly_reports': monthly_reports,
+            'monthly_assessments': SecureDASSResult.objects.filter(
+                user__in=Appointment.objects.filter(
+                    counselor=counselor,
+                    status='completed',
+                    date__gte=thirty_days_ago
+                ).values_list('user', flat=True),
+                date_taken__gte=thirty_days_ago
+            ).count()
+        }
+    })
+
+
+@counselor_required
+@api_view(['GET'])
+def archive_data(request):
+    """Get paginated archive data for the counselor"""
+    counselor = request.user.counselor_profile
+
+    # Get query parameters
+    tab = request.GET.get('tab', 'sessions')  # sessions, reports, assessments
+    page = int(request.GET.get('page', 1))
+    per_page = int(request.GET.get('per_page', 10))
+    sort_by = request.GET.get('sort_by', 'date')
+    sort_order = request.GET.get('sort_order', 'desc')
+    search = request.GET.get('search', '')
+    time_period = request.GET.get('time_period', 'all')
+    session_type = request.GET.get('session_type', 'all')
+
+    # Base querysets
+    if tab == 'sessions':
+        queryset = Appointment.objects.filter(
+            counselor=counselor,
+            status='completed'
+        ).select_related('user')
+    elif tab == 'reports':
+        queryset = Report.objects.filter(
+            counselor=counselor,
+            status__in=['archived', 'completed']
+        ).select_related('user')
+    elif tab == 'assessments':
+        # Get assessments for students who have completed sessions with this counselor
+        student_ids = Appointment.objects.filter(
+            counselor=counselor,
+            status='completed'
+        ).values_list('user', flat=True).distinct()
+        queryset = SecureDASSResult.objects.filter(
+            user__in=student_ids
+        ).select_related('user')
+    else:
+        return Response({'success': False, 'error': 'Invalid tab'}, status=400)
+
+    # Apply filters
+    if search:
+        if tab == 'sessions':
+            queryset = queryset.filter(
+                Q(user__full_name__icontains=search) |
+                Q(reason__icontains=search) |
+                Q(services__icontains=search)
+            )
+        elif tab == 'reports':
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search) |
+                Q(user__full_name__icontains=search)
+            )
+        elif tab == 'assessments':
+            queryset = queryset.filter(
+                Q(user__full_name__icontains=search) |
+                Q(user__student_id__icontains=search)
+            )
+
+    # Time period filter
+    if time_period != 'all':
+        today = timezone.now().date()
+        if time_period == 'month':
+            cutoff_date = today - timedelta(days=30)
+        elif time_period == 'quarter':
+            cutoff_date = today - timedelta(days=90)
+        elif time_period == 'year':
+            cutoff_date = today - timedelta(days=365)
+        else:
+            cutoff_date = None
+
+        if cutoff_date:
+            if tab == 'sessions':
+                queryset = queryset.filter(date__gte=cutoff_date)
+            elif tab == 'reports':
+                queryset = queryset.filter(created_at__date__gte=cutoff_date)
+            elif tab == 'assessments':
+                queryset = queryset.filter(date_taken__gte=cutoff_date)
+
+    # Session type filter (only for sessions tab)
+    if tab == 'sessions' and session_type != 'all':
+        queryset = queryset.filter(session_type=session_type)
+
+    # Apply sorting
+    if tab == 'sessions':
+        if sort_by == 'date':
+            queryset = queryset.order_by(f'{"-" if sort_order == "desc" else ""}date', f'{"-" if sort_order == "desc" else ""}time')
+        elif sort_by == 'name':
+            queryset = queryset.order_by(f'{"-" if sort_order == "desc" else ""}user__full_name')
+        elif sort_by == 'type':
+            queryset = queryset.order_by(f'{"-" if sort_order == "desc" else ""}session_type')
+    elif tab == 'reports':
+        if sort_by == 'date':
+            queryset = queryset.order_by(f'{"-" if sort_order == "desc" else ""}created_at')
+        elif sort_by == 'name':
+            queryset = queryset.order_by(f'{"-" if sort_order == "desc" else ""}user__full_name')
+        elif sort_by == 'type':
+            queryset = queryset.order_by(f'{"-" if sort_order == "desc" else ""}report_type')
+    elif tab == 'assessments':
+        if sort_by == 'date':
+            queryset = queryset.order_by(f'{"-" if sort_order == "desc" else ""}date_taken')
+        elif sort_by == 'name':
+            queryset = queryset.order_by(f'{"-" if sort_order == "desc" else ""}user__full_name')
+
+    # Pagination
+    paginator = Paginator(queryset, per_page)
+    try:
+        page_obj = paginator.page(page)
+    except:
+        page_obj = paginator.page(1)
+
+    # Serialize data
+    data = []
+    for item in page_obj:
+        if tab == 'sessions':
+            data.append({
+                'id': item.id,
+                'title': f"{item.user.full_name} - {', '.join(item.services) if item.services else 'General Session'}",
+                'date': item.date.strftime('%M %d, %Y'),
+                'student_name': item.user.full_name,
+                'student_id': item.user.student_id,
+                'college': item.user.get_college_display(),
+                'services': item.services,
+                'duration': getattr(item, 'duration', 'N/A'),
+                'reason': item.reason,
+                'type': item.session_type,
+                'status': item.status
+            })
+        elif tab == 'reports':
+            data.append({
+                'id': item.id,
+                'title': item.title,
+                'date': item.created_at.strftime('%M %d, %Y'),
+                'student_name': item.user.full_name if item.user else 'N/A',
+                'student_id': item.user.student_id if item.user else 'N/A',
+                'type': item.get_report_type_display(),
+                'status': item.get_status_display(),
+                'description': item.description
+            })
+        elif tab == 'assessments':
+            data.append({
+                'id': item.id,
+                'title': f"DASS21 Results - {item.user.full_name}",
+                'date': item.date_taken.strftime('%M %d, %Y'),
+                'student_name': item.user.full_name,
+                'student_id': item.user.student_id,
+                'depression_score': item.depression_score,
+                'anxiety_score': item.anxiety_score,
+                'stress_score': item.stress_score,
+                'depression_severity': item.depression_severity,
+                'anxiety_severity': item.anxiety_severity,
+                'stress_severity': item.stress_severity
+            })
+
+    return Response({
+        'success': True,
+        'data': data,
+        'pagination': {
+            'page': page_obj.number,
+            'per_page': per_page,
+            'total_pages': paginator.num_pages,
+            'total_items': paginator.count,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous()
+        }
+    })
+
+
+@counselor_required
+@api_view(['GET'])
+def archive_export(request):
+    """Export archive data in various formats"""
+    from django.http import HttpResponse
+    import csv
+    from io import BytesIO
+
+    counselor = request.user.counselor_profile
+
+    # Get parameters
+    tab = request.GET.get('tab', 'sessions')
+    format_type = request.GET.get('format', 'csv')
+    search = request.GET.get('search', '')
+    time_period = request.GET.get('time_period', 'all')
+    session_type = request.GET.get('session_type', 'all')
+
+    # Get data using same logic as archive_data
+    if tab == 'sessions':
+        queryset = Appointment.objects.filter(
+            counselor=counselor,
+            status='completed'
+        ).select_related('user')
+    elif tab == 'reports':
+        queryset = Report.objects.filter(
+            counselor=counselor,
+            status__in=['archived', 'completed']
+        ).select_related('user')
+    elif tab == 'assessments':
+        student_ids = Appointment.objects.filter(
+            counselor=counselor,
+            status='completed'
+        ).values_list('user', flat=True).distinct()
+        queryset = SecureDASSResult.objects.filter(
+            user__in=student_ids
+        ).select_related('user')
+    else:
+        return Response({'success': False, 'error': 'Invalid tab'}, status=400)
+
+    # Apply same filters as archive_data
+    if search:
+        if tab == 'sessions':
+            queryset = queryset.filter(
+                Q(user__full_name__icontains=search) |
+                Q(reason__icontains=search) |
+                Q(services__icontains=search)
+            )
+        elif tab == 'reports':
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search) |
+                Q(user__full_name__icontains=search)
+            )
+        elif tab == 'assessments':
+            queryset = queryset.filter(
+                Q(user__full_name__icontains=search) |
+                Q(user__student_id__icontains=search)
+            )
+
+    if time_period != 'all':
+        today = timezone.now().date()
+        if time_period == 'month':
+            cutoff_date = today - timedelta(days=30)
+        elif time_period == 'quarter':
+            cutoff_date = today - timedelta(days=90)
+        elif time_period == 'year':
+            cutoff_date = today - timedelta(days=365)
+        else:
+            cutoff_date = None
+
+        if cutoff_date:
+            if tab == 'sessions':
+                queryset = queryset.filter(date__gte=cutoff_date)
+            elif tab == 'reports':
+                queryset = queryset.filter(created_at__date__gte=cutoff_date)
+            elif tab == 'assessments':
+                queryset = queryset.filter(date_taken__gte=cutoff_date)
+
+    if tab == 'sessions' and session_type != 'all':
+        queryset = queryset.filter(session_type=session_type)
+
+    # Order by date
+    if tab == 'sessions':
+        queryset = queryset.order_by('-date', '-time')
+    elif tab == 'reports':
+        queryset = queryset.order_by('-created_at')
+    elif tab == 'assessments':
+        queryset = queryset.order_by('-date_taken')
+
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="counselor_archive_{tab}.csv"'
+
+        writer = csv.writer(response)
+
+        if tab == 'sessions':
+            writer.writerow(['Date', 'Student Name', 'Student ID', 'College', 'Services', 'Session Type', 'Reason'])
+            for item in queryset:
+                writer.writerow([
+                    item.date.strftime('%Y-%m-%d'),
+                    item.user.full_name,
+                    item.user.student_id,
+                    item.user.get_college_display(),
+                    ', '.join(item.services) if item.services else '',
+                    item.session_type,
+                    item.reason
+                ])
+        elif tab == 'reports':
+            writer.writerow(['Created Date', 'Title', 'Student Name', 'Student ID', 'Report Type', 'Status', 'Description'])
+            for item in queryset:
+                writer.writerow([
+                    item.created_at.strftime('%Y-%m-%d %H:%M'),
+                    item.title,
+                    item.user.full_name if item.user else 'N/A',
+                    item.user.student_id if item.user else 'N/A',
+                    item.get_report_type_display(),
+                    item.get_status_display(),
+                    item.description
+                ])
+        elif tab == 'assessments':
+            writer.writerow(['Date Taken', 'Student Name', 'Student ID', 'Depression Score', 'Anxiety Score', 'Stress Score', 'Depression Severity', 'Anxiety Severity', 'Stress Severity'])
+            for item in queryset:
+                writer.writerow([
+                    item.date_taken.strftime('%Y-%m-%d'),
+                    item.user.full_name,
+                    item.user.student_id,
+                    item.depression_score,
+                    item.anxiety_score,
+                    item.stress_score,
+                    item.depression_severity,
+                    item.anxiety_severity,
+                    item.stress_severity
+                ])
+
+        return response
+
+    elif format_type == 'json':
+        response = HttpResponse(content_type='application/json')
+        response['Content-Disposition'] = f'attachment; filename="counselor_archive_{tab}.json"'
+
+        data = []
+        for item in queryset:
+            if tab == 'sessions':
+                data.append({
+                    'date': item.date.strftime('%Y-%m-%d'),
+                    'student_name': item.user.full_name,
+                    'student_id': item.user.student_id,
+                    'college': item.user.get_college_display(),
+                    'services': item.services,
+                    'session_type': item.session_type,
+                    'reason': item.reason
+                })
+            elif tab == 'reports':
+                data.append({
+                    'created_at': item.created_at.strftime('%Y-%m-%d %H:%M'),
+                    'title': item.title,
+                    'student_name': item.user.full_name if item.user else 'N/A',
+                    'student_id': item.user.student_id if item.user else 'N/A',
+                    'report_type': item.get_report_type_display(),
+                    'status': item.get_status_display(),
+                    'description': item.description
+                })
+            elif tab == 'assessments':
+                data.append({
+                    'date_taken': item.date_taken.strftime('%Y-%m-%d'),
+                    'student_name': item.user.full_name,
+                    'student_id': item.user.student_id,
+                    'depression_score': item.depression_score,
+                    'anxiety_score': item.anxiety_score,
+                    'stress_score': item.stress_score,
+                    'depression_severity': item.depression_severity,
+                    'anxiety_severity': item.anxiety_severity,
+                    'stress_severity': item.stress_severity
+                })
+
+        response.write(json.dumps(data, indent=2))
+        return response
+
+    else:
+        return Response({'success': False, 'error': 'Unsupported format'}, status=400)
+
+
+@login_required
+def get_notifications(request):
+    """Get notifications for the current user (AJAX endpoint)"""
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        # Get recent notifications
+        notifications = Notification.objects.filter(
+            user=request.user,
+            dismissed=False
+        ).order_by('-created_at')[:20]  # Get more for pagination
+
+        notifications_data = []
+        for notif in notifications:
+            # Compute URL like send_notification does
+            url = notif.action_url if notif.action_url else '#'
+            if notif.type == 'followup':
+                url = '#'  # Disable navigation for all follow-up modals
+
+            # Ensure metadata is properly serialized
+            metadata = notif.metadata
+            if not metadata:
+                metadata = {}
+            elif isinstance(metadata, str):
+                import json
+                try:
+                    metadata = json.loads(metadata)
+                except:
+                    metadata = {}
+            else:
+                # Ensure it's a dict
+                metadata = dict(metadata) if hasattr(metadata, 'items') else {}
+    
+            # Set URL based on notification type and action_url
+            if notif.type == 'followup' and not notif.action_url:
+                # Student followup notifications should show modal
+                final_url = '#'
+            else:
+                # Other notifications use their action_url or default to '#'
+                final_url = notif.action_url if notif.action_url else '#'
+    
+            notifications_data.append({
+                'id': notif.id,
+                'message': notif.message,
+                'type': notif.type,
+                'url': final_url,
+                'action_url': notif.action_url,
+                'read': notif.read,
+                'created_at': notif.created_at.isoformat(),
+                'priority': getattr(notif, 'priority', 'normal'),
+                'action_text': getattr(notif, 'action_text', None),
+                'metadata': metadata,
+                'icon': notif.get_icon(),
+                'color': notif.get_color()
+            })
+
+        return JsonResponse({
+            'success': True,
+            'notifications': notifications_data
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@require_POST
+def clear_notification(request, notification_id):
+    """Clear a specific notification"""
+    try:
+        notification = Notification.objects.get(
+            id=notification_id,
+            user=request.user
+        )
+        notification.read = True
+        notification.save()
+
+        return JsonResponse({'success': True})
+    except Notification.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Notification not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def clear_all_notifications(request):
+    """Clear all notifications for the current user"""
+    try:
+        Notification.objects.filter(
+            user=request.user,
+            read=False
+        ).update(read=True)
+
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def request_followup(request, pk):
+    """Allow counselor or student to request a follow-up session"""
+    try:
+        report = Report.objects.select_related('user', 'counselor').get(pk=pk)
+
+        # Check permissions - must be the counselor or the student
+        if not (hasattr(request.user, 'counselor_profile') and
+                request.user.counselor_profile == report.counselor) and \
+           request.user != report.user:
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+        # Check if follow-up already exists for this report
+        existing_request = FollowupRequest.objects.filter(report=report).first()
+        if existing_request:
+            return JsonResponse({
+                'success': False,
+                'error': f'Follow-up already requested (Status: {existing_request.get_status_display()})'
+            }, status=400)
+
+        data = json.loads(request.body)
+        reason = data.get('reason', '').strip()
+        requested_date = data.get('requested_date')
+        requested_time = data.get('requested_time')
+
+        if not reason:
+            return JsonResponse({'success': False, 'error': 'Reason is required'}, status=400)
+
+        # Determine requester type
+        requester_type = 'counselor' if hasattr(request.user, 'counselor_profile') and \
+                        request.user.counselor_profile == report.counselor else 'student'
+
+        # Create follow-up request (automatically approved to remove admin boilerplate)
+        followup_request = FollowupRequest.objects.create(
+            report=report,
+            requested_by=request.user,
+            requester_type=requester_type,
+            reason=reason,
+            requested_date=requested_date,
+            requested_time=requested_time,
+            status='approved'
+        )
+
+        # Create notifications
+        from .notification_service import create_followup_notification
+        create_followup_notification(followup_request, 'requested')
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Follow-up request submitted successfully',
+            'request_id': followup_request.id
+        })
+
+    except Report.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Report not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@staff_member_required
+def admin_followup_requests(request):
+    """Admin interface for viewing follow-up requests (now auto-approved)"""
+    print(f"DEBUG: admin_followup_requests called by user: {request.user}, is_staff: {request.user.is_staff}, is_superuser: {request.user.is_superuser}")
+
+    # Get filter parameters - default to 'approved' since requests are now auto-approved
+    status_filter = request.GET.get('status', 'approved')
+    search = request.GET.get('search', '')
+    print(f"DEBUG: filters - status: {status_filter}, search: {search}")
+
+    # Base queryset
+    followup_requests = FollowupRequest.objects.select_related(
+        'report', 'requested_by', 'report__user', 'report__counselor',
+        'approved_denied_by', 'resulting_appointment'
+    ).order_by('-created_at')
+
+    # Apply filters
+    if status_filter and status_filter != 'all':
+        followup_requests = followup_requests.filter(status=status_filter)
+
+    if search:
+        followup_requests = followup_requests.filter(
+            Q(report__user__full_name__icontains=search) |
+            Q(report__counselor__name__icontains=search) |
+            Q(requested_by__full_name__icontains=search) |
+            Q(reason__icontains=search)
+        )
+
+    # Paginate
+    from django.core.paginator import Paginator
+    paginator = Paginator(followup_requests, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Build query parameters string for pagination links
+    query_params = ''
+    if status_filter and status_filter != 'all':
+        query_params += f'&status={status_filter}'
+    if search:
+        query_params += f'&search={search}'
+
+    context = {
+        'page_obj': page_obj,
+        'status_filter': status_filter,
+        'search': search,
+        'query_params': query_params,
+        'total_requests': followup_requests.count(),
+        'pending_count': FollowupRequest.objects.filter(status='pending').count(),
+        'approved_count': FollowupRequest.objects.filter(status='approved').count(),
+        'denied_count': FollowupRequest.objects.filter(status='denied').count(),
+    }
+
+    return render(request, 'admin-followup-requests.html', context)
+
+
+@staff_member_required
+@require_POST
+def approve_deny_followup(request, request_id):
+    """Admin approve or deny follow-up request"""
+    try:
+        followup_request = FollowupRequest.objects.select_related(
+            'report', 'requested_by', 'report__user', 'report__counselor'
+        ).get(pk=request_id)
+
+        if followup_request.status != 'pending':
+            return JsonResponse({
+                'success': False,
+                'error': 'Request has already been processed'
+            }, status=400)
+
+        data = json.loads(request.body)
+        action = data.get('action')  # 'approve' or 'deny'
+        admin_notes = data.get('admin_notes', '').strip()
+
+        if action not in ['approve', 'deny']:
+            return JsonResponse({'success': False, 'error': 'Invalid action'}, status=400)
+
+        # Update request
+        followup_request.status = 'approved' if action == 'approve' else 'denied'
+        followup_request.admin_notes = admin_notes
+        followup_request.approved_denied_by = request.user
+        followup_request.approved_denied_at = timezone.now()
+        followup_request.save()
+
+        # Create notifications
+        from .notification_service import create_followup_notification
+        create_followup_notification(followup_request, action)
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Follow-up request {action}d successfully'
+        })
+
+    except FollowupRequest.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Follow-up request not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def followup_session(request, appointment_id):
+    """Display the follow-up session assessment page"""
+    try:
+        # Get the follow-up appointment
+        appointment = Appointment.objects.select_related(
+            'user', 'counselor', 'parent_appointment'
+        ).get(pk=appointment_id, session_type='followup')
+
+        # Check permissions - must be the student
+        if appointment.user != request.user:
+            return redirect('index')
+
+        # Check if appointment is confirmed
+        if appointment.status != 'confirmed':
+            messages.error(request, 'This follow-up session is not available.')
+            return redirect('user-profile')
+
+        # Calculate days since original session
+        if appointment.parent_appointment:
+            original_date = appointment.parent_appointment.date
+            days_since_session = (timezone.now().date() - original_date).days
+        else:
+            days_since_session = 0
+
+        context = {
+            'counselor': appointment.counselor,
+            'appointment_date': appointment.date,
+            'days_since_session': days_since_session,
+            'appointment_id': appointment.id,
+            'appointment': appointment,
+        }
+
+        return render(request, 'mentalhealth/followup-session.html', context)
+
+    except Appointment.DoesNotExist:
+        messages.error(request, 'Follow-up session not found.')
+        return redirect('user-profile')
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+        return redirect('user-profile')
+
+
+@login_required
+@require_POST
+def submit_followup(request):
+    """Handle follow-up assessment submission"""
+    try:
+        data = json.loads(request.body)
+        appointment_id = data.get('appointment_id')
+
+        # Get the appointment
+        appointment = Appointment.objects.select_related('user', 'counselor').get(
+            pk=appointment_id, session_type='followup'
+        )
+
+        # Check permissions
+        if appointment.user != request.user:
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+        # Check if already submitted
+        if appointment.status == 'completed':
+            return JsonResponse({
+                'success': False,
+                'error': 'Follow-up assessment already submitted'
+            }, status=400)
+
+        # Validate required fields
+        required_fields = ['wellbeing', 'symptoms', 'strategies', 'mood', 'practice', 'new_challenges', 'future_session']
+        for field in required_fields:
+            if field not in data:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Missing required field: {field}'
+                }, status=400)
+
+        # Store the follow-up assessment data as a DASSResult with special handling
+        followup_data = {
+            'wellbeing_progress': int(data['wellbeing']),
+            'symptoms_progress': int(data['symptoms']),
+            'strategies_progress': int(data['strategies']),
+            'mood_change': data['mood'],
+            'practice_frequency': data['practice'],
+            'helpful_things': data.get('helpful_things', ''),
+            'new_challenges': data['new_challenges'],
+            'challenges_description': data.get('challenges_description', ''),
+            'future_session_preference': data['future_session'],
+            'future_focus': data.get('future_focus', ''),
+        }
+
+        # Create a special follow-up result (using DASSResult model for consistency)
+        followup_result = DASSResult.objects.create(
+            user=request.user,
+            depression_score=0,  # Not applicable for follow-up
+            anxiety_score=0,     # Not applicable for follow-up
+            stress_score=0,      # Not applicable for follow-up
+            depression_severity='normal',
+            anxiety_severity='normal',
+            stress_severity='normal',
+            answers=followup_data,
+            is_followup=True,
+            followup_appointment=appointment
+        )
+
+        # Update appointment status
+        appointment.status = 'completed'
+        appointment.save()
+
+        # Create notification for counselor
+        create_notification(
+            user=appointment.counselor.user,
+            message=f'{appointment.user.full_name} has completed their follow-up assessment.',
+            notification_type='followup',
+            url=reverse('appointment_detail', kwargs={'pk': appointment.id})
+        )
+
+        # Create notification for student
+        create_notification(
+            user=appointment.user,
+            message='Thank you for completing your follow-up assessment. Your counselor will review the results.',
+            notification_type='followup',
+            url=reverse('user-profile')
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Follow-up assessment submitted successfully!',
+            'status': 'success'
+        })
+
+    except Appointment.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Follow-up session not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@counselor_required
+def schedule_followup(request, request_id):
+    """Counselor schedules an approved follow-up request"""
+    try:
+        followup_request = FollowupRequest.objects.select_related(
+            'report', 'report__user', 'report__counselor'
+        ).get(pk=request_id)
+
+        # Check permissions
+        if followup_request.report.counselor != request.user.counselor_profile:
+            messages.error(request, 'Permission denied')
+            return redirect('admin_followup_requests')
+
+        if followup_request.status != 'approved':
+            messages.error(request, 'Request must be approved before scheduling')
+            return redirect('admin_followup_requests')
+
+        if request.method == 'POST':
+            scheduled_date = request.POST.get('scheduled_date')
+            scheduled_time = request.POST.get('scheduled_time')
+            session_type = request.POST.get('session_type', 'face_to_face')
+
+            if not scheduled_date or not scheduled_time:
+                messages.error(request, 'Date and time are required')
+                return redirect('schedule_followup', request_id=request_id)
+
+            # Validate date/time
+            try:
+                scheduled_date_obj = datetime.strptime(scheduled_date, '%Y-%m-%d').date()
+                scheduled_time_obj = datetime.strptime(scheduled_time, '%H:%M').time()
+            except ValueError:
+                messages.error(request, 'Invalid date or time format')
+                return redirect('schedule_followup', request_id=request_id)
+
+            # Check if date is in the future
+            scheduled_datetime = timezone.make_aware(
+                datetime.combine(scheduled_date_obj, scheduled_time_obj)
+            )
+            if scheduled_datetime <= timezone.now():
+                messages.error(request, 'Scheduled time must be in the future')
+                return redirect('schedule_followup', request_id=request_id)
+
+            # Check counselor availability
+            existing_appointment = Appointment.objects.filter(
+                counselor=followup_request.report.counselor,
+                date=scheduled_date_obj,
+                time=scheduled_time_obj,
+                status__in=['pending', 'confirmed']
+            ).first()
+
+            if existing_appointment:
+                messages.error(request, 'Counselor is not available at this time')
+                return redirect('schedule_followup', request_id=request_id)
+
+            # Update follow-up request
+            followup_request.scheduled_date = scheduled_date_obj
+            followup_request.scheduled_time = scheduled_time_obj
+            followup_request.session_type = session_type
+            followup_request.status = 'scheduled'
+            followup_request.save()
+
+            # Create the actual appointment
+            appointment = Appointment.objects.create(
+                user=followup_request.report.user,
+                counselor=followup_request.report.counselor,
+                date=scheduled_date_obj,
+                time=scheduled_time_obj,
+                session_type=session_type,
+                services=['Follow-up Session'],
+                reason=f"Follow-up: {followup_request.reason}",
+                phone=getattr(followup_request.report.user, 'phone', ''),
+                course_section=getattr(followup_request.report.user, 'program', ''),
+                status='confirmed'
+            )
+
+            followup_request.resulting_appointment = appointment
+            followup_request.save()
+
+            # Handle session type specific actions
+            if appointment.session_type == 'remote':
+                # Create live session for remote follow-up appointments
+                start_time = timezone.make_aware(datetime.combine(appointment.date, appointment.time))
+                end_time = start_time + timedelta(hours=1)  # Default 1-hour session
+
+                # Create or get existing live session
+                live_session, created = LiveSession.objects.get_or_create(
+                    appointment=appointment,
+                    defaults={
+                        'scheduled_start': start_time,
+                        'scheduled_end': end_time,
+                        'session_type': 'video',
+                        'status': 'scheduled'
+                    }
+                )
+
+                # Generate room ID if not already set
+                if not live_session.room_id:
+                    live_session.room_id = f'followup_{appointment.id}'
+                    live_session.save()
+
+                # Generate video call link for remote follow-up sessions
+                video_call_url = request.build_absolute_uri(
+                    reverse('live_session_view', kwargs={'room_id': live_session.room_id})
+                )
+                appointment.video_call_url = video_call_url
+                appointment.save()
+
+            # Create notifications
+            from .notification_service import create_followup_notification
+            create_followup_notification(followup_request, 'scheduled')
+
+            messages.success(request, 'Follow-up session scheduled successfully')
+            return redirect('admin_followup_requests')
+
+        # GET request - show the form
+        return render(request, 'mentalhealth/schedule-followup.html', {
+            'followup_request': followup_request,
+            'today': timezone.now().date()
+        })
+
+    except FollowupRequest.DoesNotExist:
+        messages.error(request, 'Follow-up request not found')
+        return redirect('admin_followup_requests')
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+        return redirect('admin_followup_requests')
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def accept_followup(request, request_id):
+    """Handle student acceptance for scheduled follow-up (AJAX modal or direct page access)"""
+    logger.info(f"accept_followup called by user {request.user.username} for request_id {request_id}, method: {request.method}, AJAX: {request.headers.get('X-Requested-With') == 'XMLHttpRequest'}")
+
+    try:
+        followup_request = FollowupRequest.objects.select_related(
+            'report', 'report__user', 'report__counselor', 'resulting_appointment'
+        ).get(pk=request_id)
+        logger.info(f"Found followup_request {followup_request.id} with status {followup_request.status}")
+
+        # Check permissions - must be the student
+        if followup_request.report.user != request.user:
+            logger.warning(f"Permission denied: user {request.user.username} tried to access followup_request {followup_request.id} belonging to {followup_request.report.user.username}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+            messages.error(request, 'Permission denied')
+            return redirect('user-profile')
+
+        if followup_request.status not in ['approved', 'scheduled']:
+            logger.warning(f"Follow-up request {followup_request.id} has invalid status {followup_request.status}")
+            error_msg = 'Follow-up request is not available'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': error_msg}, status=400)
+            messages.error(request, error_msg)
+            return redirect('user-profile')
+
+        if not followup_request.resulting_appointment:
+            logger.error(f"Follow-up request {followup_request.id} has no resulting appointment")
+            error_msg = 'No appointment found for this follow-up request'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': error_msg}, status=400)
+            messages.error(request, error_msg)
+            return redirect('user-profile')
+
+        if request.method == 'GET':
+            # Check if this is an AJAX request for modal data
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # Return JSON data for modal
+                appointment = followup_request.resulting_appointment
+                counselor = followup_request.report.counselor
+
+                # Robust services field handling
+                services = appointment.services
+                try:
+                    if isinstance(services, list):
+                        services_list = services
+                    elif isinstance(services, str):
+                        # Try to parse as JSON first
+                        try:
+                            parsed_services = json.loads(services)
+                            if isinstance(parsed_services, list):
+                                services_list = parsed_services
+                            else:
+                                services_list = [str(parsed_services)]
+                        except (json.JSONDecodeError, TypeError):
+                            services_list = [services]
+                    elif services is None:
+                        services_list = []
+                    else:
+                        services_list = [str(services)]
+                except Exception as e:
+                    logger.warning(f"Error processing services field for appointment {appointment.id}: {e}")
+                    services_list = []
+
+                # Safe counselor data extraction
+                counselor_data = {}
+                if counselor:
+                    try:
+                        counselor_data = {
+                            'name': counselor.name or 'Unknown Counselor',
+                            'unit': counselor.unit or 'N/A',
+                            'rank': counselor.rank or 'N/A',
+                            'image_url': counselor.image.url if hasattr(counselor, 'image') and counselor.image else None
+                        }
+                    except Exception as e:
+                        logger.warning(f"Error extracting counselor data: {e}")
+                        counselor_data = {
+                            'name': 'Unknown Counselor',
+                            'unit': 'N/A',
+                            'rank': 'N/A',
+                            'image_url': None
+                        }
+                else:
+                    counselor_data = {
+                        'name': 'Unknown Counselor',
+                        'unit': 'N/A',
+                        'rank': 'N/A',
+                        'image_url': None
+                    }
+
+                # Safe appointment data extraction
+                appointment_data = {}
+                try:
+                    appointment_data = {
+                        'id': appointment.id,
+                        'date': appointment.date.strftime('%B %d, %Y') if appointment.date else 'TBD',
+                        'time': appointment.time.strftime('%I:%M %p') if appointment.time else 'TBD',
+                        'session_type': appointment.get_session_type_display() if appointment.session_type and appointment.session_type in dict(appointment.SESSION_TYPE_CHOICES) else (appointment.session_type or 'TBD'),
+                        'services': services_list,
+                        'reason': appointment.reason or ''
+                    }
+                except Exception as e:
+                    logger.error(f"Error extracting appointment data for appointment {appointment.id}: {e}")
+                    appointment_data = {
+                        'date': 'TBD',
+                        'time': 'TBD',
+                        'session_type': 'TBD',
+                        'services': [],
+                        'reason': 'Error loading appointment details'
+                    }
+
+                return JsonResponse({
+                    'success': True,
+                    'followup_request': {
+                        'id': followup_request.id,
+                        'reason': followup_request.reason or '',
+                        'status': followup_request.status
+                    },
+                    'appointment': appointment_data,
+                    'counselor': counselor_data
+                })
+            else:
+                # Direct page access - render HTML template
+                appointment = followup_request.resulting_appointment
+                counselor = followup_request.report.counselor
+
+                context = {
+                    'counselor': counselor,
+                    'appointment': appointment,
+                    'followup_request': followup_request,
+                    'user': request.user
+                }
+
+                return render(request, 'mentalhealth/followup-consent-modal.html', context)
+
+        elif request.method == 'POST':
+            # Handle consent submission
+            # Check if it's an AJAX request first
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # AJAX request - expect JSON data
+                data = json.loads(request.body)
+                consent_given = data.get('consent_given', False)
+            else:
+                # Form submission - expect form data
+                consent_given = request.POST.get('consent_given') == 'true'
+
+            if not consent_given:
+                # Student declined - cancel the follow-up
+                followup_request.status = 'cancelled'
+                followup_request.resulting_appointment.status = 'cancelled'
+                followup_request.resulting_appointment.save()
+                followup_request.save()
+
+                # Create notifications
+                from .notification_service import create_followup_notification
+                create_followup_notification(followup_request, 'declined')
+
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Follow-up declined successfully'
+                    })
+                else:
+                    messages.success(request, 'Follow-up declined successfully')
+                    return redirect('user-profile')
+            else:
+                # Student consented - appointment remains confirmed
+                # Generate video call URL for remote sessions if not already present
+                appointment = followup_request.resulting_appointment
+                if appointment.session_type == 'remote' and not appointment.video_call_url:
+                    # Create live session for remote follow-up appointments
+                    start_time = timezone.make_aware(datetime.combine(appointment.date, appointment.time))
+                    end_time = start_time + timedelta(hours=1)  # Default 1-hour session
+
+                    # Create or get existing live session
+                    live_session, created = LiveSession.objects.get_or_create(
+                        appointment=appointment,
+                        defaults={
+                            'scheduled_start': start_time,
+                            'scheduled_end': end_time,
+                            'session_type': 'video',
+                            'status': 'scheduled'
+                        }
+                    )
+
+                    # Generate room ID if not already set
+                    if not live_session.room_id:
+                        live_session.room_id = f'followup_{appointment.id}'
+                        live_session.save()
+
+                    # Generate video call link for remote follow-up sessions
+                    video_call_url = request.build_absolute_uri(
+                        reverse('live_session_view', kwargs={'room_id': live_session.room_id})
+                    )
+                    appointment.video_call_url = video_call_url
+                    appointment.save()
+
+                # Create notifications
+                from .notification_service import create_followup_notification
+                create_followup_notification(followup_request, 'consented')
+
+                # Also create a notification for the counselor that student accepted
+                counselor = followup_request.report.counselor
+                if counselor and counselor.user:
+                    student_name = followup_request.report.user.full_name if followup_request.report.user.full_name else 'Unknown Student'
+                    create_notification(
+                        user=counselor.user,
+                        message=f'{student_name} has accepted your follow-up request. Please schedule the session.',
+                        notification_type='followup',
+                        priority='high',
+                        action_url=None,  # Show modal for counselor scheduling
+                        action_text='Schedule Session',
+                        expires_in_hours=72,
+                        metadata={
+                            'followup_request_id': followup_request.id,
+                            'student_name': student_name,
+                            'user_type': 'counselor'
+                        }
+                    )
+
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Consent given successfully'
+                    })
+                else:
+                    messages.success(request, 'Consent given successfully')
+                    return redirect('followup_session', appointment_id=appointment.id)
+
+    except FollowupRequest.DoesNotExist:
+        logger.error(f"Follow-up request {request_id} not found")
+        error_msg = 'Follow-up request not found'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': error_msg}, status=404)
+        messages.error(request, error_msg)
+        return redirect('user-profile')
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error in accept_followup: {e}")
+        error_msg = 'Invalid request data'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': error_msg}, status=400)
+        messages.error(request, error_msg)
+        return redirect('user-profile')
+    except Exception as e:
+        logger.error(f"Unexpected error in accept_followup: {e}", exc_info=True)
+        error_msg = f'An error occurred: {str(e)}'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': error_msg}, status=500)
+        messages.error(request, error_msg)
+        return redirect('user-profile')
+
+
+@login_required
+@require_http_methods(["GET"])
+def followup_details(request, request_id):
+    """Get details of a scheduled follow-up session for counselor modal"""
+    logger.info(f"followup_details called by user {request.user.username} for request_id {request_id}")
+
+    try:
+        followup_request = FollowupRequest.objects.select_related(
+            'report', 'report__user', 'report__counselor', 'resulting_appointment'
+        ).get(pk=request_id)
+
+        # Check permissions - must be the counselor
+        if followup_request.report.counselor.user != request.user:
+            logger.warning(f"Permission denied: user {request.user.username} tried to access followup_request {followup_request.id} for counselor {followup_request.report.counselor.user.username}")
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+        if followup_request.status != 'scheduled':
+            logger.warning(f"Follow-up request {followup_request.id} has invalid status {followup_request.status}")
+            return JsonResponse({'success': False, 'error': 'Follow-up request is not scheduled'}, status=400)
+
+        if not followup_request.resulting_appointment:
+            logger.error(f"Follow-up request {followup_request.id} has no resulting appointment")
+            return JsonResponse({'success': False, 'error': 'No appointment found for this follow-up request'}, status=400)
+
+        appointment = followup_request.resulting_appointment
+        counselor = followup_request.report.counselor
+        student = followup_request.report.user
+
+        # Robust services field handling
+        services = appointment.services
+        try:
+            if isinstance(services, list):
+                services_list = services
+            elif isinstance(services, str):
+                # Try to parse as JSON first
+                try:
+                    parsed_services = json.loads(services)
+                    if isinstance(parsed_services, list):
+                        services_list = parsed_services
+                    else:
+                        services_list = [str(parsed_services)]
+                except (json.JSONDecodeError, TypeError):
+                    services_list = [services]
+            elif services is None:
+                services_list = []
+            else:
+                services_list = [str(services)]
+        except Exception as e:
+            logger.warning(f"Error processing services field for appointment {appointment.id}: {e}")
+            services_list = []
+
+        # Safe counselor data extraction
+        counselor_data = {}
+        if counselor:
+            try:
+                counselor_data = {
+                    'name': counselor.name or 'Unknown Counselor',
+                    'unit': counselor.unit or 'N/A',
+                    'rank': counselor.rank or 'N/A',
+                    'image_url': counselor.image.url if hasattr(counselor, 'image') and counselor.image else None
+                }
+            except Exception as e:
+                logger.warning(f"Error extracting counselor data: {e}")
+                counselor_data = {
+                    'name': 'Unknown Counselor',
+                    'unit': 'N/A',
+                    'rank': 'N/A',
+                    'image_url': None
+                }
+
+        # Safe student data extraction
+        student_data = {}
+        if student:
+            try:
+                student_data = {
+                    'full_name': student.full_name or 'Unknown Student',
+                    'student_id': getattr(student, 'student_id', 'N/A'),
+                    'email': student.email or 'N/A'
+                }
+            except Exception as e:
+                logger.warning(f"Error extracting student data: {e}")
+                student_data = {
+                    'full_name': 'Unknown Student',
+                    'student_id': 'N/A',
+                    'email': 'N/A'
+                }
+
+        # Safe appointment data extraction
+        appointment_data = {}
+        try:
+            appointment_data = {
+                'id': appointment.id,
+                'date': appointment.date.strftime('%B %d, %Y') if appointment.date else 'TBD',
+                'time': appointment.time.strftime('%I:%M %p') if appointment.time else 'TBD',
+                'session_type': appointment.get_session_type_display() if appointment.session_type and appointment.session_type in dict(appointment.SESSION_TYPE_CHOICES) else (appointment.session_type or 'TBD'),
+                'session_type_raw': appointment.session_type or 'face_to_face',  # Add raw session type for video call logic
+                'services': services_list,
+                'reason': appointment.reason or '',
+                'status': appointment.get_status_display() if appointment.status else 'Unknown',
+                'video_call_url': appointment.video_call_url or None  # Include video call URL
+            }
+        except Exception as e:
+            logger.error(f"Error extracting appointment data for appointment {appointment.id}: {e}")
+            appointment_data = {
+                'date': 'TBD',
+                'time': 'TBD',
+                'session_type': 'TBD',
+                'session_type_raw': 'face_to_face',
+                'services': [],
+                'reason': 'Error loading appointment details',
+                'status': 'Unknown',
+                'video_call_url': None
+            }
+
+        return JsonResponse({
+            'success': True,
+            'followup_request': {
+                'id': followup_request.id,
+                'reason': followup_request.reason or '',
+                'status': followup_request.status,
+                'created_at': followup_request.created_at.strftime('%B %d, %Y %I:%M %p') if followup_request.created_at else None,
+                'scheduled_date': followup_request.scheduled_date.strftime('%B %d, %Y') if followup_request.scheduled_date else None,
+                'scheduled_time': followup_request.scheduled_time.strftime('%I:%M %p') if followup_request.scheduled_time else None,
+                'session_type': followup_request.session_type or 'TBD'
+            },
+            'appointment': appointment_data,
+            'counselor': counselor_data,
+            'student': student_data
+        })
+
+    except FollowupRequest.DoesNotExist:
+        logger.error(f"Follow-up request {request_id} not found")
+        return JsonResponse({'success': False, 'error': 'Follow-up request not found'}, status=404)
+    except Exception as e:
+        logger.error(f"Unexpected error in followup_details: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'}, status=500)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def user_settings_api(request):
+    """API endpoint for user settings management"""
+    try:
+        # Get or create user settings
+        settings_obj, created = UserSettings.objects.get_or_create(
+            user=request.user,
+            defaults={
+                'notification_preferences': UserSettings().default_notification_preferences
+            }
+        )
+
+        if request.method == 'GET':
+            # Return current settings
+            return JsonResponse({
+                'success': True,
+                'settings': {
+                    'dark_mode': settings_obj.dark_mode,
+                    'font_size': settings_obj.font_size,
+                    'notification_preferences': settings_obj.notification_preferences,
+                    'language': settings_obj.language,
+                    'high_contrast': settings_obj.high_contrast,
+                    'screen_reader': settings_obj.screen_reader,
+                    'reduced_motion': settings_obj.reduced_motion,
+                    'analytics_tracking': settings_obj.analytics_tracking,
+                    'profile_visibility': settings_obj.profile_visibility,
+                }
+            })
+
+        elif request.method == 'POST':
+            # Update settings
+            data = json.loads(request.body)
+
+            # Update theme settings
+            if 'dark_mode' in data:
+                settings_obj.dark_mode = bool(data['dark_mode'])
+            if 'font_size' in data:
+                settings_obj.font_size = data['font_size']
+
+            # Update notification preferences
+            if 'notification_preferences' in data:
+                settings_obj.notification_preferences = data['notification_preferences']
+
+            # Update language
+            if 'language' in data:
+                settings_obj.language = data['language']
+
+            # Update accessibility options
+            if 'high_contrast' in data:
+                settings_obj.high_contrast = bool(data['high_contrast'])
+            if 'screen_reader' in data:
+                settings_obj.screen_reader = bool(data['screen_reader'])
+            if 'reduced_motion' in data:
+                settings_obj.reduced_motion = bool(data['reduced_motion'])
+
+            # Update privacy settings
+            if 'analytics_tracking' in data:
+                settings_obj.analytics_tracking = bool(data['analytics_tracking'])
+            if 'profile_visibility' in data:
+                settings_obj.profile_visibility = data['profile_visibility']
+
+            settings_obj.save()
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Settings saved successfully'
+            })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def reset_settings_api(request):
+    """Reset user settings to defaults"""
+    try:
+        settings_obj, created = UserSettings.objects.get_or_create(
+            user=request.user,
+            defaults={
+                'notification_preferences': UserSettings().default_notification_preferences
+            }
+        )
+
+        # Reset all settings to defaults
+        settings_obj.dark_mode = False
+        settings_obj.font_size = 'medium'
+        settings_obj.notification_preferences = settings_obj.default_notification_preferences
+        settings_obj.language = 'en'
+        settings_obj.high_contrast = False
+        settings_obj.screen_reader = False
+        settings_obj.reduced_motion = False
+        settings_obj.analytics_tracking = True
+        settings_obj.profile_visibility = 'counselors_only'
+
+        settings_obj.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Settings reset to defaults successfully'
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+@login_required
+@staff_member_required
+def run_migrations(request):
+    """Run database migrations (temporary endpoint for Railway)"""
+    from django.core.management import call_command
+    from django.http import JsonResponse
+    import io
+    import sys
+
+    # Capture output
+    old_stdout = sys.stdout
+    sys.stdout = buffer = io.StringIO()
+
+    try:
+        # Run migrations
+        call_command('migrate', verbosity=2)
+
+        # Get output
+        output = buffer.getvalue()
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Migrations completed successfully',
+            'output': output
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'output': buffer.getvalue()
+        })
+    finally:
+        sys.stdout = old_stdout
 

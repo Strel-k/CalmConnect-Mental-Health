@@ -38,9 +38,13 @@ if not SECRET_KEY:
 
 # Email settings - use environment variables
 EMAIL_HOST = env_config('EMAIL_HOST', default='sandbox.smtp.mailtrap.io')
-EMAIL_HOST_USER = env_config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = env_config('EMAIL_HOST_PASSWORD', default='')
-EMAIL_PORT = env_config('EMAIL_PORT', default='2525', cast=int)
+EMAIL_HOST_USER = env_config('EMAIL_HOST_USER', default='d2ded003c8e726')
+EMAIL_HOST_PASSWORD = env_config('EMAIL_HOST_PASSWORD', default='7a1e018014057e')
+EMAIL_PORT = env_config('EMAIL_PORT', default=2525, cast=int)
+EMAIL_USE_TLS = env_config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_SSL = env_config('EMAIL_USE_SSL', default=False, cast=bool)
+DEFAULT_FROM_EMAIL = env_config('DEFAULT_FROM_EMAIL', default='noreply@calmconnect.edu.ph')
+SERVER_EMAIL = env_config('SERVER_EMAIL', default='server@calmconnect.edu.ph')
 
 # --- SECURITY: Production settings ---
 # Set to False in production
@@ -141,7 +145,8 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             os.path.join(BASE_DIR, 'templates'),  # Project-level templates
-            os.path.join(BASE_DIR, 'mentalhealth/templates/mentalhealth'),  # App-level templates
+            os.path.join(BASE_DIR, 'mentalhealth/templates'),  # Main app templates folder (prioritized)
+            os.path.join(BASE_DIR, 'mentalhealth/templates/mentalhealth'),  # App subfolder templates
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -157,28 +162,74 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'calmconnect_backend.wsgi.application'
 
-# --- EMAIL ---
-EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
-EMAIL_HOST_USER = 'd2ded003c8e726'
-EMAIL_HOST_PASSWORD = '7a1e018014057e'
-EMAIL_PORT = '2525'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+# Database configuration
+DATABASE_URL = os.environ.get('DATABASE_URL') or env_config('DATABASE_URL', default='')
+print(f"DATABASE_URL from os.environ: {os.environ.get('DATABASE_URL', 'Not found')}")
+print(f"DATABASE_URL from env_config: {env_config('DATABASE_URL', default='Not found')}")
+print(f"Final DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env_config('DB_NAME', default='calmconnect_db'),
-        'USER': env_config('DB_USER', default='postgres'),
-        'PASSWORD': env_config('DB_PASSWORD', default='postgres'),
-        'HOST': env_config('DB_HOST', default='localhost'),
-        'PORT': env_config('DB_PORT', default='5432', cast=int),
-        'OPTIONS': {
-            'sslmode': 'require' if not DEBUG else 'prefer',
-        },
-    }
-}
+def parse_database_url(url):
+    """Parse DATABASE_URL into Django DATABASES format"""
+    if not url:
+        return None
+
+    # Expected format: postgresql://user:password@host:port/dbname
+    if url.startswith('postgresql://'):
+        # Remove postgresql://
+        url = url[13:]
+        # Split user:password@host:port/dbname
+        if '@' in url:
+            user_pass, host_port_db = url.split('@', 1)
+            if ':' in user_pass:
+                user, password = user_pass.split(':', 1)
+            else:
+                user = user_pass
+                password = ''
+
+            if '/' in host_port_db:
+                host_port, dbname = host_port_db.rsplit('/', 1)
+            else:
+                host_port = host_port_db
+                dbname = ''
+
+            if ':' in host_port:
+                host, port = host_port.split(':', 1)
+                port = int(port)
+            else:
+                host = host_port
+                port = 5432  # Default PostgreSQL port
+
+            return {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': dbname,
+                'USER': user,
+                'PASSWORD': password,
+                'HOST': host,
+                'PORT': port,
+                'OPTIONS': {
+                    'sslmode': 'require',
+                },
+            }
+    return None
+
+if DATABASE_URL:
+    print("EXECUTING: DATABASE_URL is set, parsing database configuration")
+    parsed_db = parse_database_url(DATABASE_URL)
+    if parsed_db:
+        DATABASES = {
+            'default': parsed_db
+        }
+        print("Database configured successfully from DATABASE_URL")
+    else:
+        print("ERROR: Could not parse DATABASE_URL")
+        raise ValueError("Invalid DATABASE_URL format")
+else:
+    print("ERROR: DATABASE_URL not set. Please set DATABASE_URL environment variable.")
+    raise ValueError("DATABASE_URL environment variable must be set")
+
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
@@ -248,10 +299,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ASGI_APPLICATION = 'calmconnect_backend.asgi.application'
 
 # Channel Layers (for WebSocket support)
+REDIS_URL = env_config('REDIS_URL', default='redis://localhost:6379')
+
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer'
-    }
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [REDIS_URL],
+        },
+    },
 }
 
 # Ensure ASGI is used for both HTTP and WebSocket

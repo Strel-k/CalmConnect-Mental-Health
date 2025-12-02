@@ -8,6 +8,7 @@
   <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% include 'mentalhealth/base_notifications.html' %}
   <style>
     :root {
       --primary-color: #2ecc71;
@@ -1268,6 +1269,201 @@
       margin: 0.5rem 0;
     }
 
+    /* Consent Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 3000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 20px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.4s ease-out;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        color: white;
+        padding: 2rem;
+        border-radius: 20px 20px 0 0;
+        text-align: center;
+        position: relative;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .modal-header .close {
+        position: absolute;
+        top: 1rem;
+        right: 1.5rem;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+    .modal-header .close:hover {
+        color: #f8f9fa;
+    }
+
+    .modal-body {
+        padding: 2rem;
+    }
+
+    .followup-details {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .counselor-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .counselor-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary-color);
+    }
+
+    .counselor-details h3 {
+        color: #2c3e50;
+        margin-bottom: 0.3rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .counselor-details p {
+        color: #666;
+        margin-bottom: 0.2rem;
+        font-size: 0.9rem;
+    }
+
+    .appointment-details {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        border-left: 3px solid var(--primary-color);
+    }
+
+    .appointment-details h4 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .detail-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-label {
+        font-weight: 500;
+        color: #555;
+        font-size: 0.9rem;
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.9rem;
+    }
+
+    .consent-question {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .consent-question h3 {
+        color: #2c3e50;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .consent-question p {
+        color: #666;
+        font-size: 0.95rem;
+    }
+
+    .modal-actions {
+        padding: 1.5rem 2rem;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .modal-actions .btn {
+        padding: 0.8rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        min-width: 120px;
+    }
+
+    .btn.primary {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        color: white;
+    }
+
+    .btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+    }
+
+    .btn.secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn.secondary:hover {
+        background: #5a6268;
+    }
+
+    .btn.danger {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+    }
+
+    .btn.danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+    }
+
     /* Responsive Design */
     @media (max-width: 1024px) {
       .reports-dashboard {
@@ -1340,7 +1536,7 @@
   </style>
   {% csrf_token %}
 </head>
-<body>
+<body data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}" data-user-is-counselor="{% if user.counselor_profile %}true{% else %}false{% endif %}">
   <header>
     <div class="hdr">
       <div class="hdr-logo"><h2>CalmConnect</h2></div>
@@ -1391,10 +1587,17 @@
             <i class="bx bxs-plus"></i>
             Create New Report
           </button>
-          <button class="btn btn-secondary" id="exportReportsBtn">
-            <i class="bx bxs-download"></i>
-            Export Reports
-          </button>
+          <div class="export-container" style="display: flex; gap: 0.5rem; align-items: center;">
+            <select id="exportFormat" class="btn btn-secondary" style="padding: 0.8rem 1rem; border: 1px solid #e9ecef; border-radius: 10px; background: white; color: #666;">
+              <option value="csv">CSV</option>
+              <option value="pdf">PDF</option>
+              <option value="doc">Word Document</option>
+            </select>
+            <button class="btn btn-secondary" id="exportReportsBtn">
+              <i class="bx bxs-download"></i>
+              Export Reports
+            </button>
+          </div>
         </div>
       </section>
 
@@ -1939,6 +2142,66 @@
     </div>
   </div>
 
+  <!-- Follow-up Consent Modal -->
+  <div id="consentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Follow-up Session Consent</h3>
+        <span class="close" onclick="closeConsentModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="followup-details">
+          <div class="counselor-info">
+            <img id="consentCounselorImage" src="" alt="Counselor" class="counselor-avatar">
+            <div class="counselor-details">
+              <h3 id="consentCounselorName">Loading...</h3>
+              <p id="consentCounselorUnit">Loading...</p>
+              <p id="consentCounselorRank">Loading...</p>
+            </div>
+          </div>
+
+          <div class="appointment-details">
+            <h4>Appointment Information</h4>
+            <div class="detail-row">
+              <span class="detail-label">Date:</span>
+              <span class="detail-value date" id="consentDate">Loading...</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Time:</span>
+              <span class="detail-value" id="consentTime">Loading...</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Session Type:</span>
+              <span class="detail-value" id="consentSessionType">Loading...</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Services:</span>
+              <span class="detail-value" id="consentServices">Loading...</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Reason:</span>
+              <span class="detail-value" id="consentReason">Loading...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="consent-question">
+          <h3>Do you consent to this follow-up session?</h3>
+          <p>Your participation will help continue your counseling journey and support your mental health goals.</p>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" onclick="closeConsentModal()">Cancel</button>
+        <button type="button" class="btn primary" id="consentBtn">
+          <i class="bx bx-check"></i> Yes, I Consent
+        </button>
+        <button type="button" class="btn danger" id="declineBtn">
+          <i class="bx bx-x"></i> No, Decline
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Report CRUD operations
     function viewReport(reportId) {
@@ -2113,6 +2376,8 @@
     // Export reports
     function exportReports() {
       const params = new URLSearchParams(window.location.search);
+      const format = document.getElementById('exportFormat').value;
+      params.set('format', format);
       window.open(`/api/reports/export/?${params.toString()}`, '_blank');
     }
 
@@ -2140,199 +2405,186 @@
       return cookieValue;
     }
 
-    // Unified notification dropdown logic
-    function showNotificationDropdown() {
-        const dropdown = document.getElementById('notificationDropdown');
-        dropdown.innerHTML = '<div style="text-align:center;padding:1.5rem 0;"><span class="ai-spinner" style="width:22px;height:22px;"></span> Loading...</div>';
-        dropdown.style.display = 'block';
-        
-        fetch('/notifications/', {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => {
-            if (!response.ok) {
-                if (response.status === 401) {
-                    window.location.href = '/login/';
-                    return;
-                }
-                throw new Error(`HTTP ${response.status}`);
-            }
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                window.location.href = '/login/';
-                return;
-            }
-            return response.json();
-        })
-        .then(data => {
-            dropdown.innerHTML = '';
-            if (data.success && data.notifications && data.notifications.length > 0) {
-                data.notifications.forEach(notif => {
-                    const item = document.createElement('div');
-                    item.className = 'notification-item';
-                    item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
-                    
-                    const content = document.createElement('a');
-                    content.href = notif.url;
-                    content.style.cssText = 'flex:1;display:flex;align-items:center;gap:0.7rem;text-decoration:none;color:inherit;';
-                    content.innerHTML = `
-                        <i class='bx ${notif.type === 'appointment' ? 'bxs-calendar' : notif.type === 'report' ? 'bxs-report' : 'bxs-bell'}' style='color:#27ae60;font-size:1.2rem;'></i>
-                        <span>${notif.message}</span>
-                        <span style='margin-left:auto;font-size:0.85em;color:#888;'>${notif.time}</span>
-                    `;
-                    
-                    const clearBtn = document.createElement('button');
-                    clearBtn.innerHTML = '<i class="bx bx-x"></i>';
-                    clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
-                    clearBtn.title = 'Clear notification';
-                    clearBtn.onclick = function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        clearNotification(notif.id);
-                    };
-                    
-                    item.appendChild(content);
-                    item.appendChild(clearBtn);
-                    dropdown.appendChild(item);
-                });
-                
-                // Add clear all button
-                const clearAllDiv = document.createElement('div');
-                clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
-                
-                const clearAllBtn = document.createElement('button');
-                clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
-                clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
-                clearAllBtn.onclick = function(e) {
-                    e.preventDefault();
-                    if (confirm('Clear all notifications?')) {
-                        clearAllNotifications();
-                    }
-                };
-                
-                clearAllDiv.appendChild(clearAllBtn);
-                dropdown.appendChild(clearAllDiv);
-            } else {
-                dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#888;"><i class="bx bxs-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
-            }
-        })
-        .catch((error) => {
-            console.error('Notification error:', error);
-            dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
-        });
-    }
-    
-    const bellIcon = document.getElementById('bell-icon');
-    if (bellIcon) {
-        bellIcon.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const dropdown = document.getElementById('notificationDropdown');
-            if (dropdown.style.display === 'block') {
-                dropdown.style.display = 'none';
-            } else {
-                showNotificationDropdown();
-            }
-        });
-    }
-    
-    document.addEventListener('click', function() {
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        if (notificationDropdown) {
-            notificationDropdown.style.display = 'none';
+
+    // Consent Modal Functions
+    function openConsentModal(requestId) {
+      console.log('DEBUG: openConsentModal called with requestId:', requestId);
+
+      if (!requestId || requestId === 'None') {
+        alert('ERROR: Invalid requestId: ' + requestId);
+        return;
+      }
+
+      const modal = document.getElementById('consentModal');
+      if (!modal) {
+        alert('ERROR: Modal element not found!');
+        return;
+      }
+      console.log('DEBUG: Modal element found and requestId is valid');
+
+      // Reset modal content first
+      document.getElementById('consentCounselorName').textContent = 'Loading...';
+      document.getElementById('consentCounselorUnit').textContent = 'Loading...';
+      document.getElementById('consentCounselorRank').textContent = 'Loading...';
+      document.getElementById('consentCounselorImage').src = '{% static "mentalhealth/img/default.jpg" %}';
+      document.getElementById('consentDate').textContent = 'Loading...';
+      document.getElementById('consentTime').textContent = 'Loading...';
+      document.getElementById('consentSessionType').textContent = 'Loading...';
+      document.getElementById('consentServices').textContent = 'Loading...';
+      document.getElementById('consentReason').textContent = 'Loading...';
+
+      // Show the modal immediately
+      console.log('DEBUG: Showing modal');
+      modal.style.display = 'flex';
+
+      // Fetch follow-up request details
+      console.log('DEBUG: Fetching data from server');
+      fetch(`/followup/${requestId}/consent/?modal=1`, {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
         }
-    });
+      })
+      .then(response => {
+        console.log('DEBUG: Fetch response status:', response.status);
+        if (!response.ok) {
+          throw new Error('Network response was not ok: ' + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('DEBUG: Fetch response data:', data);
+        if (data.success) {
+          console.log('DEBUG: Populating modal with data');
+          // Populate modal with data
+          document.getElementById('consentCounselorName').textContent = data.counselor.name;
+          document.getElementById('consentCounselorUnit').textContent = data.counselor.unit;
+          document.getElementById('consentCounselorRank').textContent = data.counselor.rank;
 
-    // Function to clear individual notification
-    function clearNotification(notificationId) {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-        
-        fetch(`/notifications/${notificationId}/clear/`, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrfToken
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Refresh the notification dropdown
-                showNotificationDropdown();
-                // Update the badge
-                updateNotificationBadge();
-            } else {
-                console.error('Error clearing notification:', data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error clearing notification:', error);
-        });
+          const imageElement = document.getElementById('consentCounselorImage');
+          if (data.counselor.image_url) {
+            imageElement.src = data.counselor.image_url;
+          } else {
+            imageElement.src = '{% static "mentalhealth/img/default.jpg" %}';
+          }
+
+          document.getElementById('consentDate').textContent = data.appointment.date;
+          document.getElementById('consentTime').textContent = data.appointment.time;
+          document.getElementById('consentSessionType').textContent = data.appointment.session_type;
+          document.getElementById('consentServices').textContent = data.appointment.services.join(', ');
+          document.getElementById('consentReason').textContent = data.followup_request.reason;
+
+          console.log('DEBUG: Setting up event listeners');
+          // Add event listeners to buttons
+          setupConsentModalListeners(requestId);
+        } else {
+          console.log('DEBUG: Error in response:', data.error);
+          alert('Error: ' + (data.error || 'Failed to load consent modal'));
+          closeConsentModal();
+        }
+      })
+      .catch(error => {
+        console.error('DEBUG: Fetch error:', error);
+        alert('An error occurred while loading the consent modal. Please try again.');
+        closeConsentModal();
+      });
     }
 
-    // Function to clear all notifications
-    function clearAllNotifications() {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-        
-        fetch('/notifications/clear-all/', {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrfToken
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Refresh the notification dropdown
-                showNotificationDropdown();
-                // Update the badge
-                updateNotificationBadge();
-            } else {
-                console.error('Error clearing all notifications:', data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error clearing all notifications:', error);
+    function setupConsentModalListeners(requestId) {
+      const modal = document.getElementById('consentModal');
+
+      // Close modal when clicking outside
+      modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+          closeConsentModal();
+        }
+      });
+
+      // Close button
+      const closeBtn = modal.querySelector('.close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeConsentModal);
+      }
+
+      // Consent button
+      const consentBtn = document.getElementById('consentBtn');
+      if (consentBtn) {
+        consentBtn.addEventListener('click', function() {
+          processConsent(requestId, true);
         });
+      }
+
+      // Decline button
+      const declineBtn = document.getElementById('declineBtn');
+      if (declineBtn) {
+        declineBtn.addEventListener('click', function() {
+          if (confirm('Are you sure you want to decline this follow-up session? You can always request a new session if needed.')) {
+            processConsent(requestId, false);
+          }
+        });
+      }
     }
 
-    // Function to update notification badge
-    function updateNotificationBadge() {
-        fetch('/notifications/', {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => {
-            if (!response.ok) {
-                return;
-            }
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                return;
-            }
-            return response.json();
-        })
-        .then(data => {
-            const badge = document.getElementById('notificationBadge');
-            if (badge && data && data.count > 0) {
-                badge.textContent = data.count;
-                badge.style.display = 'flex';
-            } else if (badge) {
-                badge.style.display = 'none';
-            }
-        })
-        .catch(error => {
-            console.error('Error updating notification badge:', error);
-        });
+    function closeConsentModal() {
+      document.getElementById('consentModal').style.display = 'none';
+    }
+
+    function processConsent(requestId, consentGiven) {
+      console.log('DEBUG: processConsent called with requestId:', requestId, 'consentGiven:', consentGiven);
+      const modal = document.getElementById('consentModal');
+      const buttons = modal.querySelectorAll('button');
+      buttons.forEach(btn => btn.disabled = true);
+
+      const data = {
+        consent_given: consentGiven
+      };
+
+      console.log('DEBUG: Sending POST request with data:', data);
+      fetch(`/followup/${requestId}/consent/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        console.log('DEBUG: POST response status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('DEBUG: POST response data:', data);
+        if (data.success) {
+          alert(data.message);
+          closeConsentModal();
+          location.reload(); // Reload to show updated status
+        } else {
+          alert('Error: ' + (data.error || 'An error occurred'));
+          buttons.forEach(btn => btn.disabled = false);
+        }
+      })
+      .catch(error => {
+        console.error('DEBUG: POST error:', error);
+        alert('An error occurred while processing your response. Please try again.');
+        buttons.forEach(btn => btn.disabled = false);
+      });
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
     }
 
     // Profile dropdown toggle
@@ -2411,6 +2663,98 @@
           e.target.classList.remove('active');
         }
       });
+
+      // Global notification click handler - set up immediately
+      window.handleNotificationClick = function(notification) {
+          console.log('🔗 Counselor-reports handling notification click:', notification);
+  
+          // Check if user is a counselor - ensure DOM is ready
+          if (!document.body) {
+              console.error('❌ DOM not ready, cannot access user data');
+              return;
+          }
+          const isCounselor = document.body.dataset.userIsCounselor === 'true';
+          console.log('🔍 Counselor-reports - User is counselor:', isCounselor, 'Data attribute:', document.body.dataset.userIsCounselor);
+
+              // Handle follow-up notifications differently based on user type
+              if (notification.type === 'followup') {
+                  console.log('📋 Counselor-reports handling follow-up notification for', isCounselor ? 'counselor' : 'student');
+
+                  if (isCounselor) {
+                      // For counselors, try to show the scheduled follow-up modal
+                      console.log('👨‍⚕️ Counselor attempting to show scheduled follow-up modal');
+
+                      // Check if notification manager is available
+                      if (window.notificationManager && typeof window.notificationManager.showScheduledFollowupModal === 'function') {
+                          console.log('✅ Notification manager available, showing modal');
+
+                          // Mark as read
+                          window.notificationManager.markAsRead(notification.id);
+
+                          // Extract followup_request_id from metadata
+                          let followupRequestId = null;
+                          if (notification.metadata) {
+                              if (typeof notification.metadata === 'string') {
+                                  try {
+                                      const metadata = JSON.parse(notification.metadata);
+                                      followupRequestId = metadata.followup_request_id;
+                                  } catch (e) {
+                                      console.warn('Failed to parse notification metadata:', e);
+                                  }
+                              } else if (notification.metadata.followup_request_id) {
+                                  followupRequestId = notification.metadata.followup_request_id;
+                              }
+                          }
+
+                          if (followupRequestId) {
+                              console.log('📋 Using followup request ID:', followupRequestId);
+                              window.notificationManager.showScheduledFollowupModal(followupRequestId, notification.metadata);
+                              return; // Prevent navigation
+                          } else {
+                              console.warn('⚠️ No followup request ID found in notification');
+                          }
+                      } else {
+                          console.warn('⚠️ Notification manager not available or showScheduledFollowupModal not found');
+                      }
+
+                      // Fallback: navigate to follow-up sessions page
+                      console.log('🔄 Falling back to navigation for counselor follow-up notification');
+                      const url = notification.action_url || notification.url || '/followup-sessions/';
+                      if (url && url !== '#') {
+                          console.log('👨‍⚕️ Counselor navigating to:', url);
+                          window.location.href = url;
+                          return;
+                      }
+                  } else {
+                      // Students should see the consent modal
+                      console.log('🎯 Student opening follow-up modal for notification:', notification.id);
+                      if (window.notificationManager && typeof window.notificationManager.showFollowupConsentModal === 'function') {
+                          window.notificationManager.showFollowupConsentModal(notification);
+                          return; // Prevent navigation
+                      } else {
+                          console.warn('⚠️ Notification manager not available for student consent modal');
+                      }
+                  }
+              } else {
+                  // For non-followup notifications, navigate to URL if available
+                  const url = notification.action_url || notification.url || '#';
+                  if (url && url !== '#') {
+                      // Prevent navigation to current page (refresh)
+                      const currentUrl = window.location.pathname;
+                      if (url === currentUrl || url === window.location.href) {
+                          console.log('🚫 Preventing refresh to current page');
+                          return;
+                      }
+                      console.log('🌐 Navigating to URL from counselor-reports:', url);
+                      window.location.href = url;
+                  } else {
+                      console.log('📋 No valid URL for notification, staying on page');
+                  }
+              }
+          }
+
+          console.log('✅ Counselor-reports notification handler set up successfully');
+        }
     });
   </script>
 </body>
