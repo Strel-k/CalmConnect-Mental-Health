@@ -6683,6 +6683,56 @@ def reset_settings_api(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# TEMPORARY: Create superuser endpoint (remove after use)
+@staff_member_required
+def create_superuser_endpoint(request):
+    """TEMPORARY endpoint to create a superuser - REMOVE AFTER USE"""
+    if request.method == 'POST':
+        username = request.POST.get('username', 'admin')
+        email = request.POST.get('email', 'admin@calmconnect.edu.ph')
+        password = request.POST.get('password', 'admin123!')
+
+        # Check if user already exists
+        if CustomUser.objects.filter(username=username).exists():
+            messages.error(request, f'Superuser "{username}" already exists.')
+            return redirect('admin_dashboard')
+
+        # Generate unique student_id
+        base_student_id = 'admin001'
+        student_id = base_student_id
+        counter = 1
+        while CustomUser.objects.filter(student_id=student_id).exists():
+            counter += 1
+            student_id = f'admin{counter:03d}'
+
+        try:
+            user = CustomUser.objects.create_superuser(
+                username=username,
+                email=email,
+                password=password,
+                full_name='Administrator',
+                age=0,
+                gender='Prefer not to say',
+                college='CBA',
+                program='Administration',
+                year_level='4',
+                student_id=student_id
+            )
+
+            messages.success(request, f'Superuser "{username}" created successfully! '
+                                    f'Username: {username}, Password: {password}')
+            return redirect('admin_dashboard')
+
+        except Exception as e:
+            messages.error(request, f'Error creating superuser: {e}')
+            return redirect('admin_dashboard')
+
+    # GET request - show form
+    return render(request, 'mentalhealth/create_superuser.html', {
+        'title': 'Create Superuser (TEMPORARY)'
+    })
 @login_required
 @staff_member_required
 def run_migrations(request):

@@ -210,4 +210,7 @@ urlpatterns = [
     # Temporary migration endpoint for Railway
     path('run-migrations/', views.run_migrations, name='run_migrations'),
 
+    # TEMPORARY: Create superuser endpoint (remove after use)
+    path('create-superuser/', views.create_superuser_endpoint, name='create_superuser'),
+
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

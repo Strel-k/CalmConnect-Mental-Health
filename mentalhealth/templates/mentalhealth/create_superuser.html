@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Superuser - CalmConnect{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-shield"></i> Create Superuser (TEMPORARY)
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Warning:</strong> This is a temporary endpoint for creating an admin user.
+                        Please delete this functionality after use for security reasons.
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username"
+                                   value="admin" required>
+                            <div class="form-text">Choose a username for the admin account</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   value="admin@calmconnect.edu.ph" required>
+                            <div class="form-text">Email address for the admin account</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password"
+                                   value="admin123!" required>
+                            <div class="form-text">Choose a secure password</div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-user-plus"></i> Create Superuser
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> After Creation:</h6>
+                        <ol class="mb-0">
+                            <li>Access admin panel at: <code>/admin/</code></li>
+                            <li>Login with your chosen credentials</li>
+                            <li><strong>Delete this endpoint for security</strong></li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
