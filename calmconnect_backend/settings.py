@@ -187,8 +187,60 @@ if DATABASE_URL:
         }
         print("Database configured via DATABASE_URL")
     except Exception as e:
-        print(f"Error parsing DATABASE_URL: {e}")
-        print("Falling back to individual settings")
+        print(f"Error parsing DATABASE_URL with dj_database_url: {e}")
+        # Manual parsing for Railway DATABASE_URL format: postgresql://user:pass@host:port/db
+        try:
+            if DATABASE_URL.startswith('postgresql://'):
+                # Remove the postgresql:// prefix for manual parsing
+                db_string = DATABASE_URL.replace('postgresql://', '')
+                # Split into user:pass and host:port/db
+                auth_and_rest = db_string.split('@')
+                if len(auth_and_rest) == 2:
+                    user_pass = auth_and_rest[0]
+                    host_port_db = auth_and_rest[1]
+
+                    # Parse user and password
+                    if ':' in user_pass:
+                        user, password = user_pass.split(':', 1)
+                    else:
+                        user = user_pass
+                        password = ''
+
+                    # Parse host, port, and database
+                    if '/' in host_port_db:
+                        host_port, database = host_port_db.split('/', 1)
+                    else:
+                        host_port = host_port_db
+                        database = 'postgres'
+
+                    if ':' in host_port:
+                        host, port = host_port.split(':', 1)
+                        port = int(port)
+                    else:
+                        host = host_port
+                        port = 5432
+
+                    DATABASES = {
+                        'default': {
+                            'ENGINE': 'django.db.backends.postgresql',
+                            'NAME': database,
+                            'USER': user,
+                            'PASSWORD': password,
+                            'HOST': host,
+                            'PORT': port,
+                            'OPTIONS': {
+                                'sslmode': 'require',
+                            },
+                        }
+                    }
+                    print(f"Manual database parsing successful: HOST={host}, PORT={port}, DB={database}")
+                else:
+                    raise ValueError("Invalid DATABASE_URL format")
+            else:
+                raise ValueError("DATABASE_URL doesn't start with postgresql://")
+        except Exception as manual_e:
+            print(f"Manual parsing also failed: {manual_e}")
+            print("Falling back to individual settings")
         # This will be handled by the fallback below
 else:
     # Fallback to individual settings
