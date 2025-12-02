@@ -177,14 +177,19 @@ else:
 if DATABASE_URL:
     # Use DATABASE_URL if provided (for Railway and other cloud providers)
     import dj_database_url
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=False,  # Railway handles SSL differently
-        )
-    }
-    print("Database configured via DATABASE_URL")
+    print(f"Raw DATABASE_URL: {DATABASE_URL}")
+    try:
+        # Parse the DATABASE_URL
+        db_config = dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+        print(f"Parsed database config: ENGINE={db_config.get('ENGINE')}, HOST={db_config.get('HOST')}, PORT={db_config.get('PORT')}")
+        DATABASES = {
+            'default': db_config
+        }
+        print("Database configured via DATABASE_URL")
+    except Exception as e:
+        print(f"Error parsing DATABASE_URL: {e}")
+        print("Falling back to individual settings")
+        # This will be handled by the fallback below
 else:
     # Fallback to individual settings
     DATABASES = {
