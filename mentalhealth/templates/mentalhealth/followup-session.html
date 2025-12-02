@@ -397,8 +397,8 @@
             </div>
 
             <div class="session-details">
-                <img src="{% if counselor.profile_picture %}{{ counselor.profile_picture }}{% else %}{% static 'img/default-counselor.jpg' %}{% endif %}" 
-                     alt="{{ counselor.name }}" 
+                <img src="{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}"
+                     alt="{{ counselor.name }}"
                      class="counselor-avatar">
                 <div class="session-info">
                     <h3>Follow-up for session with {{ counselor.name }}</h3>

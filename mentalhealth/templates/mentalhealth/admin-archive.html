@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" />
   <link rel="stylesheet" href="{% static 'css/admin-panel.css' %}">
       <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
+  {% include 'mentalhealth/base_notifications.html' %}
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -778,7 +779,7 @@
     }
   </style>
 </head>
-<body>
+<body data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}" data-user-is-counselor="{% if user.counselor_profile %}true{% else %}false{% endif %}">
   <header>
     <div class="hdr">
       <div class="hdr-logo"><h2>CalmConnect</h2></div>
@@ -825,7 +826,7 @@
       </div>
 
       <div class="archive-nav-buttons">
-        <button class="archive-btn active" data-type="appointments">
+        <button class="archive-btn" data-type="appointments">
           <i class='bx bxs-calendar-check'></i> Appointments
         </button>
         <button class="archive-btn" data-type="dass21">
@@ -834,13 +835,13 @@
         <button class="archive-btn" data-type="employees">
           <i class='bx bxs-user-detail'></i> Employees
         </button>
-        <button class="archive-btn" data-type="reports">
+        <button class="archive-btn active" data-type="reports">
           <i class='bx bxs-file-doc'></i> Reports
         </button>
       </div>
 
       <!-- Appointments Section -->
-      <section id="appointmentsArchive" class="archive-section active">
+      <section id="appointmentsArchive" class="archive-section">
         <div class="section-header">
           <h3>Past Appointments</h3>
           <div class="section-actions">
@@ -1077,7 +1078,7 @@
       </section>
 
       <!-- Reports Section -->
-      <section id="reportsArchive" class="archive-section">
+      <section id="reportsArchive" class="archive-section active">
         <div class="section-header">
           <h3>Archived Reports</h3>
           <div class="section-actions">
@@ -1158,7 +1159,130 @@
   </div>
 
   <script>
-    // JavaScript for tab switching
+   // Global notification click handler - uniform standard
+   function setupNotificationHandler() {
+       console.log('🔧 Setting up admin-archive notification handler');
+
+       window.handleNotificationClick = function(notification) {
+           console.log('🔗 Admin-archive handling notification click:', notification);
+
+           // Check if user is a counselor
+           const isCounselor = document.body.dataset.userIsCounselor === 'true';
+           console.log('🔍 Admin-archive - User is counselor:', isCounselor, 'Data attribute:', document.body.dataset.userIsCounselor);
+
+           // Handle follow-up notifications differently based on user type
+           if (notification.type === 'followup') {
+               console.log('📋 Admin-archive handling follow-up notification for', isCounselor ? 'counselor' : 'student');
+
+               if (isCounselor) {
+                   // For counselors, try to show the scheduled follow-up modal
+                   console.log('👨‍⚕️ Counselor attempting to show scheduled follow-up modal');
+
+                   // Check if notification manager is available
+                   if (window.notificationManager && typeof window.notificationManager.showScheduledFollowupModal === 'function') {
+                       console.log('✅ Notification manager available, showing modal');
+
+                       // Mark as read
+                       window.notificationManager.markAsRead(notification.id);
+
+                       // Extract followup_request_id from metadata
+                       let followupRequestId = null;
+                       if (notification.metadata) {
+                           if (typeof notification.metadata === 'string') {
+                               try {
+                                   const metadata = JSON.parse(notification.metadata);
+                                   followupRequestId = metadata.followup_request_id;
+                               } catch (e) {
+                                   console.warn('Failed to parse notification metadata:', e);
+                               }
+                           } else if (notification.metadata.followup_request_id) {
+                               followupRequestId = notification.metadata.followup_request_id;
+                           }
+                       }
+
+                       if (followupRequestId) {
+                           console.log('📋 Using followup request ID:', followupRequestId);
+                           window.notificationManager.showScheduledFollowupModal(followupRequestId, notification.metadata);
+                           return; // Prevent navigation
+                       } else {
+                           console.warn('⚠️ No followup request ID found in notification');
+                       }
+                   } else {
+                       console.warn('⚠️ Notification manager not available or showScheduledFollowupModal not found');
+                   }
+
+                   // Fallback: navigate to follow-up sessions page
+                   console.log('🔄 Falling back to navigation for counselor follow-up notification');
+                   const url = notification.action_url || notification.url || '/followup-sessions/';
+                   if (url && url !== '#') {
+                       console.log('👨‍⚕️ Counselor navigating to:', url);
+                       window.location.href = url;
+                       return;
+                   }
+               } else {
+                   // Students should see the consent modal
+                   console.log('🎯 Student opening follow-up modal for notification:', notification.id);
+                   if (window.notificationManager && typeof window.notificationManager.showFollowupConsentModal === 'function') {
+                       window.notificationManager.showFollowupConsentModal(notification);
+                       return; // Prevent navigation
+                   } else {
+                       console.warn('⚠️ Notification manager not available for student consent modal');
+                   }
+               }
+           } else {
+               // For non-followup notifications, navigate to URL if available
+               const url = notification.action_url || notification.url || '#';
+               if (url && url !== '#') {
+                   // Prevent navigation to current page (refresh)
+                   const currentUrl = window.location.pathname;
+                   if (url === currentUrl || url === window.location.href) {
+                       console.log('🚫 Preventing refresh to current page');
+                       return;
+                   }
+                   console.log('🌐 Navigating to URL from admin-archive:', url);
+                   window.location.href = url;
+               } else {
+                   console.log('📋 No valid URL for notification, staying on page');
+               }
+           }
+       };
+
+       console.log('✅ Admin-archive notification handler set up successfully');
+   }
+
+   // Wait for notification manager to be initialized before setting up handler
+   function waitForNotificationManager() {
+       if (window.notificationManager && typeof window.notificationManager.showScheduledFollowupModal === 'function') {
+           console.log('✅ Notification manager is ready, setting up handler');
+           setupNotificationHandler();
+       } else {
+           console.log('⏳ Waiting for notification manager...');
+           let attempts = 0;
+           const maxAttempts = 50; // 5 seconds max
+
+           const checkManager = setInterval(() => {
+               attempts++;
+               if (window.notificationManager && typeof window.notificationManager.showScheduledFollowupModal === 'function') {
+                   clearInterval(checkManager);
+                   console.log('✅ Notification manager now ready, setting up handler');
+                   setupNotificationHandler();
+               } else if (attempts >= maxAttempts) {
+                   clearInterval(checkManager);
+                   console.error('❌ Timeout waiting for notification manager, setting up handler anyway');
+                   setupNotificationHandler();
+               }
+           }, 100);
+       }
+   }
+
+   // Initialize notification handler after DOM and notification manager are ready
+   if (document.readyState === 'loading') {
+       document.addEventListener('DOMContentLoaded', waitForNotificationManager);
+   } else {
+       waitForNotificationManager();
+   }
+
+   // JavaScript for tab switching
     document.querySelectorAll('.archive-btn').forEach(btn => {
       btn.addEventListener('click', function() {
         document.querySelectorAll('.archive-btn').forEach(b => b.classList.remove('active'));
@@ -1371,7 +1495,7 @@
     // Initialize active tab from URL
     document.addEventListener('DOMContentLoaded', function() {
       const urlParams = new URLSearchParams(window.location.search);
-      const activeTab = urlParams.get('tab') || 'appointments';
+      const activeTab = urlParams.get('tab') || 'reports';
       const activeBtn = document.querySelector(`.archive-btn[data-type="${activeTab}"]`);
       if (activeBtn) {
         activeBtn.click();

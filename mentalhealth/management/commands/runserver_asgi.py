@@ -10,46 +10,20 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Set the environment variable for Django settings
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calmconnect_backend.settings')
-        
+
         # Import and run Daphne
         try:
-            from daphne.server import Server
-            from daphne.endpoints import build_endpoint_description_strings
-            from calmconnect_backend.asgi import application
-            
-            # Build endpoint description
-            endpoints = build_endpoint_description_strings(
-                host='0.0.0.0',
-                port=8000,
-                application=application
-            )
-            
-            # Create and run server
-            server = Server(
-                application=application,
-                endpoints=endpoints,
-                signal_handlers=True,
-                action_logger=None,
-                http_timeout=120,
-                request_buffer_size=8192,
-                max_buffer_size=32768,
-                websocket_timeout=120,
-                websocket_connect_timeout=20,
-                verbosity=1,
-            )
-            
-            self.stdout.write(
-                self.style.SUCCESS('Starting ASGI server with WebSocket support...')
-            )
-            self.stdout.write(
-                self.style.SUCCESS('Server running at http://0.0.0.0:8000/')
-            )
-            self.stdout.write(
-                self.style.SUCCESS('WebSocket support enabled!')
-            )
-            
-            server.run()
-            
+            from daphne.cli import CommandLineInterface
+
+            # Use Daphne's CLI to run the server
+            cli = CommandLineInterface()
+            cli.run([
+                'daphne',
+                '-b', '0.0.0.0',
+                '-p', '8000',
+                'calmconnect_backend.asgi:application'
+            ])
+
         except ImportError:
             self.stdout.write(
                 self.style.ERROR('Daphne not installed. Installing...')
@@ -61,4 +35,4 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(
                 self.style.ERROR(f'Error starting ASGI server: {e}')
-            ) 
+            )

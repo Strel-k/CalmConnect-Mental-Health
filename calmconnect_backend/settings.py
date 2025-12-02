@@ -38,9 +38,13 @@ if not SECRET_KEY:
 
 # Email settings - use environment variables
 EMAIL_HOST = env_config('EMAIL_HOST', default='sandbox.smtp.mailtrap.io')
-EMAIL_HOST_USER = env_config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = env_config('EMAIL_HOST_PASSWORD', default='')
-EMAIL_PORT = env_config('EMAIL_PORT', default='2525', cast=int)
+EMAIL_HOST_USER = env_config('EMAIL_HOST_USER', default='d2ded003c8e726')
+EMAIL_HOST_PASSWORD = env_config('EMAIL_HOST_PASSWORD', default='7a1e018014057e')
+EMAIL_PORT = env_config('EMAIL_PORT', default=2525, cast=int)
+EMAIL_USE_TLS = env_config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_SSL = env_config('EMAIL_USE_SSL', default=False, cast=bool)
+DEFAULT_FROM_EMAIL = env_config('DEFAULT_FROM_EMAIL', default='noreply@calmconnect.edu.ph')
+SERVER_EMAIL = env_config('SERVER_EMAIL', default='server@calmconnect.edu.ph')
 
 # --- SECURITY: Production settings ---
 # Set to False in production
@@ -141,7 +145,8 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             os.path.join(BASE_DIR, 'templates'),  # Project-level templates
-            os.path.join(BASE_DIR, 'mentalhealth/templates/mentalhealth'),  # App-level templates
+            os.path.join(BASE_DIR, 'mentalhealth/templates'),  # Main app templates folder (prioritized)
+            os.path.join(BASE_DIR, 'mentalhealth/templates/mentalhealth'),  # App subfolder templates
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -157,28 +162,38 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'calmconnect_backend.wsgi.application'
 
-# --- EMAIL ---
-EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
-EMAIL_HOST_USER = 'd2ded003c8e726'
-EMAIL_HOST_PASSWORD = '7a1e018014057e'
-EMAIL_PORT = '2525'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env_config('DB_NAME', default='calmconnect_db'),
-        'USER': env_config('DB_USER', default='postgres'),
-        'PASSWORD': env_config('DB_PASSWORD', default='postgres'),
-        'HOST': env_config('DB_HOST', default='localhost'),
-        'PORT': env_config('DB_PORT', default='5432', cast=int),
-        'OPTIONS': {
-            'sslmode': 'require' if not DEBUG else 'prefer',
-        },
+# Database configuration
+DATABASE_URL = env_config('DATABASE_URL', default='')
+
+if DATABASE_URL:
+    # Use DATABASE_URL if provided (for Fly.io and other cloud providers)
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True,
+        )
     }
-}
+else:
+    # Fallback to individual settings
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': env_config('DB_NAME', default='calmconnect_db'),
+            'USER': env_config('DB_USER', default='postgres'),
+            'PASSWORD': env_config('DB_PASSWORD', default='postgres'),
+            'HOST': env_config('DB_HOST', default='localhost'),
+            'PORT': env_config('DB_PORT', default='5432', cast=int),
+            'OPTIONS': {
+                'sslmode': 'require' if not DEBUG else 'prefer',
+            },
+        }
+    }
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
@@ -248,10 +263,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ASGI_APPLICATION = 'calmconnect_backend.asgi.application'
 
 # Channel Layers (for WebSocket support)
+REDIS_URL = env_config('REDIS_URL', default='redis://localhost:6379')
+
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer'
-    }
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [REDIS_URL],
+        },
+    },
 }
 
 # Ensure ASGI is used for both HTTP and WebSocket

@@ -8,6 +8,7 @@
   <meta name="description" content="Archive for counselors to view past sessions and reports">
   <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" />
+  {% include 'mentalhealth/base_notifications.html' %}
   <style>
     :root {
       --primary-color: #2ecc71;
@@ -168,40 +169,7 @@
       font-weight: bold;
     }
 
-    .notification-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 1rem;
-      min-width: 300px;
-      max-width: 400px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      display: none;
-      z-index: 1001;
-      margin-top: 0.5rem;
-    }
-
-    .notification-dropdown a {
-      display: block;
-      padding: 0.8rem 1rem;
-      color: var(--text-dark);
-      text-decoration: none;
-      border-radius: 8px;
-      transition: all 0.3s ease;
-      margin-bottom: 0.5rem;
-    }
-
-    .notification-dropdown a:hover {
-      background: rgba(46, 204, 113, 0.1);
-      color: var(--primary-color);
-    }
-
-    .notification-dropdown a:last-child {
-      margin-bottom: 0;
-    }
+    /* Notification styles are now handled by base_notifications.html */
 
     /* Dashboard Layout */
     .counselor-dashboard {
@@ -731,7 +699,7 @@
   </style>
   {% csrf_token %}
 </head>
-<body>
+<body data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}" data-user-is-counselor="{% if user.counselor_profile %}true{% else %}false{% endif %}">
   <!-- Header -->
   <header>
     <div class="hdr">
@@ -740,16 +708,16 @@
       </div>
       <div class="hdr-btns">
         <div class="prfl-bell" id="notif-bell">
-          <i class="bx bxs-bell" id="bell-icon"></i>
-          <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
-          <div class="notification-dropdown" id="notificationDropdown" style="display:none;"></div>
+            <i class="bx bxs-bell" id="bell-icon"></i>
+            <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
+            <div class="notification-dropdown" id="notificationDropdown" style="display:none;"></div>
         </div>
-        <div class="prfl-name"><h4>{{ counselor.name }}</h4></div>
+        <div class="prfl-name"><h4>{{ request.user.full_name }}</h4></div>
         <div class="prfl-container dropdown">
-          {% if counselor.image %}
-            <img src="{{ counselor.image.url }}" alt="Profile picture of {{ counselor.name }}" id="profileDropdownToggle" />
+          {% if request.user.profile_picture %}
+            <img src="{{ request.user.profile_picture.url }}" alt="Profile picture of {{ request.user.full_name }}" id="profileDropdownToggle" />
           {% else %}
-                            <img src="{% static 'mentalhealth/img/default.jpg' %}" alt="Default profile picture" id="profileDropdownToggle" />
+            <img src="{% static 'mentalhealth/img/default.jpg' %}" alt="Default profile picture" id="profileDropdownToggle" />
           {% endif %}
           <div class="dropdown-menu" id="profileDropdown">
             <a href="{% url 'counselor_profile' %}"><i class="bx bxs-user-circle"></i> Profile</a>
@@ -825,13 +793,13 @@
 
       <!-- Archive Tabs -->
       <div class="archive-tabs">
-        <button class="tab-btn active" data-tab="sessions">Sessions</button>
-        <button class="tab-btn" data-tab="reports">Reports</button>
+        <button class="tab-btn" data-tab="sessions">Sessions</button>
+        <button class="tab-btn active" data-tab="reports">Reports</button>
         <button class="tab-btn" data-tab="assessments">Assessments</button>
       </div>
 
       <!-- Sessions Tab -->
-      <div id="sessions-tab" class="archive-content active">
+      <div id="sessions-tab" class="archive-content">
         <div class="archive-list">
           {% if completed_appointments %}
             {% for appointment in completed_appointments %}
@@ -861,7 +829,7 @@
       </div>
 
       <!-- Reports Tab -->
-      <div id="reports-tab" class="archive-content">
+      <div id="reports-tab" class="archive-content active">
         <div class="archive-list">
           {% if archived_reports %}
             {% for report in archived_reports %}
@@ -988,17 +956,19 @@
     let currentItemId = null;
     let currentItemType = null;
 
+    // Notification system is handled by base_notifications.html
+
     document.addEventListener('DOMContentLoaded', function() {
       // Tab functionality
       const tabBtns = document.querySelectorAll('.tab-btn');
       const tabContents = document.querySelectorAll('.archive-content');
-      
+
       tabBtns.forEach(btn => {
         btn.addEventListener('click', function() {
           // Remove active class from all buttons and contents
           tabBtns.forEach(b => b.classList.remove('active'));
           tabContents.forEach(c => c.classList.remove('active'));
-          
+
           // Add active class to clicked button and corresponding content
           this.classList.add('active');
           const tabId = this.getAttribute('data-tab');
@@ -1009,7 +979,7 @@
       // Time period filter
       const timePeriodSelect = document.getElementById('timePeriod');
       const customDateRange = document.getElementById('customDateRange');
-      
+
       timePeriodSelect.addEventListener('change', function() {
         if (this.value === 'custom') {
           customDateRange.style.display = 'block';
@@ -1032,7 +1002,7 @@
       // Profile dropdown toggle
       const profileToggle = document.getElementById('profileDropdownToggle');
       const profileDropdown = document.getElementById('profileDropdown');
-      
+
       if (profileToggle) {
         profileToggle.addEventListener('click', function(e) {
           e.stopPropagation();
@@ -1040,8 +1010,13 @@
         });
       }
 
-      // Close dropdown when clicking outside
-      document.addEventListener('click', function() {
+      // Close dropdown when clicking outside (but don't interfere with notification dropdown)
+      document.addEventListener('click', function(e) {
+        // Don't close profile dropdown if clicking on notification bell or dropdown
+        if (e.target.closest('#notif-bell') || e.target.closest('#notificationDropdown')) {
+          return;
+        }
+
         if (profileDropdown) {
           profileDropdown.style.display = 'none';
         }
@@ -1058,203 +1033,7 @@
         });
       }
 
-      // Unified notification dropdown logic
-      function showNotificationDropdown() {
-          const dropdown = document.getElementById('notificationDropdown');
-          dropdown.innerHTML = '<div style="text-align:center;padding:1.5rem 0;"><span class="ai-spinner" style="width:22px;height:22px;"></span> Loading...</div>';
-          dropdown.style.display = 'block';
-          
-          fetch('/notifications/', {
-              headers: {
-                  'X-Requested-With': 'XMLHttpRequest',
-                  'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
-              },
-              credentials: 'same-origin'
-          })
-          .then(response => {
-              if (!response.ok) {
-                  if (response.status === 401) {
-                      // User not authenticated, redirect to login
-                      window.location.href = '/login/';
-                      return;
-                  }
-                  throw new Error(`HTTP ${response.status}`);
-              }
-              // Check if response is JSON
-              const contentType = response.headers.get('content-type');
-              if (!contentType || !contentType.includes('application/json')) {
-                  // Response is HTML (probably login page), redirect to login
-                  window.location.href = '/login/';
-                  return;
-              }
-              return response.json();
-          })
-          .then(data => {
-              dropdown.innerHTML = '';
-              if (data.success && data.notifications && data.notifications.length > 0) {
-                  data.notifications.forEach(notif => {
-                      const item = document.createElement('div');
-                      item.className = 'notification-item';
-                      item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
-                      
-                      const content = document.createElement('a');
-                      content.href = notif.url;
-                      content.style.cssText = 'flex:1;display:flex;align-items:center;gap:0.7rem;text-decoration:none;color:inherit;';
-                      content.innerHTML = `
-                          <i class='bx ${notif.type === 'appointment' ? 'bxs-calendar' : notif.type === 'report' ? 'bxs-report' : 'bxs-bell'}' style='color:#27ae60;font-size:1.2rem;'></i>
-                          <span>${notif.message}</span>
-                          <span style='margin-left:auto;font-size:0.85em;color:#888;'>${notif.time}</span>
-                      `;
-                      
-                      const clearBtn = document.createElement('button');
-                      clearBtn.innerHTML = '<i class="bx bx-x"></i>';
-                      clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
-                      clearBtn.title = 'Clear notification';
-                      clearBtn.onclick = function(e) {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          clearNotification(notif.id);
-                      };
-                      
-                      item.appendChild(content);
-                      item.appendChild(clearBtn);
-                      dropdown.appendChild(item);
-                  });
-                  
-                  // Add clear all button
-                  const clearAllDiv = document.createElement('div');
-                  clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
-                  
-                  const clearAllBtn = document.createElement('button');
-                  clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
-                  clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
-                  clearAllBtn.onclick = function(e) {
-                      e.preventDefault();
-                      if (confirm('Clear all notifications?')) {
-                          clearAllNotifications();
-                      }
-                  };
-                  
-                  clearAllDiv.appendChild(clearAllBtn);
-                  dropdown.appendChild(clearAllDiv);
-              } else {
-                  dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#888;"><i class="bx bxs-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
-              }
-          })
-          .catch((error) => {
-              console.error('Notification error:', error);
-              dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
-          });
-      }
-      
-      const bellIcon = document.getElementById('bell-icon');
-      if (bellIcon) {
-        bellIcon.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const dropdown = document.getElementById('notificationDropdown');
-            if (dropdown.style.display === 'block') {
-                dropdown.style.display = 'none';
-            } else {
-                showNotificationDropdown();
-            }
-        });
-      }
-      
-      document.addEventListener('click', function() {
-          const notificationDropdown = document.getElementById('notificationDropdown');
-          if (notificationDropdown) {
-            notificationDropdown.style.display = 'none';
-          }
-      });
-
-      // Function to clear individual notification
-      function clearNotification(notificationId) {
-          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-          
-          fetch(`/notifications/${notificationId}/clear/`, {
-              method: 'POST',
-              headers: {
-                  'X-Requested-With': 'XMLHttpRequest',
-                  'X-CSRFToken': csrfToken
-              },
-              credentials: 'same-origin'
-          })
-          .then(response => response.json())
-          .then(data => {
-              if (data.success) {
-                  // Refresh the notification dropdown
-                  showNotificationDropdown();
-                  // Update the badge
-                  updateNotificationBadge();
-              } else {
-                  console.error('Error clearing notification:', data.error);
-              }
-          })
-          .catch(error => {
-              console.error('Error clearing notification:', error);
-          });
-      }
-
-      // Function to clear all notifications
-      function clearAllNotifications() {
-          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-          
-          fetch('/notifications/clear-all/', {
-              method: 'POST',
-              headers: {
-                  'X-Requested-With': 'XMLHttpRequest',
-                  'X-CSRFToken': csrfToken
-              },
-              credentials: 'same-origin'
-          })
-          .then(response => response.json())
-          .then(data => {
-              if (data.success) {
-                  // Refresh the notification dropdown
-                  showNotificationDropdown();
-                  // Update the badge
-                  updateNotificationBadge();
-              } else {
-                  console.error('Error clearing all notifications:', data.error);
-              }
-          })
-          .catch(error => {
-              console.error('Error clearing all notifications:', error);
-          });
-      }
-
-      // Function to update notification badge
-      function updateNotificationBadge() {
-          fetch('/notifications/', {
-              headers: {
-                  'X-Requested-With': 'XMLHttpRequest',
-                  'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
-              },
-              credentials: 'same-origin'
-          })
-          .then(response => {
-              if (!response.ok) {
-                  return;
-              }
-              const contentType = response.headers.get('content-type');
-              if (!contentType || !contentType.includes('application/json')) {
-                  return;
-              }
-              return response.json();
-          })
-          .then(data => {
-              const badge = document.getElementById('notificationBadge');
-              if (badge && data && data.count > 0) {
-                  badge.textContent = data.count;
-                  badge.style.display = 'flex';
-              } else if (badge) {
-                  badge.style.display = 'none';
-              }
-          })
-          .catch(error => {
-              console.error('Error updating notification badge:', error);
-          });
-      }
+      // Notification system is now handled by base_notifications.html
 
       // Close modals when clicking outside
       window.addEventListener('click', function(e) {
@@ -1270,9 +1049,37 @@
       currentItemType = 'session';
       
       // Fetch session details from backend
-      fetch(`/api/appointment-detail/${sessionId}/`)
-        .then(response => response.json())
-        .then(data => {
+      fetch(`/api/appointment-detail/${sessionId}/`, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+        },
+        credentials: 'same-origin'
+      })
+      .then(response => {
+        if (!response.ok) {
+          if (response.status === 401) {
+            window.location.href = '/login/';
+            return;
+          }
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.text().then(text => {
+          // Check if response is HTML
+          if (text.trim().startsWith('<')) {
+            // Response is HTML (probably login page), redirect to login
+            window.location.href = '/login/';
+            return;
+          }
+          // Try to parse as JSON
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            throw new Error('Invalid JSON response');
+          }
+        });
+      })
+      .then(data => {
           if (data.success) {
             const session = data.appointment;
             document.getElementById('sessionModalBody').innerHTML = `
@@ -1321,52 +1128,81 @@
     function openReportModal(reportId) {
       currentItemId = reportId;
       currentItemType = 'report';
-      
+
       // Fetch report details from backend
-      fetch(`/api/reports/${reportId}/`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            const report = data.report;
-            document.getElementById('reportModalBody').innerHTML = `
-              <div class="modal-detail">
-                <h4><i class="bx bxs-file-doc"></i> Report Information</h4>
-                <div class="detail-value">
-                  <strong>Title:</strong> ${report.title}<br>
-                  <strong>Type:</strong> ${report.report_type}<br>
-                  <strong>Status:</strong> <span class="status-badge status-${report.status}">${report.status}</span><br>
-                  <strong>Created:</strong> ${report.created_at}<br>
-                  <strong>Updated:</strong> ${report.updated_at}
-                </div>
-              </div>
-              <div class="modal-detail">
-                <h4><i class="bx bxs-user"></i> Student Information</h4>
-                <div class="detail-value">
-                  ${report.user_name ? `<strong>Student:</strong> ${report.user_name}` : 'No student associated'}
-                </div>
-              </div>
-              <div class="modal-detail">
-                <h4><i class="bx bxs-note"></i> Report Content</h4>
-                <div class="detail-value">
-                  ${report.description}
-                </div>
-              </div>
-            `;
-            document.getElementById('reportModal').classList.add('active');
-          } else {
-            alert('Error loading report details: ' + data.error);
+      fetch(`/api/reports/${reportId}/`, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+        },
+        credentials: 'same-origin'
+      })
+      .then(response => {
+        if (!response.ok) {
+          if (response.status === 401) {
+            // User not authenticated, redirect to login
+            window.location.href = '/login/';
+            return;
           }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('Error loading report details');
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.text().then(text => {
+          // Check if response is HTML
+          if (text.trim().startsWith('<')) {
+            // Response is HTML (probably login page), redirect to login
+            window.location.href = '/login/';
+            return;
+          }
+          // Try to parse as JSON
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            throw new Error('Invalid JSON response');
+          }
         });
+      })
+      .then(data => {
+        if (data.success) {
+          const report = data.report;
+          document.getElementById('reportModalBody').innerHTML = `
+            <div class="modal-detail">
+              <h4><i class="bx bxs-file-doc"></i> Report Information</h4>
+              <div class="detail-value">
+                <strong>Title:</strong> ${report.title}<br>
+                <strong>Type:</strong> ${report.report_type}<br>
+                <strong>Status:</strong> <span class="status-badge status-${report.status}">${report.status}</span><br>
+                <strong>Created:</strong> ${report.created_at}<br>
+                <strong>Updated:</strong> ${report.updated_at}
+              </div>
+            </div>
+            <div class="modal-detail">
+              <h4><i class="bx bxs-user"></i> Student Information</h4>
+              <div class="detail-value">
+                ${report.user_name ? `<strong>Student:</strong> ${report.user_name}` : 'No student associated'}
+              </div>
+            </div>
+            <div class="modal-detail">
+              <h4><i class="bx bxs-note"></i> Report Content</h4>
+              <div class="detail-value">
+                ${report.description}
+              </div>
+            </div>
+          `;
+          document.getElementById('reportModal').classList.add('active');
+        } else {
+          alert('Error loading report details: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading report details');
+      });
     }
 
     function openAssessmentModal(assessmentId) {
       currentItemId = assessmentId;
       currentItemType = 'assessment';
-      
+
       // For now, show a placeholder since we don't have assessment API
       document.getElementById('assessmentModalBody').innerHTML = `
         <div class="modal-detail">

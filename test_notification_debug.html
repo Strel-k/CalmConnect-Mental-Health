@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Debug Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" />
+</head>
+<body>
+    <h1>Notification System Debug Test</h1>
+    <div id="debug-output"></div>
+    <button id="test-bell">Test Bell Click</button>
+    <button id="test-notifications">Test Notifications API</button>
+    <button id="test-websocket">Test WebSocket</button>
+
+    <!-- Include notification system -->
+    {% load static %}
+    {% include 'mentalhealth/base_notifications.html' %}
+
+    <script>
+        const debugOutput = document.getElementById('debug-output');
+
+        function log(message) {
+            console.log(message);
+            debugOutput.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+
+        // Test bell click
+        document.getElementById('test-bell').addEventListener('click', function() {
+            log('Testing bell click...');
+            const bellIcon = document.getElementById('bell-icon');
+            if (bellIcon) {
+                log('Bell icon found, clicking...');
+                bellIcon.click();
+            } else {
+                log('ERROR: Bell icon not found!');
+            }
+        });
+
+        // Test notifications API
+        document.getElementById('test-notifications').addEventListener('click', function() {
+            log('Testing notifications API...');
+            fetch('/notifications/', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                log('API Response status: ' + response.status);
+                return response.text();
+            })
+            .then(text => {
+                log('API Response: ' + text.substring(0, 200) + '...');
+            })
+            .catch(error => {
+                log('API Error: ' + error);
+            });
+        });
+
+        // Test WebSocket
+        document.getElementById('test-websocket').addEventListener('click', function() {
+            log('Testing WebSocket connection...');
+            if (window.notificationManager && window.notificationManager.socket) {
+                log('WebSocket state: ' + window.notificationManager.socket.readyState);
+                log('WebSocket URL: ' + window.notificationManager.socket.url);
+            } else {
+                log('ERROR: Notification manager or WebSocket not found!');
+            }
+        });
+
+        // Check notification manager initialization
+        setTimeout(function() {
+            log('Checking notification manager...');
+            if (window.notificationManager) {
+                log('Notification manager found');
+                log('WebSocket connected: ' + (window.notificationManager.isConnected ? 'Yes' : 'No'));
+                log('Unread count: ' + window.notificationManager.unreadCount);
+            } else {
+                log('ERROR: Notification manager not found!');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

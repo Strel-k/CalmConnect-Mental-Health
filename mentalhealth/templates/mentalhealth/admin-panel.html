@@ -8,6 +8,7 @@
   <link rel="icon" type="image/x-icon" href="{% static 'mentalhealth/img/favicon.png' %}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% include 'mentalhealth/base_notifications.html' %}
   <style>
     * {
       margin: 0;
@@ -413,6 +414,201 @@
       font-size: 0.85rem;
     }
 
+    /* Consent Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 3000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 20px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.4s ease-out;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+        color: white;
+        padding: 2rem;
+        border-radius: 20px 20px 0 0;
+        text-align: center;
+        position: relative;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .modal-header .close {
+        position: absolute;
+        top: 1rem;
+        right: 1.5rem;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+    .modal-header .close:hover {
+        color: #f8f9fa;
+    }
+
+    .modal-body {
+        padding: 2rem;
+    }
+
+    .followup-details {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .counselor-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .counselor-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #2ecc71;
+    }
+
+    .counselor-details h3 {
+        color: #2c3e50;
+        margin-bottom: 0.3rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .counselor-details p {
+        color: #666;
+        margin-bottom: 0.2rem;
+        font-size: 0.9rem;
+    }
+
+    .appointment-details {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        border-left: 3px solid #2ecc71;
+    }
+
+    .appointment-details h4 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .detail-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-label {
+        font-weight: 500;
+        color: #555;
+        font-size: 0.9rem;
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.9rem;
+    }
+
+    .consent-question {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .consent-question h3 {
+        color: #2c3e50;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .consent-question p {
+        color: #666;
+        font-size: 0.95rem;
+    }
+
+    .modal-actions {
+        padding: 1.5rem 2rem;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .modal-actions .btn {
+        padding: 0.8rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        min-width: 120px;
+    }
+
+    .btn.primary {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+        color: white;
+    }
+
+    .btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+    }
+
+    .btn.secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn.secondary:hover {
+        background: #5a6268;
+    }
+
+    .btn.danger {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+    }
+
+    .btn.danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+    }
+
     /* Responsive Design */
     @media (max-width: 1024px) {
       .admin-dashboard {
@@ -455,24 +651,15 @@
     }
   </style>
 </head>
-<body>
+<body data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}" data-user-is-counselor="{% if user.counselor_profile %}true{% else %}false{% endif %}" data-user-is-admin="{% if user.is_superuser or user.is_staff %}true{% else %}false{% endif %}">
   <header>
     <div class="hdr">
       <div class="hdr-logo"><h2>CalmConnect</h2></div>
       <div class="hdr-btns">
         <div class="prfl-bell" id="notif-bell" aria-label="Notifications">
-          <i class="bx bxs-bell"></i>
-          <div class="notification-badge" id="notification-badge" style="display: none;">0</div>
-          <div class="notification-dropdown" id="notification-dropdown">
-            <div class="notification-header">
-              <h4>Notifications</h4>
-            </div>
-            <div class="notification-list" id="notification-list">
-              <div class="no-notifications">
-                <i class="bx bx-bell" style="font-size:2.2rem;"></i><br>No notifications
-              </div>
-            </div>
-          </div>
+            <i class="bx bxs-bell" id="bell-icon"></i>
+            <span class="notification-badge" id="notificationBadge" style="display:none;">0</span>
+            <div class="notification-dropdown" id="notificationDropdown" style="display:none;"></div>
         </div>
         <div class="prfl-name"><h4>{{ request.user.username }}</h4></div>
         <div class="prfl-container">
@@ -586,6 +773,66 @@
     </main>
   </div>
 
+  <!-- Follow-up Consent Modal -->
+  <div id="consentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Follow-up Session Acceptance</h3>
+        <span class="close" onclick="closeConsentModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="followup-details">
+          <div class="counselor-info">
+            <img id="consentCounselorImage" src="" alt="Counselor" class="counselor-avatar">
+            <div class="counselor-details">
+              <h3 id="consentCounselorName">Loading...</h3>
+              <p id="consentCounselorUnit">Loading...</p>
+              <p id="consentCounselorRank">Loading...</p>
+            </div>
+          </div>
+
+          <div class="appointment-details">
+            <h4>Appointment Information</h4>
+            <div class="detail-row">
+              <span class="detail-label">Date:</span>
+              <span class="detail-value date" id="consentDate">Loading...</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Time:</span>
+              <span class="detail-value" id="consentTime">Loading...</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Session Type:</span>
+              <span class="detail-value" id="consentSessionType">Loading...</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Services:</span>
+              <span class="detail-value" id="consentServices">Loading...</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Reason:</span>
+              <span class="detail-value" id="consentReason">Loading...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="consent-question">
+          <h3>Do you accept this follow-up session?</h3>
+          <p>Your participation will help continue your counseling journey and support your mental health goals.</p>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" onclick="closeConsentModal()">Cancel</button>
+        <button type="button" class="btn primary" id="consentBtn">
+          <i class="bx bx-check"></i> Yes, I Accept
+        </button>
+        <button type="button" class="btn danger" id="declineBtn">
+          <i class="bx bx-x"></i> No, Decline
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Initialize Chart
     const ctx = document.getElementById('overviewChart').getContext('2d');
@@ -638,182 +885,189 @@
       }
     });
 
-    // Notification functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const notifBell = document.getElementById('notif-bell');
-        const notificationDropdown = document.getElementById('notification-dropdown');
-        const notificationList = document.getElementById('notification-list');
-        const notificationBadge = document.getElementById('notification-badge');
-        
-        // Get CSRF token
-        function getCSRFToken() {
-            const cookies = document.cookie.split(';');
-            for (let cookie of cookies) {
-                const [name, value] = cookie.trim().split('=');
-                if (name === 'csrftoken') {
-                    return value;
-                }
-            }
-            return '';
-        }
+    // Notification system is now fully handled by base_notifications.html
+    console.log('✅ Admin panel using unified notification system from base_notifications.html');
 
-        // Toggle notification dropdown
-        notifBell.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const isVisible = notificationDropdown.style.display === 'block';
-            notificationDropdown.style.display = isVisible ? 'none' : 'block';
-            
-            if (!isVisible) {
-                loadNotifications();
-            }
+    // Consent Modal Functions
+    function openConsentModal(requestId) {
+      console.log('DEBUG: openConsentModal called with requestId:', requestId);
+
+      if (!requestId || requestId === 'None') {
+        alert('ERROR: Invalid requestId: ' + requestId);
+        return;
+      }
+
+      const modal = document.getElementById('consentModal');
+      if (!modal) {
+        alert('ERROR: Modal element not found!');
+        return;
+      }
+      console.log('DEBUG: Modal element found and requestId is valid');
+
+      // Reset modal content first
+      document.getElementById('consentCounselorName').textContent = 'Loading...';
+      document.getElementById('consentCounselorUnit').textContent = 'Loading...';
+      document.getElementById('consentCounselorRank').textContent = 'Loading...';
+      document.getElementById('consentCounselorImage').src = '{% static "mentalhealth/img/default.jpg" %}';
+      document.getElementById('consentDate').textContent = 'Loading...';
+      document.getElementById('consentTime').textContent = 'Loading...';
+      document.getElementById('consentSessionType').textContent = 'Loading...';
+      document.getElementById('consentServices').textContent = 'Loading...';
+      document.getElementById('consentReason').textContent = 'Loading...';
+
+      // Show the modal immediately
+      console.log('DEBUG: Showing modal');
+      modal.style.display = 'flex';
+
+      // Fetch follow-up request details
+      console.log('DEBUG: Fetching data from server');
+      fetch(`/followup/${requestId}/consent/?modal=1`, {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => {
+        console.log('DEBUG: Fetch response status:', response.status);
+        if (!response.ok) {
+          throw new Error('Network response was not ok: ' + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('DEBUG: Fetch response data:', data);
+        if (data.success) {
+          console.log('DEBUG: Populating modal with data');
+          // Populate modal with data
+          document.getElementById('consentCounselorName').textContent = data.counselor.name;
+          document.getElementById('consentCounselorUnit').textContent = data.counselor.unit;
+          document.getElementById('consentCounselorRank').textContent = data.counselor.rank;
+
+          const imageElement = document.getElementById('consentCounselorImage');
+          if (data.counselor.image_url) {
+            imageElement.src = data.counselor.image_url;
+          } else {
+            imageElement.src = '{% static "mentalhealth/img/default.jpg" %}';
+          }
+
+          document.getElementById('consentDate').textContent = data.appointment.date;
+          document.getElementById('consentTime').textContent = data.appointment.time;
+          document.getElementById('consentSessionType').textContent = data.appointment.session_type;
+          document.getElementById('consentServices').textContent = data.appointment.services.join(', ');
+          document.getElementById('consentReason').textContent = data.followup_request.reason;
+
+          console.log('DEBUG: Setting up event listeners');
+          // Add event listeners to buttons
+          setupConsentModalListeners(requestId);
+        } else {
+          console.log('DEBUG: Error in response:', data.error);
+          alert('Error: ' + (data.error || 'Failed to load consent modal'));
+          closeConsentModal();
+        }
+      })
+      .catch(error => {
+        console.error('DEBUG: Fetch error:', error);
+        alert('An error occurred while loading the consent modal. Please try again.');
+        closeConsentModal();
+      });
+    }
+
+    function setupConsentModalListeners(requestId) {
+      const modal = document.getElementById('consentModal');
+
+      // Close modal when clicking outside
+      modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+          closeConsentModal();
+        }
+      });
+
+      // Close button
+      const closeBtn = modal.querySelector('.close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeConsentModal);
+      }
+
+      // Consent button
+      const consentBtn = document.getElementById('consentBtn');
+      if (consentBtn) {
+        consentBtn.addEventListener('click', function() {
+          processConsent(requestId, true);
         });
+      }
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!notifBell.contains(e.target)) {
-                notificationDropdown.style.display = 'none';
-            }
+      // Decline button
+      const declineBtn = document.getElementById('declineBtn');
+      if (declineBtn) {
+        declineBtn.addEventListener('click', function() {
+          if (confirm('Are you sure you want to decline this follow-up session? You can always request a new session if needed.')) {
+            processConsent(requestId, false);
+          }
         });
+      }
+    }
 
-        // Load notifications
-        function loadNotifications() {
-            fetch('/notifications/', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCSRFToken(),
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = '/login/';
-                        return;
-                    }
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.notifications && data.notifications.length > 0) {
-                    notificationList.innerHTML = '';
-                    data.notifications.forEach(notif => {
-                        const notifItem = document.createElement('div');
-                        notifItem.className = 'notification-item';
-                        notifItem.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
-                        
-                        const content = document.createElement('div');
-                        content.style.cssText = 'flex:1;';
-                        content.innerHTML = `
-                            <div class="notification-title">${notif.message}</div>
-                            <div class="notification-time">${notif.time}</div>
-                        `;
-                        
-                        const clearBtn = document.createElement('button');
-                        clearBtn.innerHTML = '<i class="bx bx-x"></i>';
-                        clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
-                        clearBtn.title = 'Clear notification';
-                        clearBtn.onclick = function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            clearNotification(notif.id);
-                        };
-                        
-                        notifItem.appendChild(content);
-                        notifItem.appendChild(clearBtn);
-                        notificationList.appendChild(notifItem);
-                    });
-                    
-                    // Add clear all button
-                    const clearAllDiv = document.createElement('div');
-                    clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
-                    
-                    const clearAllBtn = document.createElement('button');
-                    clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
-                    clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
-                    clearAllBtn.onclick = function(e) {
-                        e.preventDefault();
-                        if (confirm('Clear all notifications?')) {
-                            clearAllNotifications();
-                        }
-                    };
-                    
-                    clearAllDiv.appendChild(clearAllBtn);
-                    notificationList.appendChild(clearAllDiv);
-                    
-                    // Update badge
-                    notificationBadge.textContent = data.notifications.length;
-                    notificationBadge.style.display = 'block';
-                } else {
-                    notificationList.innerHTML = '<div class="no-notifications"><i class="bx bx-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
-                    notificationBadge.style.display = 'none';
-                }
-            })
-            .catch(error => {
-                console.error('Error loading notifications:', error);
-                notificationList.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
-            });
+    function closeConsentModal() {
+      document.getElementById('consentModal').style.display = 'none';
+    }
+
+    function processConsent(requestId, consentGiven) {
+      console.log('DEBUG: processConsent called with requestId:', requestId, 'consentGiven:', consentGiven);
+      const modal = document.getElementById('consentModal');
+      const buttons = modal.querySelectorAll('button');
+      buttons.forEach(btn => btn.disabled = true);
+
+      const data = {
+        consent_given: consentGiven
+      };
+
+      console.log('DEBUG: Sending POST request with data:', data);
+      fetch(`/followup/${requestId}/consent/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        console.log('DEBUG: POST response status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('DEBUG: POST response data:', data);
+        if (data.success) {
+          alert(data.message);
+          closeConsentModal();
+          location.reload(); // Reload to show updated status
+        } else {
+          alert('Error: ' + (data.error || 'An error occurred'));
+          buttons.forEach(btn => btn.disabled = false);
         }
+      })
+      .catch(error => {
+        console.error('DEBUG: POST error:', error);
+        alert('An error occurred while processing your response. Please try again.');
+        buttons.forEach(btn => btn.disabled = false);
+      });
+    }
 
-        // Auto-refresh notifications every 30 seconds
-        setInterval(() => {
-            if (notificationDropdown.style.display === 'block') {
-                loadNotifications();
-            }
-        }, 30000);
-
-        // Function to clear individual notification
-        function clearNotification(notificationId) {
-            fetch(`/notifications/${notificationId}/clear/`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Refresh the notification dropdown
-                    loadNotifications();
-                } else {
-                    console.error('Error clearing notification:', data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error clearing notification:', error);
-            });
+    // Helper function to get CSRF token
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
         }
-
-        // Function to clear all notifications
-        function clearAllNotifications() {
-            fetch('/notifications/clear-all/', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCSRFToken()
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Refresh the notification dropdown
-                    loadNotifications();
-                } else {
-                    console.error('Error clearing all notifications:', data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error clearing all notifications:', error);
-            });
-        }
-
-        // Initial load
-        loadNotifications();
-    });
+      }
+      return cookieValue;
+    }
   </script>
 </body>
 </html>

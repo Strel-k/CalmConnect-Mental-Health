@@ -34,6 +34,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             'counselor_name',
             'date',
             'time',
+            'session_type',
             'services',
             'reason',
             'phone',
@@ -44,7 +45,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             'updated_at',
             'college',
             'program',
-            'cancelled_at',  
+            'cancelled_at',
             'cancellation_reason'
         ]
         read_only_fields = ['created_at', 'updated_at']

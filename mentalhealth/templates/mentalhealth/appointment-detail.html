@@ -86,8 +86,13 @@
     .actions {
       display: flex;
       gap: 1rem;
-      justify-content: flex-end;
+      justify-content: space-between;
       margin-top: 2rem;
+    }
+
+    .back-actions {
+      display: flex;
+      gap: 1rem;
     }
     .btn {
       padding: 0.8rem 1.5rem;
@@ -311,22 +316,36 @@
       .header h2 { font-size: 1.2rem; }
       .meta span { font-size: 0.85rem; }
       .section .content { font-size: 0.95rem; }
-      
+
       .status-update-section {
         padding: 1rem;
       }
-      
+
       .status-options {
         grid-template-columns: 1fr;
       }
-      
+
       .form-actions {
         flex-direction: column;
       }
-      
+
       .form-actions .btn {
         width: 100%;
         justify-content: center;
+      }
+
+      .actions {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .back-actions, .page-actions {
+        justify-content: center;
+      }
+
+      .back-actions .btn, .page-actions .btn {
+        flex: 1;
+        text-align: center;
       }
     }
   </style>
@@ -396,8 +415,18 @@
       </div>
     </div>
     <div class="actions">
-      <a href="{% url 'counselor_archive' %}" class="btn secondary"><i class="bx bx-arrow-back"></i> Back to Archive</a>
-      <a href="{% url 'counselor_schedule' %}" class="btn primary"><i class="bx bxs-calendar"></i> All Appointments</a>
+      <div class="back-actions">
+        <button type="button" class="btn secondary" onclick="goBack()" id="backBtn">
+          <i class="bx bx-arrow-back"></i> Back
+        </button>
+        <a href="{% url 'counselor_dashboard' %}" class="btn secondary">
+          <i class="bx bx-home"></i> Dashboard
+        </a>
+      </div>
+      <div class="page-actions">
+        <a href="{% url 'counselor_archive' %}" class="btn secondary"><i class="bx bx-archive"></i> Archive</a>
+        <a href="{% url 'counselor_schedule' %}" class="btn primary"><i class="bx bxs-calendar"></i> Schedule</a>
+      </div>
     </div>
     {% if form %}
     <div class="section status-update-section">
@@ -470,6 +499,28 @@
   </div>
   
   <script>
+    // Store referrer for back navigation
+    document.addEventListener('DOMContentLoaded', function() {
+      // Store the referrer when page loads
+      const referrer = document.referrer;
+      if (referrer && referrer.includes(window.location.hostname)) {
+        localStorage.setItem('appointmentDetailReferrer', referrer);
+      }
+    });
+
+    // Function to go back to previous page
+    function goBack() {
+      const storedReferrer = localStorage.getItem('appointmentDetailReferrer');
+      if (storedReferrer && storedReferrer !== window.location.href) {
+        // Clear the stored referrer and navigate back
+        localStorage.removeItem('appointmentDetailReferrer');
+        window.location.href = storedReferrer;
+      } else {
+        // Fallback to browser history
+        history.back();
+      }
+    }
+
     // Enhanced status update functionality
     document.addEventListener('DOMContentLoaded', function() {
       const statusRadios = document.querySelectorAll('.status-radio');

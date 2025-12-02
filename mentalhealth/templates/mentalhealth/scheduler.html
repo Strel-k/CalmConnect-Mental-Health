@@ -13,6 +13,9 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
 
     <title>Scheduler | CalmConnect</title>
+
+    <!-- Include notification system -->
+    {% include 'mentalhealth/base_notifications.html' %}
     
   <style>
         * {
@@ -456,8 +459,8 @@
             border-radius: 20px;
             padding: 2rem;
             width: 100%;
-            max-width: 600px;
-            max-height: 80vh;
+            max-width: 900px;
+            max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             position: relative;
@@ -534,6 +537,7 @@
 
         .form-group {
             flex: 1;
+            min-width: 0; /* Allow flex items to shrink below content size */
         }
 
         .input-field {
@@ -559,7 +563,7 @@
 
         .services-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 0.8rem;
             margin-top: 1rem;
         }
@@ -701,6 +705,13 @@
         }
 
         /* Responsive Design */
+        @media (max-width: 1024px) {
+            .modal-content {
+                max-width: 95%;
+                padding: 1.8rem;
+            }
+        }
+
         @media (max-width: 768px) {
             .hdr {
                 padding: 1rem;
@@ -730,22 +741,23 @@
                 flex-direction: column;
                 gap: 1rem;
             }
-            
+
             .services-grid {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             }
         }
 
         @media (max-width: 480px) {
             .modal-content {
                 padding: 1.5rem;
-                max-width: 95%;
+                max-width: 98%;
+                margin: 0.5rem;
             }
-            
+
             .services-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .section-title {
                 font-size: 1rem;
             }
@@ -999,11 +1011,11 @@
     <h4>{{ user.username }}</h4>
 </div>
 <div class="prfl-container dropdown">
-    <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}" 
-         alt="Profile Picture" 
+    <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'mentalhealth/img/default.jpg' %}{% endif %}"
+         alt="Profile Picture"
          id="profile-img">
     <div class="dropdown-menu" id="profile-dropdown">
-        <a href="#">Settings</a>
+        <a href="#" id="settings-link">Settings</a>
         <a href="{% url 'logout' %}">Log out</a>
         <a href="{% url 'user-profile' %}">Profile</a>
     </div>
@@ -1207,8 +1219,366 @@
             </div>
         </div>
     </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+                <h2 style="margin: 0; color: #2c3e50; font-size: 1.8rem; font-weight: 600;">Settings</h2>
+                <button id="closeSettingsModal" style="background: none; border: none; font-size: 1.5rem; color: #666; cursor: pointer; padding: 0.5rem;">&times;</button>
+            </div>
+
+            <div class="settings-content">
+                <!-- Theme & Appearance -->
+                <div class="settings-section" style="margin-bottom: 2rem;">
+                    <h3 style="color: #2c3e50; font-size: 1.3rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bx bx-palette"></i>
+                        Theme & Appearance
+                    </h3>
+
+                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+                        <div>
+                            <label style="font-weight: 500; color: #2c3e50;">Dark Mode</label>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">Enable dark theme for reduced eye strain</p>
+                        </div>
+                        <label class="toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                            <input type="checkbox" id="darkModeToggle">
+                            <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
+                            <span class="toggle-slider:before" style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <div>
+                            <label for="fontSizeSelect" style="font-weight: 500; color: #2c3e50;">Font Size</label>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">Adjust text size for better readability</p>
+                        </div>
+                        <select id="fontSizeSelect" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: white;">
+                            <option value="small">Small</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="large">Large</option>
+                            <option value="extra_large">Extra Large</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Notification Preferences -->
+                <div class="settings-section" style="margin-bottom: 2rem;">
+                    <h3 style="color: #2c3e50; font-size: 1.3rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bx bx-bell"></i>
+                        Notification Preferences
+                    </h3>
+
+                    <div class="notification-settings">
+                        <div class="setting-item" style="padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <label style="font-weight: 500; color: #2c3e50;">Assignment Reminders</label>
+                                <input type="checkbox" id="assignmentRemindersEnabled" checked>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <label for="assignmentRemindersFreq" style="font-size: 0.9rem; color: #666;">Frequency:</label>
+                                <select id="assignmentRemindersFreq" style="padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px;">
+                                    <option value="daily" selected>Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="immediate">Immediate</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-item" style="padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <label style="font-weight: 500; color: #2c3e50;">Grade Updates</label>
+                                <input type="checkbox" id="gradeUpdatesEnabled" checked>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <label for="gradeUpdatesFreq" style="font-size: 0.9rem; color: #666;">Frequency:</label>
+                                <select id="gradeUpdatesFreq" style="padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px;">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly" selected>Weekly</option>
+                                    <option value="immediate">Immediate</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-item" style="padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <label style="font-weight: 500; color: #2c3e50;">Study Session Alerts</label>
+                                <input type="checkbox" id="studySessionAlertsEnabled" checked>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <label for="studySessionAlertsFreq" style="font-size: 0.9rem; color: #666;">Frequency:</label>
+                                <select id="studySessionAlertsFreq" style="padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px;">
+                                    <option value="daily" selected>Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="immediate">Immediate</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-item" style="padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <label style="font-weight: 500; color: #2c3e50;">Appointment Reminders</label>
+                                <input type="checkbox" id="appointmentRemindersEnabled" checked>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <label for="appointmentRemindersFreq" style="font-size: 0.9rem; color: #666;">Frequency:</label>
+                                <select id="appointmentRemindersFreq" style="padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px;">
+                                    <option value="daily" selected>Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="immediate">Immediate</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-item" style="padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <label style="font-weight: 500; color: #2c3e50;">Follow-up Notifications</label>
+                                <input type="checkbox" id="followupNotificationsEnabled" checked>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <label for="followupNotificationsFreq" style="font-size: 0.9rem; color: #666;">Frequency:</label>
+                                <select id="followupNotificationsFreq" style="padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px;">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly" selected>Weekly</option>
+                                    <option value="immediate">Immediate</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Language & Localization -->
+                <div class="settings-section" style="margin-bottom: 2rem;">
+                    <h3 style="color: #2c3e50; font-size: 1.3rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bx bx-globe"></i>
+                        Language & Localization
+                    </h3>
+
+                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <div>
+                            <label for="languageSelect" style="font-weight: 500; color: #2c3e50;">Language</label>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">Choose your preferred language</p>
+                        </div>
+                        <select id="languageSelect" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: white;">
+                            <option value="en" selected>English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Accessibility Options -->
+                <div class="settings-section" style="margin-bottom: 2rem;">
+                    <h3 style="color: #2c3e50; font-size: 1.3rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bx bx-accessibility"></i>
+                        Accessibility Options
+                    </h3>
+
+                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+                        <div>
+                            <label style="font-weight: 500; color: #2c3e50;">High Contrast Mode</label>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">Increase contrast for better visibility</p>
+                        </div>
+                        <label class="toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                            <input type="checkbox" id="highContrastToggle">
+                            <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
+                            <span class="toggle-slider:before" style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+                        <div>
+                            <label style="font-weight: 500; color: #2c3e50;">Screen Reader Support</label>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">Optimize interface for screen readers</p>
+                        </div>
+                        <label class="toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                            <input type="checkbox" id="screenReaderToggle">
+                            <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
+                            <span class="toggle-slider:before" style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <div>
+                            <label style="font-weight: 500; color: #2c3e50;">Reduced Motion</label>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">Minimize animations and transitions</p>
+                        </div>
+                        <label class="toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                            <input type="checkbox" id="reducedMotionToggle">
+                            <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
+                            <span class="toggle-slider:before" style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Data Privacy Settings -->
+                <div class="settings-section" style="margin-bottom: 2rem;">
+                    <h3 style="color: #2c3e50; font-size: 1.3rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bx bx-shield"></i>
+                        Data Privacy Settings
+                    </h3>
+
+                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+                        <div>
+                            <label style="font-weight: 500; color: #2c3e50;">Analytics Tracking</label>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">Allow collection of usage analytics</p>
+                        </div>
+                        <label class="toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                            <input type="checkbox" id="analyticsTrackingToggle" checked>
+                            <span class="toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
+                            <span class="toggle-slider:before" style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <div>
+                            <label for="profileVisibilitySelect" style="font-weight: 500; color: #2c3e50;">Profile Visibility</label>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; color: #666;">Control who can see your profile</p>
+                        </div>
+                        <select id="profileVisibilitySelect" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background: white;">
+                            <option value="public">Public</option>
+                            <option value="counselors_only" selected>Counselors Only</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <button id="resetSettingsBtn" style="background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 500;">Reset to Defaults</button>
+                <div style="display: flex; gap: 1rem;">
+                    <button id="cancelSettingsBtn" style="background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 500;">Cancel</button>
+                    <button id="saveSettingsBtn" style="background: #2ecc71; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 500;">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
     <script>
+    // Global notification click handler - uniform standard
+    function setupNotificationHandler() {
+        console.log('🔧 Setting up scheduler notification handler');
+
+        window.handleNotificationClick = function(notification) {
+            console.log('🔗 Scheduler handling notification click:', notification);
+
+            // Check if user is a counselor
+            const isCounselor = document.body.dataset.userIsCounselor === 'true';
+            console.log('🔍 Scheduler - User is counselor:', isCounselor, 'Data attribute:', document.body.dataset.userIsCounselor);
+
+            // Handle follow-up notifications differently based on user type
+            if (notification.type === 'followup') {
+                console.log('📋 Scheduler handling follow-up notification for', isCounselor ? 'counselor' : 'student');
+
+                if (isCounselor) {
+                    // For counselors, try to show the scheduled follow-up modal
+                    console.log('👨‍⚕️ Counselor attempting to show scheduled follow-up modal');
+
+                    // Check if notification manager is available
+                    if (window.notificationManager && typeof window.notificationManager.showScheduledFollowupModal === 'function') {
+                        console.log('✅ Notification manager available, showing modal');
+
+                        // Mark as read
+                        window.notificationManager.markAsRead(notification.id);
+
+                        // Extract followup_request_id from metadata
+                        let followupRequestId = null;
+                        if (notification.metadata) {
+                            if (typeof notification.metadata === 'string') {
+                                try {
+                                    const metadata = JSON.parse(notification.metadata);
+                                    followupRequestId = metadata.followup_request_id;
+                                } catch (e) {
+                                    console.warn('Failed to parse notification metadata:', e);
+                                }
+                            } else if (notification.metadata.followup_request_id) {
+                                followupRequestId = notification.metadata.followup_request_id;
+                            }
+                        }
+
+                        if (followupRequestId) {
+                            console.log('📋 Using followup request ID:', followupRequestId);
+                            window.notificationManager.showScheduledFollowupModal(followupRequestId, notification.metadata);
+                            return; // Prevent navigation
+                        } else {
+                            console.warn('⚠️ No followup request ID found in notification');
+                        }
+                    } else {
+                        console.warn('⚠️ Notification manager not available or showScheduledFollowupModal not found');
+                    }
+
+                    // Fallback: navigate to follow-up sessions page
+                    console.log('🔄 Falling back to navigation for counselor follow-up notification');
+                    const url = notification.action_url || notification.url || '/followup-sessions/';
+                    if (url && url !== '#') {
+                        console.log('👨‍⚕️ Counselor navigating to:', url);
+                        window.location.href = url;
+                        return;
+                    }
+                } else {
+                    // Students should see the consent modal
+                    console.log('🎯 Student opening follow-up modal for notification:', notification.id);
+                    if (window.notificationManager && typeof window.notificationManager.showFollowupConsentModal === 'function') {
+                        window.notificationManager.showFollowupConsentModal(notification);
+                        return; // Prevent navigation
+                    } else {
+                        console.warn('⚠️ Notification manager not available for student consent modal');
+                    }
+                }
+            } else {
+                // For non-followup notifications, navigate to URL if available
+                const url = notification.action_url || notification.url || '#';
+                if (url && url !== '#') {
+                    // Prevent navigation to current page (refresh)
+                    const currentUrl = window.location.pathname;
+                    if (url === currentUrl || url === window.location.href) {
+                        console.log('🚫 Preventing refresh to current page');
+                        return;
+                    }
+                    console.log('🌐 Navigating to URL from scheduler:', url);
+                    window.location.href = url;
+                } else {
+                    console.log('📋 No valid URL for notification, staying on page');
+                }
+            }
+        };
+
+        console.log('✅ Scheduler notification handler set up successfully');
+    }
+
+    // Wait for notification manager to be initialized before setting up handler
+    function waitForNotificationManager() {
+        if (window.notificationManager && typeof window.notificationManager.showScheduledFollowupModal === 'function') {
+            console.log('✅ Notification manager is ready, setting up handler');
+            setupNotificationHandler();
+        } else {
+            console.log('⏳ Waiting for notification manager...');
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds max
+
+            const checkManager = setInterval(() => {
+                attempts++;
+                if (window.notificationManager && typeof window.notificationManager.showScheduledFollowupModal === 'function') {
+                    clearInterval(checkManager);
+                    console.log('✅ Notification manager now ready, setting up handler');
+                    setupNotificationHandler();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkManager);
+                    console.error('❌ Timeout waiting for notification manager, setting up handler anyway');
+                    setupNotificationHandler();
+                }
+            }, 100);
+        }
+    }
+
+    // Initialize notification handler after DOM and notification manager are ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', waitForNotificationManager);
+    } else {
+        waitForNotificationManager();
+    }
+
     // Carousel logic
     const carousel = document.getElementById('counselor-carousel');
     const cards = Array.from(document.querySelectorAll('.counselor-card'));
@@ -1352,203 +1722,6 @@
     document.addEventListener('click', function() {
         document.getElementById('profile-dropdown').style.display = 'none';
     });
-        // Unified notification dropdown logic
-            function showNotificationDropdown() {
-            console.log('showNotificationDropdown called (scheduler)');
-            const dropdown = document.getElementById('notificationDropdown');
-            if (!dropdown) {
-                console.error('notificationDropdown element not found (scheduler)');
-                return;
-            }
-            dropdown.innerHTML = '<div style="text-align:center;padding:1.5rem 0;"><span class="ai-spinner" style="width:22px;height:22px;"></span> Loading...</div>';
-            dropdown.style.display = 'block';
-            
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-            console.log('CSRF Token (scheduler):', csrfToken ? 'Present' : 'Missing');
-            
-            fetch('/notifications/', {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': csrfToken
-                },
-                credentials: 'same-origin'
-            })
-                .then(response => {
-                    console.log('Notification response status (scheduler):', response.status);
-                    if (!response.ok) {
-                        if (response.status === 401) {
-                            console.log('Unauthorized, redirecting to login (scheduler)');
-                            window.location.href = '/login/';
-                            return;
-                        }
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                    const contentType = response.headers.get('content-type');
-                    console.log('Content-Type (scheduler):', contentType);
-                    if (!contentType || !contentType.includes('application/json')) {
-                        console.log('Invalid content type, redirecting to login (scheduler)');
-                        window.location.href = '/login/';
-                        return;
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Notification data (scheduler):', data);
-                    dropdown.innerHTML = '';
-                    if (data.notifications && data.notifications.length > 0) {
-                        data.notifications.forEach(notif => {
-                            const item = document.createElement('div');
-                            item.className = 'notification-item';
-                            item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.8rem;border-bottom:1px solid #eee;';
-                            
-                            const content = document.createElement('a');
-                            content.href = notif.url;
-                            content.style.cssText = 'flex:1;display:flex;align-items:center;gap:0.7rem;text-decoration:none;color:inherit;';
-                            content.innerHTML = `
-                                <i class='bx ${notif.type === 'appointment' ? 'bxs-calendar' : notif.type === 'report' ? 'bxs-report' : 'bxs-bell'}' style='color:#27ae60;font-size:1.2rem;'></i>
-                                <span>${notif.message}</span>
-                                <span style='margin-left:auto;font-size:0.85em;color:#888;'>${notif.time}</span>
-                            `;
-                            
-                            const clearBtn = document.createElement('button');
-                            clearBtn.innerHTML = '<i class="bx bx-x"></i>';
-                            clearBtn.style.cssText = 'background:none;border:none;color:#e74c3c;cursor:pointer;padding:0.3rem;margin-left:0.5rem;font-size:1.1rem;';
-                            clearBtn.title = 'Clear notification';
-                            clearBtn.onclick = function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                clearNotification(notif.id);
-                            };
-                            
-                            item.appendChild(content);
-                            item.appendChild(clearBtn);
-                            dropdown.appendChild(item);
-                        });
-                        
-                        // Add clear all button
-                        const clearAllDiv = document.createElement('div');
-                        clearAllDiv.style.cssText = 'padding:0.8rem;border-top:2px solid #eee;text-align:center;';
-                        
-                        const clearAllBtn = document.createElement('button');
-                        clearAllBtn.innerHTML = '<i class="bx bx-trash"></i> Clear All';
-                        clearAllBtn.style.cssText = 'background:#e74c3c;color:white;border:none;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;font-size:0.9rem;';
-                        clearAllBtn.onclick = function(e) {
-                            e.preventDefault();
-                            if (confirm('Clear all notifications?')) {
-                                clearAllNotifications();
-                            }
-                        };
-                        
-                        clearAllDiv.appendChild(clearAllBtn);
-                        dropdown.appendChild(clearAllDiv);
-                    } else {
-                        dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#888;"><i class="bx bxs-bell" style="font-size:2.2rem;"></i><br>No notifications</div>';
-                    }
-                })
-                .catch((error) => {
-                    console.error('Notification error (scheduler):', error);
-                    dropdown.innerHTML = '<div style="text-align:center;padding:2rem 0;color:#e74c3c;">Error loading notifications</div>';
-                });
-    }
-document.getElementById('bell-icon').addEventListener('click', function(e) {
-    e.stopPropagation();
-    const dropdown = document.getElementById('notificationDropdown');
-    if (dropdown.style.display === 'block') {
-        dropdown.style.display = 'none';
-    } else {
-        showNotificationDropdown();
-    }
-});
-document.addEventListener('click', function() {
-    document.getElementById('notificationDropdown').style.display = 'none';
-});
-// Badge update
-        function updateNotificationBadge() {
-            fetch('/notifications/', {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
-                },
-                credentials: 'same-origin'
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        return;
-                    }
-                    const contentType = response.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        return;
-                    }
-                    return response.json();
-                })
-                .then(data => {
-            const badge = document.getElementById('notificationBadge');
-            if (data.count > 0) {
-                badge.textContent = data.count;
-                badge.style.display = 'flex';
-            } else {
-                badge.style.display = 'none';
-            }
-        });
-}
-updateNotificationBadge();
-setInterval(updateNotificationBadge, 300000);
-
-// Function to clear individual notification
-function clearNotification(notificationId) {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-    
-    fetch(`/notifications/${notificationId}/clear/`, {
-        method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': csrfToken
-        },
-        credentials: 'same-origin'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Refresh the notification dropdown
-            showNotificationDropdown();
-            // Update the badge
-            updateNotificationBadge();
-        } else {
-            console.error('Error clearing notification:', data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error clearing notification:', error);
-    });
-}
-
-// Function to clear all notifications
-function clearAllNotifications() {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-    
-    fetch('/notifications/clear-all/', {
-        method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': csrfToken
-        },
-        credentials: 'same-origin'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Refresh the notification dropdown
-            showNotificationDropdown();
-            // Update the badge
-            updateNotificationBadge();
-        } else {
-            console.error('Error clearing all notifications:', data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error clearing all notifications:', error);
-    });
-}
     // Booking form submit
     document.getElementById('booking-form').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -1643,6 +1816,235 @@ function clearAllNotifications() {
         spinner.style.display = 'inline-block';
         submitBtn.setAttribute('disabled', 'disabled');
         submitBtn.style.opacity = '0.7';
+    });
+
+    // Settings Modal Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Settings modal elements
+        const settingsModal = document.getElementById('settingsModal');
+        const settingsLink = document.getElementById('settings-link');
+        const closeSettingsModal = document.getElementById('closeSettingsModal');
+        const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const resetSettingsBtn = document.getElementById('resetSettingsBtn');
+
+        // Settings controls
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const fontSizeSelect = document.getElementById('fontSizeSelect');
+        const languageSelect = document.getElementById('languageSelect');
+        const highContrastToggle = document.getElementById('highContrastToggle');
+        const screenReaderToggle = document.getElementById('screenReaderToggle');
+        const reducedMotionToggle = document.getElementById('reducedMotionToggle');
+        const analyticsTrackingToggle = document.getElementById('analyticsTrackingToggle');
+        const profileVisibilitySelect = document.getElementById('profileVisibilitySelect');
+
+        // Notification settings
+        const notificationSettings = {
+            assignmentReminders: { enabled: document.getElementById('assignmentRemindersEnabled'), freq: document.getElementById('assignmentRemindersFreq') },
+            gradeUpdates: { enabled: document.getElementById('gradeUpdatesEnabled'), freq: document.getElementById('gradeUpdatesFreq') },
+            studySessionAlerts: { enabled: document.getElementById('studySessionAlertsEnabled'), freq: document.getElementById('studySessionAlertsFreq') },
+            appointmentReminders: { enabled: document.getElementById('appointmentRemindersEnabled'), freq: document.getElementById('appointmentRemindersFreq') },
+            followupNotifications: { enabled: document.getElementById('followupNotificationsEnabled'), freq: document.getElementById('followupNotificationsFreq') }
+        };
+
+        // Default settings
+        const defaultSettings = {
+            theme: { darkMode: false, fontSize: 'medium' },
+            notifications: {
+                assignmentReminders: { enabled: true, frequency: 'daily' },
+                gradeUpdates: { enabled: true, frequency: 'weekly' },
+                studySessionAlerts: { enabled: true, frequency: 'daily' },
+                appointmentReminders: { enabled: true, frequency: 'daily' },
+                followupNotifications: { enabled: true, frequency: 'weekly' }
+            },
+            language: 'en',
+            accessibility: { highContrast: false, screenReader: false, reducedMotion: false },
+            privacy: { analyticsTracking: true, profileVisibility: 'counselors_only' }
+        };
+
+        // Load settings from localStorage or backend
+        function loadSettings() {
+            try {
+                const savedSettings = localStorage.getItem('userSettings');
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    applySettings(settings);
+                } else {
+                    applySettings(defaultSettings);
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+                applySettings(defaultSettings);
+            }
+        }
+
+        // Apply settings to UI
+        function applySettings(settings) {
+            // Theme settings
+            darkModeToggle.checked = settings.theme?.darkMode || false;
+            fontSizeSelect.value = settings.theme?.fontSize || 'medium';
+
+            // Notification settings
+            Object.keys(notificationSettings).forEach(key => {
+                const setting = settings.notifications?.[key];
+                if (setting) {
+                    notificationSettings[key].enabled.checked = setting.enabled;
+                    notificationSettings[key].freq.value = setting.frequency;
+                }
+            });
+
+            // Language
+            languageSelect.value = settings.language || 'en';
+
+            // Accessibility
+            highContrastToggle.checked = settings.accessibility?.highContrast || false;
+            screenReaderToggle.checked = settings.accessibility?.screenReader || false;
+            reducedMotionToggle.checked = settings.accessibility?.reducedMotion || false;
+
+            // Privacy
+            analyticsTrackingToggle.checked = settings.privacy?.analyticsTracking ?? true;
+            profileVisibilitySelect.value = settings.privacy?.profileVisibility || 'counselors_only';
+
+            // Apply theme immediately
+            applyTheme(settings.theme);
+            applyAccessibility(settings.accessibility);
+        }
+
+        // Apply theme changes
+        function applyTheme(theme) {
+            document.documentElement.classList.toggle('dark-mode', theme.darkMode);
+            document.documentElement.style.fontSize = getFontSizeValue(theme.fontSize);
+        }
+
+        // Apply accessibility changes
+        function applyAccessibility(accessibility) {
+            document.documentElement.classList.toggle('high-contrast', accessibility.highContrast);
+            document.documentElement.classList.toggle('screen-reader', accessibility.screenReader);
+            document.documentElement.classList.toggle('reduced-motion', accessibility.reducedMotion);
+        }
+
+        // Get font size value
+        function getFontSizeValue(size) {
+            const sizes = { small: '14px', medium: '16px', large: '18px', extra_large: '20px' };
+            return sizes[size] || '16px';
+        }
+
+        // Save settings
+        async function saveSettings() {
+            const settings = {
+                theme: {
+                    darkMode: darkModeToggle.checked,
+                    fontSize: fontSizeSelect.value
+                },
+                notifications: {},
+                language: languageSelect.value,
+                accessibility: {
+                    highContrast: highContrastToggle.checked,
+                    screenReader: screenReaderToggle.checked,
+                    reducedMotion: reducedMotionToggle.checked
+                },
+                privacy: {
+                    analyticsTracking: analyticsTrackingToggle.checked,
+                    profileVisibility: profileVisibilitySelect.value
+                }
+            };
+
+            // Collect notification settings
+            Object.keys(notificationSettings).forEach(key => {
+                settings.notifications[key] = {
+                    enabled: notificationSettings[key].enabled.checked,
+                    frequency: notificationSettings[key].freq.value
+                };
+            });
+
+            try {
+                // Save to localStorage
+                localStorage.setItem('userSettings', JSON.stringify(settings));
+
+                // Try to save to backend
+                const response = await fetch('/api/user-settings/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                if (response.ok) {
+                    console.log('Settings saved successfully');
+                } else {
+                    console.warn('Failed to save settings to backend, using localStorage');
+                }
+
+                // Apply settings immediately
+                applySettings(settings);
+
+                // Close modal
+                settingsModal.style.display = 'none';
+
+                // Show success message
+                alert('Settings saved successfully!');
+
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                alert('Error saving settings. Please try again.');
+            }
+        }
+
+        // Reset settings
+        function resetSettings() {
+            if (confirm('Are you sure you want to reset all settings to default?')) {
+                applySettings(defaultSettings);
+                localStorage.removeItem('userSettings');
+                alert('Settings reset to defaults.');
+            }
+        }
+
+        // Event listeners
+        settingsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            loadSettings();
+            settingsModal.style.display = 'flex';
+        });
+
+        closeSettingsModal.addEventListener('click', () => {
+            settingsModal.style.display = 'none';
+        });
+
+        cancelSettingsBtn.addEventListener('click', () => {
+            settingsModal.style.display = 'none';
+        });
+
+        saveSettingsBtn.addEventListener('click', saveSettings);
+        resetSettingsBtn.addEventListener('click', resetSettings);
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                settingsModal.style.display = 'none';
+            }
+        });
+
+        // Live preview for some settings
+        darkModeToggle.addEventListener('change', () => {
+            document.documentElement.classList.toggle('dark-mode', darkModeToggle.checked);
+        });
+
+        fontSizeSelect.addEventListener('change', () => {
+            document.documentElement.style.fontSize = getFontSizeValue(fontSizeSelect.value);
+        });
+
+        highContrastToggle.addEventListener('change', () => {
+            document.documentElement.classList.toggle('high-contrast', highContrastToggle.checked);
+        });
+
+        reducedMotionToggle.addEventListener('change', () => {
+            document.documentElement.classList.toggle('reduced-motion', reducedMotionToggle.checked);
+        });
+
+        // Initialize settings on page load
+        loadSettings();
     });
     </script>
 </body>
