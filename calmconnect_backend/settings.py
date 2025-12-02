@@ -181,8 +181,8 @@ if not DATABASE_URL:
             'NAME': 'railway',
             'USER': 'postgres',
             'PASSWORD': 'QyvTyslAILafsBpRNuNluMpiqEocRQoK',
-            'HOST': 'postgres-lbc.railway.internal',
-            'PORT': 5432,
+            'HOST': 'switchyard.proxy.rlwy.net',
+            'PORT': 30541,
             'OPTIONS': {
                 'sslmode': 'require',
             },
