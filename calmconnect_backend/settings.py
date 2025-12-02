@@ -228,15 +228,19 @@ if DATABASE_URL:
         print("ERROR: Could not parse DATABASE_URL")
         raise ValueError("Invalid DATABASE_URL format")
 else:
-    # Check if we're in a build context (like collectstatic) where DB isn't needed
+    # Check if we're in a build context where DB isn't needed
     import sys
+
+    # Special handling for collectstatic - it doesn't need database access
+    is_collectstatic = len(sys.argv) > 1 and 'collectstatic' in ' '.join(sys.argv)
+
     # Allow build-time commands that don't need database connectivity
-    build_commands = ['collectstatic', 'makemigrations', 'migrate', 'shell', 'dbshell', 'showmigrations']
+    build_commands = ['makemigrations', 'migrate', 'shell', 'dbshell', 'showmigrations']
 
     # Check if this is a build-time command
     is_build_command = len(sys.argv) > 1 and (
         sys.argv[1] in build_commands or
-        (len(sys.argv) > 2 and sys.argv[2] in build_commands)  # Handle cases like python manage.py collectstatic --noinput
+        (len(sys.argv) > 2 and sys.argv[2] in build_commands)
     )
 
     # Also check for Railway build environment or CI
@@ -245,13 +249,13 @@ else:
         os.environ.get('CI') or
         os.environ.get('BUILD_ENV') or
         os.environ.get('DOCKER_BUILD') or
-        os.environ.get('RAILWAY_PROJECT_ID')  # Railway sets this during build
+        os.environ.get('RAILWAY_PROJECT_ID')
     )
 
-    if is_build_command or is_build_env:
-        command_name = sys.argv[1] if len(sys.argv) > 1 else 'unknown'
-        print(f"WARNING: DATABASE_URL not set, but allowing build-time command: {command_name}")
-        # Use a dummy database configuration for build-time operations
+    if is_collectstatic or is_build_command or is_build_env:
+        command_name = 'collectstatic' if is_collectstatic else (sys.argv[1] if len(sys.argv) > 1 else 'unknown')
+        print(f"WARNING: DATABASE_URL not set, but allowing command: {command_name}")
+        # Use a dummy database configuration for operations that don't need DB
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
