@@ -174,7 +174,7 @@ print(f"Final DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
 # Temporary hardcoded Railway database connection (from error logs)
 # TODO: Remove this once DATABASE_URL detection is fixed
 if not DATABASE_URL:
-    print("Using hardcoded Railway database connection")
+    print("EXECUTING: Using hardcoded Railway database connection")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -189,102 +189,13 @@ if not DATABASE_URL:
         }
     }
     print("Database configured via hardcoded Railway connection")
+    # Don't continue to other blocks
 elif DATABASE_URL:
+    print("EXECUTING: DATABASE_URL is set, attempting to parse")
     print(f"Using DATABASE_URL: {DATABASE_URL[:50]}...")
 else:
     print("Falling back to individual DB settings")
 
-if DATABASE_URL:
-    # Use DATABASE_URL if provided (for Railway and other cloud providers)
-    import dj_database_url
-    print(f"Raw DATABASE_URL: {DATABASE_URL}")
-    try:
-        # Parse the DATABASE_URL
-        db_config = dj_database_url.parse(DATABASE_URL, conn_max_age=600)
-        print(f"Parsed database config: ENGINE={db_config.get('ENGINE')}, HOST={db_config.get('HOST')}, PORT={db_config.get('PORT')}")
-        DATABASES = {
-            'default': db_config
-        }
-        print("Database configured via dj_database_url")
-    except Exception as e:
-        print(f"Error parsing DATABASE_URL with dj_database_url: {e}")
-        # Manual parsing for Railway DATABASE_URL format: postgresql://user:pass@host:port/db
-        try:
-            print("Attempting manual parsing...")
-            if DATABASE_URL.startswith('postgresql://'):
-                # Remove the postgresql:// prefix for manual parsing
-                db_string = DATABASE_URL.replace('postgresql://', '')
-                print(f"After removing prefix: {db_string}")
-                # Split into user:pass and host:port/db
-                auth_and_rest = db_string.split('@')
-                print(f"Split by @: {auth_and_rest}")
-                if len(auth_and_rest) == 2:
-                    user_pass = auth_and_rest[0]
-                    host_port_db = auth_and_rest[1]
-                    print(f"user_pass: {user_pass}, host_port_db: {host_port_db}")
-
-                    # Parse user and password
-                    if ':' in user_pass:
-                        user, password = user_pass.split(':', 1)
-                    else:
-                        user = user_pass
-                        password = ''
-                    print(f"user: {user}, password: [hidden]")
-
-                    # Parse host, port, and database
-                    if '/' in host_port_db:
-                        host_port, database = host_port_db.split('/', 1)
-                    else:
-                        host_port = host_port_db
-                        database = 'postgres'
-                    print(f"host_port: {host_port}, database: {database}")
-
-                    if ':' in host_port:
-                        host, port = host_port.split(':', 1)
-                        port = int(port)
-                    else:
-                        host = host_port
-                        port = 5432
-                    print(f"host: {host}, port: {port}")
-
-                    DATABASES = {
-                        'default': {
-                            'ENGINE': 'django.db.backends.postgresql',
-                            'NAME': database,
-                            'USER': user,
-                            'PASSWORD': password,
-                            'HOST': host,
-                            'PORT': port,
-                            'OPTIONS': {
-                                'sslmode': 'require',
-                            },
-                        }
-                    }
-                    print(f"Manual database parsing successful: HOST={host}, PORT={port}, DB={database}")
-                else:
-                    raise ValueError("Invalid DATABASE_URL format")
-            else:
-                raise ValueError("DATABASE_URL doesn't start with postgresql://")
-        except Exception as manual_e:
-            print(f"Manual parsing failed: {manual_e}")
-            print("Falling back to individual settings")
-            # This will be handled by the fallback below
-else:
-    # Fallback to individual settings
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': env_config('DB_NAME', default='calmconnect_db'),
-            'USER': env_config('DB_USER', default='postgres'),
-            'PASSWORD': env_config('DB_PASSWORD', default='postgres'),
-            'HOST': env_config('DB_HOST', default='localhost'),
-            'PORT': env_config('DB_PORT', default='5432', cast=int),
-            'OPTIONS': {
-                'sslmode': 'require' if not DEBUG else 'prefer',
-            },
-        }
-    }
-    print("Database configured via individual settings")
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
