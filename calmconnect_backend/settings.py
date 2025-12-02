@@ -22,27 +22,6 @@ env_config = AutoConfig(search_path=os.path.dirname(os.path.dirname(__file__)))
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Run migrations on first startup (temporary - remove after successful migration)
-import subprocess
-import os
-
-migration_flag = BASE_DIR / 'migration_complete.txt'
-if not migration_flag.exists():
-    try:
-        print("🔄 Running database migrations...")
-        result = subprocess.run(['python', 'manage.py', 'migrate'],
-                              capture_output=True, text=True, cwd=BASE_DIR)
-        if result.returncode == 0:
-            with open(migration_flag, 'w') as f:
-                f.write('completed')
-            print("✅ Migrations completed successfully!")
-            print(result.stdout)
-        else:
-            print("❌ Migration failed:")
-            print(result.stderr)
-    except Exception as e:
-        print(f"❌ Migration error: {e}")
-
 # --- SECURITY: Load secrets from environment variables ---
 OPENAI_API_KEY = env_config("OPENAI_API_KEY", default="")
 print(f"OpenAI API Key loaded: {'Yes' if OPENAI_API_KEY else 'No'}")
