@@ -51,7 +51,7 @@ SERVER_EMAIL = env_config('SERVER_EMAIL', default='server@calmconnect.edu.ph')
 DEBUG = env_config('DJANGO_DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = env_config(
     'DJANGO_ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,testserver,.up.railway.app',
+    default='localhost,127.0.0.1,testserver,.up.railway.app,earnest-presence-production-5ca0.up.railway.app',
     cast=Csv()
 )
 
