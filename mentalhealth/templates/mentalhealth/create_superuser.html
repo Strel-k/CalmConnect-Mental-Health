@@ -13,13 +13,21 @@
                     </h4>
                 </div>
                 <div class="card-body">
+                    {% if success_message %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <strong>Success!</strong><br>
+                        {{ success_message|safe }}
+                    </div>
+                    {% else %}
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle"></i>
                         <strong>Warning:</strong> This is a temporary endpoint for creating an admin user.
                         Please delete this functionality after use for security reasons.
                     </div>
+                    {% endif %}
 
-                    <form method="post">
+                    <form method="post" action="{% url 'create_superuser' %}">
                         {% csrf_token %}
 
                         <div class="mb-3">

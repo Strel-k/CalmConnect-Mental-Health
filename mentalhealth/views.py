@@ -6686,7 +6686,6 @@ def reset_settings_api(request):
 
 
 # TEMPORARY: Create superuser endpoint (remove after use)
-@staff_member_required
 def create_superuser_endpoint(request):
     """TEMPORARY endpoint to create a superuser - REMOVE AFTER USE"""
     if request.method == 'POST':
@@ -6723,7 +6722,14 @@ def create_superuser_endpoint(request):
 
             messages.success(request, f'Superuser "{username}" created successfully! '
                                     f'Username: {username}, Password: {password}')
-            return redirect('admin_dashboard')
+            return render(request, 'mentalhealth/create_superuser.html', {
+                'title': 'Create Superuser (TEMPORARY)',
+                'success_message': f'Superuser "{username}" created successfully!<br>'
+                                 f'<strong>Username:</strong> {username}<br>'
+                                 f'<strong>Password:</strong> {password}<br>'
+                                 f'<strong>Email:</strong> {email}<br><br>'
+                                 f'<a href="/admin/" class="btn btn-primary">Go to Admin Panel</a>'
+            })
 
         except Exception as e:
             messages.error(request, f'Error creating superuser: {e}')
