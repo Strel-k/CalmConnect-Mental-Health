@@ -231,8 +231,8 @@ else:
     # Check if we're in a build context where DB isn't needed
     import sys
 
-    # Special handling for collectstatic - it doesn't need database access
-    is_collectstatic = len(sys.argv) > 1 and 'collectstatic' in ' '.join(sys.argv)
+    # Always allow collectstatic - it doesn't need database access
+    is_collectstatic = 'collectstatic' in ' '.join(sys.argv)
 
     # Allow build-time commands that don't need database connectivity
     build_commands = ['makemigrations', 'migrate', 'shell', 'dbshell', 'showmigrations']
@@ -249,11 +249,13 @@ else:
         os.environ.get('CI') or
         os.environ.get('BUILD_ENV') or
         os.environ.get('DOCKER_BUILD') or
-        os.environ.get('RAILWAY_PROJECT_ID')
+        os.environ.get('RAILWAY_PROJECT_ID') or
+        os.environ.get('RAILWAY_STATIC_URL') or  # Railway sets this during build
+        os.environ.get('SOURCE_COMMIT')  # Railway sets this during build
     )
 
     if is_collectstatic or is_build_command or is_build_env:
-        command_name = 'collectstatic' if is_collectstatic else (sys.argv[1] if len(sys.argv) > 1 else 'unknown')
+        command_name = 'collectstatic' if is_collectstatic else (sys.argv[1] if len(sys.argv) > 1 else 'build_env')
         print(f"WARNING: DATABASE_URL not set, but allowing command: {command_name}")
         # Use a dummy database configuration for operations that don't need DB
         DATABASES = {
@@ -265,6 +267,7 @@ else:
     else:
         print("ERROR: DATABASE_URL not set. Please set DATABASE_URL environment variable.")
         print(f"Current command: {' '.join(sys.argv) if sys.argv else 'unknown'}")
+        print(f"Environment variables: {list(os.environ.keys())}")
         raise ValueError("DATABASE_URL environment variable must be set")
 
 AUTHENTICATION_BACKENDS = [
