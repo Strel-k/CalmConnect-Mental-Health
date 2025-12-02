@@ -167,8 +167,10 @@ WSGI_APPLICATION = 'calmconnect_backend.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 # Database configuration
-DATABASE_URL = env_config('DATABASE_URL', default='')
-print(f"DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
+DATABASE_URL = os.environ.get('DATABASE_URL') or env_config('DATABASE_URL', default='')
+print(f"DATABASE_URL from os.environ: {os.environ.get('DATABASE_URL', 'Not found')}")
+print(f"DATABASE_URL from env_config: {env_config('DATABASE_URL', default='Not found')}")
+print(f"Final DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
 if DATABASE_URL:
     print(f"Using DATABASE_URL: {DATABASE_URL[:50]}...")
 else:
