@@ -3997,27 +3997,7 @@ def submit_feedback(request):
             user=request.user,
             status='completed'
         )
-@require_GET
-def run_migrations(request):
-    """Run database migrations via HTTP request (temporary endpoint for Railway)"""
-    from django.core.management import call_command
-    from django.http import HttpResponse
-    import subprocess
-    import os
 
-    try:
-        # Run migrations
-        result = subprocess.run(['python', 'manage.py', 'migrate'],
-                              capture_output=True, text=True, cwd=os.path.dirname(os.path.dirname(__file__)))
-
-        if result.returncode == 0:
-            return HttpResponse(f"Migrations completed successfully!\n\n{result.stdout}", content_type='text/plain')
-        else:
-            return HttpResponse(f"Migration failed!\n\nSTDOUT:\n{result.stdout}\n\nSTDERR:\n{result.stderr}",
-                              content_type='text/plain', status=500)
-    except Exception as e:
-        return HttpResponse(f"Error running migrations: {str(e)}", content_type='text/plain', status=500)
-        
         # Check if feedback already exists
         if Feedback.objects.filter(appointment=appointment, user=request.user).exists():
             return JsonResponse({
@@ -6703,4 +6683,37 @@ def reset_settings_api(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+@login_required
+@staff_member_required
+def run_migrations(request):
+    """Run database migrations (temporary endpoint for Railway)"""
+    from django.core.management import call_command
+    from django.http import JsonResponse
+    import io
+    import sys
+
+    # Capture output
+    old_stdout = sys.stdout
+    sys.stdout = buffer = io.StringIO()
+
+    try:
+        # Run migrations
+        call_command('migrate', verbosity=2)
+
+        # Get output
+        output = buffer.getvalue()
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Migrations completed successfully',
+            'output': output
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'output': buffer.getvalue()
+        })
+    finally:
+        sys.stdout = old_stdout
 

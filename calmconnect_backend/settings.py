@@ -171,30 +171,64 @@ print(f"DATABASE_URL from os.environ: {os.environ.get('DATABASE_URL', 'Not found
 print(f"DATABASE_URL from env_config: {env_config('DATABASE_URL', default='Not found')}")
 print(f"Final DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
 
-# Temporary hardcoded Railway database connection (from error logs)
-# TODO: Remove this once DATABASE_URL detection is fixed
-if not DATABASE_URL:
-    print("EXECUTING: Using hardcoded Railway database connection")
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'railway',
-            'USER': 'postgres',
-            'PASSWORD': 'QyvTyslAILafsBpRNuNluMpiqEocRQoK',
-            'HOST': 'switchyard.proxy.rlwy.net',
-            'PORT': 30541,
-            'OPTIONS': {
-                'sslmode': 'require',
-            },
+def parse_database_url(url):
+    """Parse DATABASE_URL into Django DATABASES format"""
+    if not url:
+        return None
+
+    # Expected format: postgresql://user:password@host:port/dbname
+    if url.startswith('postgresql://'):
+        # Remove postgresql://
+        url = url[13:]
+        # Split user:password@host:port/dbname
+        if '@' in url:
+            user_pass, host_port_db = url.split('@', 1)
+            if ':' in user_pass:
+                user, password = user_pass.split(':', 1)
+            else:
+                user = user_pass
+                password = ''
+
+            if '/' in host_port_db:
+                host_port, dbname = host_port_db.rsplit('/', 1)
+            else:
+                host_port = host_port_db
+                dbname = ''
+
+            if ':' in host_port:
+                host, port = host_port.split(':', 1)
+                port = int(port)
+            else:
+                host = host_port
+                port = 5432  # Default PostgreSQL port
+
+            return {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': dbname,
+                'USER': user,
+                'PASSWORD': password,
+                'HOST': host,
+                'PORT': port,
+                'OPTIONS': {
+                    'sslmode': 'require',
+                },
+            }
+    return None
+
+if DATABASE_URL:
+    print("EXECUTING: DATABASE_URL is set, parsing database configuration")
+    parsed_db = parse_database_url(DATABASE_URL)
+    if parsed_db:
+        DATABASES = {
+            'default': parsed_db
         }
-    }
-    print("Database configured via hardcoded Railway connection")
-    # Don't continue to other blocks
-elif DATABASE_URL:
-    print("EXECUTING: DATABASE_URL is set, attempting to parse")
-    print(f"Using DATABASE_URL: {DATABASE_URL[:50]}...")
+        print("Database configured successfully from DATABASE_URL")
+    else:
+        print("ERROR: Could not parse DATABASE_URL")
+        raise ValueError("Invalid DATABASE_URL format")
 else:
-    print("Falling back to individual DB settings")
+    print("ERROR: DATABASE_URL not set. Please set DATABASE_URL environment variable.")
+    raise ValueError("DATABASE_URL environment variable must be set")
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
