@@ -57,7 +57,7 @@ allowed_hosts = env_config(
 )
 
 # Ensure Railway domain is always included (in case env var doesn't include it)
-railway_domains = ['.up.railway.app', 'earnest-presence-production-5ca0.up.railway.app']
+railway_domains = ['.up.railway.app', 'earnest-presence-production-5ca0.up.railway.app', 'calmn-connect.up.railway.app']
 for domain in railway_domains:
     if domain not in allowed_hosts:
         allowed_hosts.append(domain)
