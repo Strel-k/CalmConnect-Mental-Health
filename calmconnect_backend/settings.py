@@ -168,9 +168,14 @@ WSGI_APPLICATION = 'calmconnect_backend.wsgi.application'
 
 # Database configuration
 DATABASE_URL = env_config('DATABASE_URL', default='')
+print(f"DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
+if DATABASE_URL:
+    print(f"Using DATABASE_URL: {DATABASE_URL[:50]}...")
+else:
+    print("Falling back to individual DB settings")
 
 if DATABASE_URL:
-    # Use DATABASE_URL if provided (for Fly.io and other cloud providers)
+    # Use DATABASE_URL if provided (for Railway and other cloud providers)
     import dj_database_url
     DATABASES = {
         'default': dj_database_url.config(
@@ -179,6 +184,7 @@ if DATABASE_URL:
             ssl_require=True,
         )
     }
+    print("Database configured via DATABASE_URL")
 else:
     # Fallback to individual settings
     DATABASES = {
@@ -194,6 +200,7 @@ else:
             },
         }
     }
+    print("Database configured via individual settings")
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
