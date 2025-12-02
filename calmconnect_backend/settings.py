@@ -215,6 +215,7 @@ def parse_database_url(url):
             }
     return None
 
+# Handle database configuration - allow build-time operations without DATABASE_URL
 if DATABASE_URL:
     print("EXECUTING: DATABASE_URL is set, parsing database configuration")
     parsed_db = parse_database_url(DATABASE_URL)
@@ -227,8 +228,20 @@ if DATABASE_URL:
         print("ERROR: Could not parse DATABASE_URL")
         raise ValueError("Invalid DATABASE_URL format")
 else:
-    print("ERROR: DATABASE_URL not set. Please set DATABASE_URL environment variable.")
-    raise ValueError("DATABASE_URL environment variable must be set")
+    # Check if we're in a build context (like collectstatic) where DB isn't needed
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] in ['collectstatic', 'makemigrations', 'migrate']:
+        print("WARNING: DATABASE_URL not set, but allowing build-time command:", sys.argv[1])
+        # Use a dummy database configuration for build-time operations
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': ':memory:',
+            }
+        }
+    else:
+        print("ERROR: DATABASE_URL not set. Please set DATABASE_URL environment variable.")
+        raise ValueError("DATABASE_URL environment variable must be set")
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
