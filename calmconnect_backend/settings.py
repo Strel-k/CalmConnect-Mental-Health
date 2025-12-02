@@ -230,8 +230,13 @@ if DATABASE_URL:
 else:
     # Check if we're in a build context (like collectstatic) where DB isn't needed
     import sys
-    if len(sys.argv) > 1 and sys.argv[1] in ['collectstatic', 'makemigrations', 'migrate']:
-        print("WARNING: DATABASE_URL not set, but allowing build-time command:", sys.argv[1])
+    # Allow build-time commands that don't need database connectivity
+    build_commands = ['collectstatic', 'makemigrations', 'migrate', 'shell', 'dbshell', 'showmigrations']
+    # Also check for Railway build environment
+    is_build_env = os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('CI') or os.environ.get('BUILD_ENV')
+
+    if (len(sys.argv) > 1 and sys.argv[1] in build_commands) or is_build_env:
+        print("WARNING: DATABASE_URL not set, but allowing build-time command:", sys.argv[1] if len(sys.argv) > 1 else 'build_env')
         # Use a dummy database configuration for build-time operations
         DATABASES = {
             'default': {
