@@ -6741,7 +6741,6 @@ def create_superuser_endpoint(request):
         'title': 'Create Superuser (TEMPORARY)'
     })
 @login_required
-@staff_member_required
 def run_migrations(request):
     """Run database migrations (temporary endpoint for Railway)"""
     from django.core.management import call_command
