@@ -180,9 +180,9 @@ if not DATABASE_URL:
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'railway',
             'USER': 'postgres',
-            'PASSWORD': 'QfaJsYXZONmMlyUHpdrGXwbwchagTLQs',
-            'HOST': 'ballast.proxy.rlwy.net',
-            'PORT': 42908,
+            'PASSWORD': 'QyvTyslAILafsBpRNuNluMpiqEocRQoK',
+            'HOST': 'postgres-lbc.railway.internal',
+            'PORT': 5432,
             'OPTIONS': {
                 'sslmode': 'require',
             },
