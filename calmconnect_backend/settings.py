@@ -232,11 +232,25 @@ else:
     import sys
     # Allow build-time commands that don't need database connectivity
     build_commands = ['collectstatic', 'makemigrations', 'migrate', 'shell', 'dbshell', 'showmigrations']
-    # Also check for Railway build environment
-    is_build_env = os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('CI') or os.environ.get('BUILD_ENV')
 
-    if (len(sys.argv) > 1 and sys.argv[1] in build_commands) or is_build_env:
-        print("WARNING: DATABASE_URL not set, but allowing build-time command:", sys.argv[1] if len(sys.argv) > 1 else 'build_env')
+    # Check if this is a build-time command
+    is_build_command = len(sys.argv) > 1 and (
+        sys.argv[1] in build_commands or
+        (len(sys.argv) > 2 and sys.argv[2] in build_commands)  # Handle cases like python manage.py collectstatic --noinput
+    )
+
+    # Also check for Railway build environment or CI
+    is_build_env = (
+        os.environ.get('RAILWAY_ENVIRONMENT') or
+        os.environ.get('CI') or
+        os.environ.get('BUILD_ENV') or
+        os.environ.get('DOCKER_BUILD') or
+        os.environ.get('RAILWAY_PROJECT_ID')  # Railway sets this during build
+    )
+
+    if is_build_command or is_build_env:
+        command_name = sys.argv[1] if len(sys.argv) > 1 else 'unknown'
+        print(f"WARNING: DATABASE_URL not set, but allowing build-time command: {command_name}")
         # Use a dummy database configuration for build-time operations
         DATABASES = {
             'default': {
@@ -246,6 +260,7 @@ else:
         }
     else:
         print("ERROR: DATABASE_URL not set. Please set DATABASE_URL environment variable.")
+        print(f"Current command: {' '.join(sys.argv) if sys.argv else 'unknown'}")
         raise ValueError("DATABASE_URL environment variable must be set")
 
 AUTHENTICATION_BACKENDS = [
