@@ -49,11 +49,21 @@ SERVER_EMAIL = env_config('SERVER_EMAIL', default='server@calmconnect.edu.ph')
 # --- SECURITY: Production settings ---
 # Set to False in production
 DEBUG = env_config('DJANGO_DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = env_config(
+# Get ALLOWED_HOSTS from environment or use default
+allowed_hosts = env_config(
     'DJANGO_ALLOWED_HOSTS',
     default='localhost,127.0.0.1,testserver,.up.railway.app,earnest-presence-production-5ca0.up.railway.app',
     cast=Csv()
 )
+
+# Ensure Railway domain is always included (in case env var doesn't include it)
+railway_domains = ['.up.railway.app', 'earnest-presence-production-5ca0.up.railway.app']
+for domain in railway_domains:
+    if domain not in allowed_hosts:
+        allowed_hosts.append(domain)
+
+ALLOWED_HOSTS = allowed_hosts
+print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 
 # DRF configuration to ensure browser session auth works for API endpoints
 REST_FRAMEWORK = {
