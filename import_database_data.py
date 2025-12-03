@@ -234,6 +234,9 @@ def import_database_data():
             return
 
         print(f"📝 Found {len(valid_statements)} SQL statements to execute")
+        if valid_statements:
+            print(f"📋 First statement: {valid_statements[0][:100]}...")
+            print(f"📋 Last statement: {valid_statements[-1][:100]}...")
 
         # Execute statements in batches
         executed = 0
