@@ -134,6 +134,7 @@ def fix_schema():
             existing_columns = [row[0] for row in cursor.fetchall()]
 
             missing_columns = {
+                'cancelled_at': 'TIMESTAMP WITH TIME ZONE',
                 'video_call_url': 'VARCHAR(500)',
                 'cancellation_token': 'VARCHAR(255)',
                 'cancellation_deadline': 'TIMESTAMP WITH TIME ZONE',
