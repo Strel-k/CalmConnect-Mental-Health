@@ -36,7 +36,7 @@ def convert_sqlite_to_postgres(sql_content):
         # SQLite uses different datetime format, but our data looks compatible
 
         # Remove table creation for sqlite_sequence (PostgreSQL handles this differently)
-        (r'CREATE TABLE sqlite_sequence.*?\);', '', re.DOTALL),
+        (r'CREATE TABLE sqlite_sequence.*?\);', ''),
 
         # Remove INSERT into sqlite_sequence
         (r'INSERT INTO sqlite_sequence VALUES.*;', ''),
@@ -54,10 +54,7 @@ def convert_sqlite_to_postgres(sql_content):
 
     result = sql_content
     for pattern, replacement in conversions:
-        if isinstance(pattern, str):
-            result = re.sub(pattern, replacement, result, flags=re.IGNORECASE | re.MULTILINE)
-        else:
-            result = pattern.sub(replacement, result)
+        result = re.sub(pattern, replacement, result, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
     return result
 
