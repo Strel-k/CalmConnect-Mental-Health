@@ -63,37 +63,63 @@ def create_superuser_remote():
                 print(f"   - {user.username} ({user.email})")
             return
 
-        # Create superuser
+        # Create superuser with minimal required fields
         username = input("Enter username for superuser [admin]: ").strip() or 'admin'
         email = input("Enter email for superuser [admin@calmconnect.edu.ph]: ").strip() or 'admin@calmconnect.edu.ph'
         password = input("Enter password for superuser [admin123!]: ").strip() or 'admin123!'
 
-        # Generate unique student_id
-        base_student_id = 'admin001'
-        student_id = base_student_id
-        counter = 1
-        while CustomUser.objects.filter(student_id=student_id).exists():
-            counter += 1
-            student_id = f'admin{counter:03d}'
+        # Try to create superuser with minimal fields first
+        try:
+            # Create basic user first
+            user = CustomUser.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                is_staff=True,
+                is_superuser=True
+            )
 
-        user = CustomUser.objects.create_superuser(
-            username=username,
-            email=email,
-            password=password,
-            full_name='Administrator',
-            age=0,
-            gender='Prefer not to say',
-            college='CBA',
-            program='Administration',
-            year_level='4',
-            student_id=student_id
-        )
+            # Set additional fields if they exist
+            try:
+                user.full_name = 'Administrator'
+                user.age = 0
+                user.gender = 'Prefer not to say'
+                user.college = 'CBA'
+                user.program = 'Administration'
+                user.year_level = '4'
+                user.student_id = 'admin001'
+                user.email_verified = True
+                user.save()
+            except Exception as field_error:
+                print(f"⚠️  Some additional fields couldn't be set: {field_error}")
+                print("Superuser created with basic fields only.")
+
+        except Exception as create_error:
+            print(f"❌ Error creating superuser: {create_error}")
+            print("Trying alternative approach...")
+
+            # Alternative: Use Django management command
+            from django.core.management import call_command
+            try:
+                call_command('createsuperuser', '--username', username, '--email', email, '--noinput')
+                # Set password separately
+                user = CustomUser.objects.get(username=username)
+                user.set_password(password)
+                user.save()
+                print("✅ Superuser created using management command!")
+            except Exception as cmd_error:
+                print(f"❌ Management command also failed: {cmd_error}")
+                return
 
         print("✅ Superuser created successfully!")
         print(f"   Username: {username}")
         print(f"   Email: {email}")
         print(f"   Password: {password}")
-        print(f"   Student ID: {student_id}")
+        try:
+            student_id = getattr(user, 'student_id', 'N/A')
+            print(f"   Student ID: {student_id}")
+        except:
+            print("   Student ID: N/A (basic user created)")
         print("\n🔐 Access admin panel at: /admin/")
 
     except Exception as e:
