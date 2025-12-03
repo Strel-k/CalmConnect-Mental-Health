@@ -38,21 +38,28 @@ def create_superuser_remote():
     print("📦 Running database migrations first...")
 
     try:
-        # Run specific missing migrations
-        print("🔧 Running specific missing migrations...")
+        # Run essential Django migrations first
+        print("🔧 Running essential Django migrations...")
         try:
-            # Try to run the password reset migration specifically
-            execute_from_command_line(['manage.py', 'migrate', 'mentalhealth', '0027'])
-            print("✅ Password reset migration completed!")
+            # Run auth migrations first (creates auth_user table)
+            execute_from_command_line(['manage.py', 'migrate', 'auth'])
+            print("✅ Auth migrations completed!")
         except Exception as e:
-            print(f"⚠️  Migration 0027 failed: {e}")
-            print("Trying to run all remaining migrations...")
-            try:
-                execute_from_command_line(['manage.py', 'migrate', '--fake-initial'])
-                print("✅ Remaining migrations completed with --fake-initial!")
-            except Exception as e2:
-                print(f"⚠️  All migrations failed: {e2}")
-                print("Continuing with superuser creation anyway...")
+            print(f"⚠️  Auth migrations failed: {e}")
+
+        try:
+            # Run sessions migrations
+            execute_from_command_line(['manage.py', 'migrate', 'sessions'])
+            print("✅ Sessions migrations completed!")
+        except Exception as e:
+            print(f"⚠️  Sessions migrations failed: {e}")
+
+        try:
+            # Run contenttypes migrations
+            execute_from_command_line(['manage.py', 'migrate', 'contenttypes'])
+            print("✅ Contenttypes migrations completed!")
+        except Exception as e:
+            print(f"⚠️  Contenttypes migrations failed: {e}")
 
         print("🔄 Creating superuser...")
         # Check if superuser already exists
