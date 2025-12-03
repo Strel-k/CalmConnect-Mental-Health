@@ -153,6 +153,40 @@ def fix_schema():
                     except Exception as e:
                         print(f"   ⚠️  Error adding {col_name}: {str(e)[:50]}")
 
+        # Fix mentalhealth_counselor table
+        if 'mentalhealth_counselor' in existing_tables:
+            print("🔧 Fixing mentalhealth_counselor table...")
+
+            cursor.execute("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'mentalhealth_counselor'
+                ORDER BY column_name
+            """)
+            existing_columns = [row[0] for row in cursor.fetchall()]
+
+            missing_columns = {
+                'email': 'VARCHAR(254)',
+                'unit': 'VARCHAR(100)',
+                'rank': 'VARCHAR(100)',
+                'is_active': 'BOOLEAN DEFAULT TRUE',
+                'bio': 'TEXT',
+                'image': 'VARCHAR(100)',
+                'available_days': 'JSONB DEFAULT \'[]\'',
+                'available_start_time': 'TIME',
+                'available_end_time': 'TIME',
+                'day_schedules': 'JSONB DEFAULT \'{}\'',
+                'user_id': 'INTEGER'
+            }
+
+            for col_name, col_type in missing_columns.items():
+                if col_name not in existing_columns:
+                    try:
+                        cursor.execute(f'ALTER TABLE mentalhealth_counselor ADD COLUMN IF NOT EXISTS {col_name} {col_type}')
+                        print(f"   ✅ Added column: {col_name}")
+                    except Exception as e:
+                        print(f"   ⚠️  Error adding {col_name}: {str(e)[:50]}")
+
         # Fix mentalhealth_dassresult table
         if 'mentalhealth_dassresult' in existing_tables:
             print("🔧 Fixing mentalhealth_dassresult table...")
