@@ -148,6 +148,18 @@ MIDDLEWARE = [
     'mentalhealth.middleware.ContentSecurityMiddleware',  # CSP headers
 ]
 
+# --- CSRF PROTECTION DISABLED FOR RAILWAY ---
+# Temporarily disable CSRF protection for Railway deployments
+# This resolves login/register/admin issues until frontend is updated
+if not DEBUG or os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_PROJECT_ID'):
+    print("WARNING: CSRF protection disabled for Railway deployment")
+    MIDDLEWARE.remove('django.middleware.csrf.CsrfViewMiddleware')
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = False
+else:
+    print("CSRF protection enabled for development")
+
 ROOT_URLCONF = 'calmconnect_backend.urls'
 
 TEMPLATES = [
