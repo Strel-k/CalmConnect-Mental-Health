@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Import SQLite database DATA into Railway PostgreSQL database
-Only imports INSERT statements - tables must already exist from Django migrations
+Import SQLite database TABLES into Railway PostgreSQL database
+Only creates table structures - does not import data
 """
 
 import os
@@ -199,7 +199,7 @@ def import_database_data():
             print(f"❌ ERROR during SQL statement parsing: {parse_error}")
             return
 
-        # Filter statements - only keep INSERT statements, skip CREATE TABLE and other DDL
+        # Filter statements - only keep CREATE TABLE statements, skip INSERT and other statements
         try:
             valid_statements = []
             for stmt in statements:
@@ -207,13 +207,13 @@ def import_database_data():
                 if not stmt:
                     continue
 
-                # Skip DDL statements (Data Definition Language) - tables already exist from migrations
+                # Skip non-table creation statements
                 skip_patterns = [
-                    'CREATE TABLE',
                     'CREATE UNIQUE INDEX',
                     'CREATE INDEX',
                     'ALTER TABLE',
                     'DROP TABLE',
+                    'INSERT INTO',
                     'INSERT INTO sqlite_sequence',
                     'PRAGMA',
                     'BEGIN TRANSACTION',
@@ -226,8 +226,8 @@ def import_database_data():
                         should_skip = True
                         break
 
-                # Only keep INSERT statements
-                if not should_skip and stmt.upper().startswith('INSERT INTO'):
+                # Only keep CREATE TABLE statements
+                if not should_skip and stmt.upper().startswith('CREATE TABLE'):
                     valid_statements.append(stmt)
         except Exception as filter_error:
             print(f"❌ ERROR during statement filtering: {filter_error}")
@@ -241,6 +241,23 @@ def import_database_data():
 
         for i, statement in enumerate(valid_statements):
             try:
+                # Skip CREATE TABLE statements for tables that already exist
+                if statement.upper().startswith('CREATE TABLE') and 'IF NOT EXISTS' not in statement.upper():
+                    try:
+                        # Extract table name more safely
+                        after_create = statement.split('CREATE TABLE', 1)[1].strip()
+                        table_name = after_create.split('(')[0].split()[0].strip().strip('"').strip('`')
+                        # Check if table exists
+                        cursor.execute("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = %s)", (table_name,))
+                        exists = cursor.fetchone()[0]
+                        if exists:
+                            print(f"⏭️  Table {table_name} already exists, skipping...")
+                            continue
+                    except (IndexError, ValueError):
+                        # If we can't parse the table name, just execute the statement
+                        print(f"⚠️  Could not parse table name from: {statement[:50]}... proceeding anyway")
+                        pass
+
                 cursor.execute(statement)
                 executed += 1
 
