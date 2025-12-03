@@ -38,21 +38,8 @@ def create_superuser_remote():
     print("📦 Running database migrations first...")
 
     try:
-        # Run migrations with better error handling
-        print("Running: python manage.py migrate")
-        try:
-            execute_from_command_line(['manage.py', 'migrate'])
-            print("✅ Migrations completed successfully!")
-        except Exception as migrate_error:
-            print(f"⚠️  Migration error: {migrate_error}")
-            print("Trying with --fake-initial...")
-            try:
-                execute_from_command_line(['manage.py', 'migrate', '--fake-initial'])
-                print("✅ Migrations completed with --fake-initial!")
-            except Exception as fake_error:
-                print(f"❌ Migration failed even with --fake-initial: {fake_error}")
-                print("Continuing anyway - database might already be migrated...")
-
+        # Skip migrations - assume database is already set up
+        print("⏭️  Skipping migrations (assuming database is already migrated)")
         print("🔄 Creating superuser...")
         # Check if superuser already exists
         superusers = CustomUser.objects.filter(is_superuser=True)
