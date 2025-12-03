@@ -294,22 +294,35 @@ def import_database_data():
         print(f"✅ Successfully executed: {executed} statements")
         print(f"⚠️  Errors encountered: {errors} statements")
 
-        # Verify some key tables
+        # Verify what tables were created
         try:
-            cursor.execute("SELECT COUNT(*) FROM custom_user")
-            user_count = cursor.fetchone()[0]
-            print(f"👥 Users imported: {user_count}")
+            # List all tables in the database
+            cursor.execute("""
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                ORDER BY table_name
+            """)
+            tables = cursor.fetchall()
+            table_names = [row[0] for row in tables]
 
-            cursor.execute("SELECT COUNT(*) FROM mentalhealth_appointment")
-            appt_count = cursor.fetchone()[0]
-            print(f"📅 Appointments imported: {appt_count}")
+            print(f"📋 Tables in database: {len(table_names)}")
+            for table in table_names[:10]:  # Show first 10
+                print(f"   - {table}")
+            if len(table_names) > 10:
+                print(f"   ... and {len(table_names) - 10} more")
 
-            cursor.execute("SELECT COUNT(*) FROM mentalhealth_dassresult")
-            dass_count = cursor.fetchone()[0]
-            print(f"📊 DASS results imported: {dass_count}")
+            # Check for key application tables
+            key_tables = ['custom_user', 'mentalhealth_appointment', 'mentalhealth_dassresult']
+            found_tables = [t for t in key_tables if t in table_names]
+
+            if found_tables:
+                print(f"✅ Key tables found: {', '.join(found_tables)}")
+            else:
+                print("⚠️  No key application tables found")
 
         except Exception as e:
-            print(f"⚠️  Could not verify import: {e}")
+            print(f"⚠️  Could not verify tables: {e}")
 
         cursor.close()
         conn.close()
