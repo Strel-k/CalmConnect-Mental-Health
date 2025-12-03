@@ -32,8 +32,29 @@ def convert_sqlite_to_postgres(sql_content):
         # Handle SQLite's replace() function calls
         (r"replace\('([^']*)',\s*'([^']*)',\s*char\(10\)\)", r"replace(\1, \2, '\n')"),
 
-        # Convert datetime format if needed
-        # SQLite uses different datetime format, but our data looks compatible
+        # Convert datetime to timestamp (PostgreSQL doesn't have datetime type)
+        (r'\bdatetime\b', 'timestamp'),
+
+        # Remove unsigned from integers (PostgreSQL doesn't support unsigned)
+        (r'\binteger unsigned\b', 'integer'),
+        (r'\bsmallint unsigned\b', 'smallint'),
+
+        # Convert SQLite's "datetime" fields to "timestamp"
+        (r'"date_taken"\s+datetime', '"date_taken" timestamp'),
+        (r'"applied"\s+datetime', '"applied" timestamp'),
+        (r'"timestamp"\s+datetime', '"timestamp" timestamp'),
+        (r'"created_at"\s+datetime', '"created_at" timestamp'),
+        (r'"updated_at"\s+datetime', '"updated_at" timestamp'),
+        (r'"submitted_at"\s+datetime', '"submitted_at" timestamp'),
+        (r'"scheduled_start"\s+datetime', '"scheduled_start" timestamp'),
+        (r'"scheduled_end"\s+datetime', '"scheduled_end" timestamp'),
+        (r'"joined_at"\s+datetime', '"joined_at" timestamp'),
+        (r'"left_at"\s+datetime', '"left_at" timestamp'),
+        (r'"expires_at"\s+datetime', '"expires_at" timestamp'),
+        (r'"approved_denied_at"\s+datetime', '"approved_denied_at" timestamp'),
+        (r'"cancelled_at"\s+datetime', '"cancelled_at" timestamp'),
+        (r'"date"\s+datetime', '"date" date'),
+        (r'"time"\s+datetime', '"time" time'),
 
         # Remove table creation for sqlite_sequence (PostgreSQL handles this differently)
         (r'CREATE TABLE sqlite_sequence.*?\);', ''),
