@@ -202,10 +202,16 @@ def import_database_data():
         # Filter statements - only keep CREATE TABLE statements, skip INSERT and other statements
         try:
             valid_statements = []
+            skipped_insert = 0
+            skipped_other = 0
+
             for stmt in statements:
                 stmt = stmt.strip()
                 if not stmt:
                     continue
+
+                # Debug: show what we're processing
+                stmt_type = stmt.upper()[:20]
 
                 # Skip non-table creation statements
                 skip_patterns = [
@@ -224,11 +230,20 @@ def import_database_data():
                 for pattern in skip_patterns:
                     if pattern.lower() in stmt.lower():
                         should_skip = True
+                        if 'INSERT INTO' in pattern:
+                            skipped_insert += 1
+                        else:
+                            skipped_other += 1
                         break
 
                 # Only keep CREATE TABLE statements
                 if not should_skip and stmt.upper().startswith('CREATE TABLE'):
                     valid_statements.append(stmt)
+                elif not should_skip:
+                    print(f"⚠️  Unexpected statement type: {stmt_type}...")
+
+            print(f"📊 Filtered: {len(valid_statements)} CREATE TABLE, {skipped_insert} INSERT, {skipped_other} other statements")
+
         except Exception as filter_error:
             print(f"❌ ERROR during statement filtering: {filter_error}")
             return
