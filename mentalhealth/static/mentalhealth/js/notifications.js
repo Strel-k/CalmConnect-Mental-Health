@@ -20,14 +20,17 @@ class NotificationManager {
     
     init() {
         this.createNotificationContainer();
-        this.connectWebSocket();
+        // Remove immediate WebSocket connection - will connect lazily
         this.bindEvents();
         this.requestNotificationPermission();
-        
-        // Load initial notifications
+
+        // Load initial notifications (without WebSocket)
         this.loadNotifications();
-        
-        console.log('🔔 Notification system initialized');
+
+        console.log('🔔 Notification system initialized (lazy loading)');
+
+        // Set up lazy connection triggers
+        this.setupLazyConnection();
     }
     
     createNotificationContainer() {
@@ -1925,20 +1928,28 @@ class NotificationManager {
     }
     
     markAsRead(notificationId) {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify({
-                type: 'mark_read',
-                notification_id: notificationId
-            }));
-        }
+        this.ensureConnection();
+        // Wait a bit for connection to establish, then send
+        setTimeout(() => {
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                this.socket.send(JSON.stringify({
+                    type: 'mark_read',
+                    notification_id: notificationId
+                }));
+            }
+        }, 500);
     }
-    
+
     markAllAsRead() {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify({
-                type: 'mark_all_read'
-            }));
-        }
+        this.ensureConnection();
+        // Wait a bit for connection to establish, then send
+        setTimeout(() => {
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                this.socket.send(JSON.stringify({
+                    type: 'mark_all_read'
+                }));
+            }
+        }, 500);
     }
     
     requestNotificationPermission() {
@@ -1956,15 +1967,53 @@ class NotificationManager {
         }
     }
     
+    setupLazyConnection() {
+        // Connect WebSocket after user interaction to avoid Railway cold starts
+        const connectTriggers = [
+            // Connect after 10 seconds of inactivity (user is engaged)
+            () => setTimeout(() => this.ensureConnection(), 10000),
+
+            // Connect immediately on any user interaction
+            () => {
+                let connected = false;
+                const connectOnce = () => {
+                    if (!connected) {
+                        connected = true;
+                        this.ensureConnection();
+                    }
+                };
+
+                // Mouse/touch events
+                document.addEventListener('click', connectOnce, { once: true });
+                document.addEventListener('touchstart', connectOnce, { once: true });
+                document.addEventListener('mousemove', connectOnce, { once: true });
+                document.addEventListener('keydown', connectOnce, { once: true });
+                document.addEventListener('scroll', connectOnce, { once: true });
+            }
+        ];
+
+        // Execute all connection triggers
+        connectTriggers.forEach(trigger => trigger());
+    }
+
+    ensureConnection() {
+        if (!this.isConnected && !this.socket) {
+            console.log('🔌 Lazy connecting to WebSocket...');
+            this.connectWebSocket();
+        }
+    }
+
     bindEvents() {
         // Handle page visibility changes
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && this.unreadCount > 0) {
                 // User returned to page, refresh notifications
                 this.loadNotifications();
+                // Also ensure WebSocket connection
+                this.ensureConnection();
             }
         });
-        
+
         // Handle beforeunload to close WebSocket
         window.addEventListener('beforeunload', () => {
             if (this.socket) {
@@ -2009,11 +2058,15 @@ class NotificationManager {
     
     // Public API methods
     sendTestNotification() {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify({
-                type: 'test_notification'
-            }));
-        }
+        this.ensureConnection();
+        // Wait for connection to establish, then send
+        setTimeout(() => {
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                this.socket.send(JSON.stringify({
+                    type: 'test_notification'
+                }));
+            }
+        }, 500);
     }
     
     disconnect() {
