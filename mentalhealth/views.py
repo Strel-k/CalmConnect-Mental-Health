@@ -24,6 +24,14 @@ from django.utils.crypto import get_random_string
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
+
+# CSRF exemptions for Railway deployment issues
+def csrf_exempt_if_railway(view_func):
+    """Exempt view from CSRF if running on Railway"""
+    import os
+    if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_PROJECT_ID'):
+        return csrf_exempt(view_func)
+    return view_func
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -325,6 +333,7 @@ def home(request):
     return render(request, 'mentalhealth/login.html')
 
 
+@csrf_exempt_if_railway
 def register(request):
     if request.method == 'POST':
         print(f"DEBUG: POST data received: {request.POST}")
@@ -570,6 +579,7 @@ def validate_fields(request):
         return JsonResponse({'error': str(e)}, status=400)
 
 
+@csrf_exempt_if_railway
 def login_view(request):
     # Initialize error_message at the start
     error_message = None

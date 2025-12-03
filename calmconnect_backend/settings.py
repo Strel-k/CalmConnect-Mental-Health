@@ -75,13 +75,24 @@ REST_FRAMEWORK = {
     ],
 }
 
-# Allow localhost origins for CSRF in development
+# CSRF trusted origins - include Railway domains
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://localhost:8000',
     'http://127.0.0.1',
     'http://127.0.0.1:8000',
+    'https://calmn-connect.up.railway.app',
+    'https://earnest-presence-production-5ca0.up.railway.app',
 ]
+
+# Add Railway domains dynamically if not already included
+railway_csrf_domains = [
+    'https://calmn-connect.up.railway.app',
+    'https://earnest-presence-production-5ca0.up.railway.app',
+]
+for domain in railway_csrf_domains:
+    if domain not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(domain)
 
 # --- SECURITY: HTTPS and cookies ---
 # Enable security settings in production
@@ -148,17 +159,9 @@ MIDDLEWARE = [
     'mentalhealth.middleware.ContentSecurityMiddleware',  # CSP headers
 ]
 
-# --- CSRF PROTECTION DISABLED FOR RAILWAY ---
-# Temporarily disable CSRF protection for Railway deployments
-# This resolves login/register/admin issues until frontend is updated
-if not DEBUG or os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_PROJECT_ID'):
-    print("WARNING: CSRF protection disabled for Railway deployment")
-    MIDDLEWARE.remove('django.middleware.csrf.CsrfViewMiddleware')
-    CSRF_COOKIE_SECURE = False
-    SESSION_COOKIE_SECURE = False
-    SECURE_SSL_REDIRECT = False
-else:
-    print("CSRF protection enabled for development")
+# CSRF protection is enabled for all environments
+# Railway domains are added to CSRF_TRUSTED_ORIGINS above
+print("CSRF protection enabled with Railway domains in trusted origins")
 
 ROOT_URLCONF = 'calmconnect_backend.urls'
 
