@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Import SQLite database TABLES into Railway PostgreSQL database
-Only creates table structures - does not import data
+Clean up Railway PostgreSQL database and prepare for proper Django migrations
+Drops all tables created from SQLite dump so Django can create proper schema
 """
 
 import os
@@ -79,8 +79,8 @@ def convert_sqlite_to_postgres(sql_content):
 
     return result
 
-def import_database_data():
-    """Import SQLite data into Railway PostgreSQL database"""
+def cleanup_database():
+    """Clean up Railway PostgreSQL database by dropping all tables"""
 
     # Get database URL from environment
     database_url = os.environ.get('DATABASE_URL')
@@ -92,52 +92,35 @@ def import_database_data():
     print(f"🔗 Connecting to database: {database_url[:50]}...")
 
     try:
-        # Parse DATABASE_URL
+        # Parse DATABASE_URL (same parsing logic as before)
         if not database_url.startswith('postgresql://'):
             print("❌ ERROR: DATABASE_URL must be a PostgreSQL URL")
-            print(f"Got: {database_url[:50]}...")
             return
 
-        try:
-            # Remove postgresql://
-            url = database_url[13:]
-
-            # Split into user:pass@host:port/dbname
-            if '@' not in url:
-                print("❌ ERROR: DATABASE_URL missing '@' separator")
-                return
-
-            user_pass, host_db = url.split('@', 1)
-
-            if '/' not in host_db:
-                print("❌ ERROR: DATABASE_URL missing '/' separator for database name")
-                return
-
-            host_port, dbname = host_db.split('/', 1)
-
-            # Parse user and password
-            if ':' in user_pass:
-                user, password = user_pass.split(':', 1)
-            else:
-                user = user_pass
-                password = ''
-
-            # Parse host and port
-            if ':' in host_port:
-                host, port_str = host_port.split(':', 1)
-                try:
-                    port = int(port_str)
-                except ValueError:
-                    print(f"❌ ERROR: Invalid port number: {port_str}")
-                    return
-            else:
-                host = host_port
-                port = 5432
-
-        except Exception as parse_error:
-            print(f"❌ ERROR: Failed to parse DATABASE_URL: {parse_error}")
-            print("Expected format: postgresql://user:password@host:port/database")
+        url = database_url[13:]
+        if '@' not in url:
+            print("❌ ERROR: DATABASE_URL missing '@' separator")
             return
+
+        user_pass, host_db = url.split('@', 1)
+        if '/' not in host_db:
+            print("❌ ERROR: DATABASE_URL missing '/' separator for database name")
+            return
+
+        host_port, dbname = host_db.split('/', 1)
+
+        if ':' in user_pass:
+            user, password = user_pass.split(':', 1)
+        else:
+            user = user_pass
+            password = ''
+
+        if ':' in host_port:
+            host, port_str = host_port.split(':', 1)
+            port = int(port_str)
+        else:
+            host = host_port
+            port = 5432
 
         # Connect to database
         conn = psycopg2.connect(
@@ -152,192 +135,59 @@ def import_database_data():
 
         print("✅ Connected to database successfully!")
 
-        # Read the SQLite dump file
-        dump_file = 'cleaned_dump2.sql'
-        if not os.path.exists(dump_file):
-            print(f"❌ ERROR: {dump_file} not found!")
-            print("Make sure the SQLite dump file is in the current directory")
+        # Get all tables in public schema
+        cursor.execute("""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        """)
+
+        tables = cursor.fetchall()
+        table_names = [row[0] for row in tables]
+
+        if not table_names:
+            print("ℹ️  No tables found in database - already clean!")
+            cursor.close()
+            conn.close()
             return
 
-        print(f"📖 Reading {dump_file}...")
-        with open(dump_file, 'r', encoding='utf-8') as f:
-            sql_content = f.read()
+        print(f"🗑️  Found {len(table_names)} tables to drop:")
+        for table in table_names:
+            print(f"   - {table}")
 
-        print("🔄 Converting SQLite syntax to PostgreSQL...")
-        try:
-            postgres_sql = convert_sqlite_to_postgres(sql_content)
-        except Exception as conv_error:
-            print(f"❌ ERROR during SQL conversion: {conv_error}")
-            return
-
-        # Split into individual statements
-        try:
-            statements = []
-            current_statement = []
-            in_string = False
-            string_char = None
-
-            for char in postgres_sql:
-                if not in_string:
-                    if char in ("'", '"'):
-                        in_string = True
-                        string_char = char
-                    elif char == ';':
-                        if current_statement:
-                            statement = ''.join(current_statement).strip()
-                            if statement and not statement.startswith('--'):
-                                statements.append(statement + ';')
-                            current_statement = []
-                        continue
-                else:
-                    if char == string_char:
-                        in_string = False
-                        string_char = None
-
-                current_statement.append(char)
-        except Exception as parse_error:
-            print(f"❌ ERROR during SQL statement parsing: {parse_error}")
-            return
-
-        # Filter statements - only keep CREATE TABLE statements, skip INSERT and other statements
-        try:
-            valid_statements = []
-            skipped_insert = 0
-            skipped_other = 0
-
-            for stmt in statements:
-                stmt = stmt.strip()
-                if not stmt:
-                    continue
-
-                # Debug: show what we're processing
-                stmt_type = stmt.upper()[:20]
-
-                # Skip non-table creation statements
-                skip_patterns = [
-                    'CREATE UNIQUE INDEX',
-                    'CREATE INDEX',
-                    'ALTER TABLE',
-                    'DROP TABLE',
-                    'INSERT INTO',
-                    'INSERT INTO sqlite_sequence',
-                    'PRAGMA',
-                    'BEGIN TRANSACTION',
-                    'COMMIT'
-                ]
-
-                should_skip = False
-                for pattern in skip_patterns:
-                    if pattern.lower() in stmt.lower():
-                        should_skip = True
-                        if 'INSERT INTO' in pattern:
-                            skipped_insert += 1
-                        else:
-                            skipped_other += 1
-                        break
-
-                # Only keep CREATE TABLE statements
-                if not should_skip and stmt.upper().startswith('CREATE TABLE'):
-                    valid_statements.append(stmt)
-                elif not should_skip:
-                    print(f"⚠️  Unexpected statement type: {stmt_type}...")
-
-            print(f"📊 Filtered: {len(valid_statements)} CREATE TABLE, {skipped_insert} INSERT, {skipped_other} other statements")
-
-        except Exception as filter_error:
-            print(f"❌ ERROR during statement filtering: {filter_error}")
-            return
-
-        print(f"📝 Found {len(valid_statements)} SQL statements to execute")
-        if valid_statements:
-            print(f"📋 First statement: {valid_statements[0][:100]}...")
-            print(f"📋 Last statement: {valid_statements[-1][:100]}...")
-
-        # Execute statements in batches
-        executed = 0
-        errors = 0
-
-        for i, statement in enumerate(valid_statements):
+        # Drop all tables
+        dropped = 0
+        for table_name in table_names:
             try:
-                # Skip CREATE TABLE statements for tables that already exist
-                if statement.upper().startswith('CREATE TABLE') and 'IF NOT EXISTS' not in statement.upper():
-                    try:
-                        # Extract table name more safely
-                        after_create = statement.split('CREATE TABLE', 1)[1].strip()
-                        table_name = after_create.split('(')[0].split()[0].strip().strip('"').strip('`')
-                        # Check if table exists
-                        cursor.execute("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = %s)", (table_name,))
-                        exists = cursor.fetchone()[0]
-                        if exists:
-                            print(f"⏭️  Table {table_name} already exists, skipping...")
-                            continue
-                    except (IndexError, ValueError):
-                        # If we can't parse the table name, just execute the statement
-                        print(f"⚠️  Could not parse table name from: {statement[:50]}... proceeding anyway")
-                        pass
-
-                cursor.execute(statement)
-                executed += 1
-
-                if (i + 1) % 50 == 0:
-                    print(f"✅ Executed {i + 1}/{len(valid_statements)} statements")
-
+                cursor.execute(f'DROP TABLE IF EXISTS "{table_name}" CASCADE')
+                dropped += 1
+                print(f"✅ Dropped table: {table_name}")
             except Exception as e:
-                errors += 1
-                error_msg = str(e)[:100]
-                print(f"⚠️  Error executing statement {i + 1}: {error_msg}")
+                print(f"⚠️  Error dropping {table_name}: {str(e)[:50]}")
 
-                # Continue with next statement
-                continue
+        print(f"\n🧹 Cleanup completed!")
+        print(f"✅ Successfully dropped: {dropped} tables")
 
-        print("\n🎉 Import completed!")
-        print(f"✅ Successfully executed: {executed} statements")
-        print(f"⚠️  Errors encountered: {errors} statements")
+        # Verify cleanup
+        cursor.execute("""
+            SELECT COUNT(*) FROM information_schema.tables
+            WHERE table_schema = 'public'
+        """)
+        remaining = cursor.fetchone()[0]
 
-        # Verify what tables were created
-        try:
-            # List all tables in the database
-            cursor.execute("""
-                SELECT table_name
-                FROM information_schema.tables
-                WHERE table_schema = 'public'
-                ORDER BY table_name
-            """)
-            tables = cursor.fetchall()
-            table_names = [row[0] for row in tables]
-
-            print(f"📋 Tables in database: {len(table_names)}")
-            for table in table_names[:10]:  # Show first 10
-                print(f"   - {table}")
-            if len(table_names) > 10:
-                print(f"   ... and {len(table_names) - 10} more")
-
-            # Check for key application tables
-            key_tables = ['custom_user', 'mentalhealth_appointment', 'mentalhealth_dassresult']
-            found_tables = [t for t in key_tables if t in table_names]
-
-            if found_tables:
-                print(f"✅ Key tables found: {', '.join(found_tables)}")
-            else:
-                print("⚠️  No key application tables found")
-
-        except Exception as e:
-            print(f"⚠️  Could not verify tables: {e}")
+        if remaining == 0:
+            print("✅ Database is now clean - ready for Django migrations!")
+        else:
+            print(f"⚠️  {remaining} tables still remain")
 
         cursor.close()
         conn.close()
 
-        print("\n🎯 Database import completed!")
-        print("Your Railway database now contains all your application data!")
-
     except Exception as e:
         print(f"❌ Database error: {e}")
-        print("\n💡 Make sure:")
-        print("1. DATABASE_URL is correct")
-        print("2. Railway database is accessible")
-        print("3. cleaned_dump2.sql is in the current directory")
 
 if __name__ == '__main__':
-    print("🚀 CalmConnect Database Import Tool")
-    print("=" * 45)
-    import_database_data()
+    print("🧹 CalmConnect Database Cleanup Tool")
+    print("=" * 40)
+    cleanup_database()
