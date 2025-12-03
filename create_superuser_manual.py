@@ -90,6 +90,33 @@ def create_superuser_manual():
                 print("❌ Cannot proceed without auth_user table")
                 return
 
+        # Create mentalhealth_customuser table if it doesn't exist
+        print("🔧 Creating mentalhealth_customuser table...")
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS mentalhealth_customuser (
+                    user_ptr_id INTEGER PRIMARY KEY REFERENCES auth_user(id) ON DELETE CASCADE,
+                    full_name VARCHAR(100) NOT NULL DEFAULT '',
+                    age INTEGER NOT NULL DEFAULT 0,
+                    gender VARCHAR(20) NOT NULL DEFAULT 'Prefer not to say',
+                    college VARCHAR(10) NOT NULL DEFAULT 'CBA',
+                    program VARCHAR(100) NOT NULL DEFAULT '',
+                    year_level VARCHAR(5) NOT NULL DEFAULT '1',
+                    student_id VARCHAR(20) NOT NULL DEFAULT '',
+                    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+                    verification_token VARCHAR(64) DEFAULT NULL,
+                    password_reset_token VARCHAR(64) DEFAULT NULL,
+                    password_reset_expires TIMESTAMP WITH TIME ZONE NULL,
+                    profile_picture VARCHAR(100) DEFAULT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+                )
+            """)
+            print("✅ Custom user table created!")
+        except Exception as custom_table_error:
+            print(f"⚠️  Custom user table creation failed: {custom_table_error}")
+            print("Continuing anyway - basic auth user will work...")
+
         # Check if superuser already exists
         cursor.execute("SELECT username, email FROM auth_user WHERE is_superuser = TRUE")
         existing = cursor.fetchall()
