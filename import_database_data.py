@@ -208,13 +208,20 @@ def import_database_data():
             try:
                 # Skip CREATE TABLE statements for tables that already exist
                 if statement.upper().startswith('CREATE TABLE') and 'IF NOT EXISTS' not in statement.upper():
-                    table_name = statement.split('CREATE TABLE')[1].split('(')[0].strip().strip('"')
-                    # Check if table exists
-                    cursor.execute("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = %s)", (table_name,))
-                    exists = cursor.fetchone()[0]
-                    if exists:
-                        print(f"⏭️  Table {table_name} already exists, skipping...")
-                        continue
+                    try:
+                        # Extract table name more safely
+                        after_create = statement.split('CREATE TABLE', 1)[1].strip()
+                        table_name = after_create.split('(')[0].split()[0].strip().strip('"').strip('`')
+                        # Check if table exists
+                        cursor.execute("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = %s)", (table_name,))
+                        exists = cursor.fetchone()[0]
+                        if exists:
+                            print(f"⏭️  Table {table_name} already exists, skipping...")
+                            continue
+                    except (IndexError, ValueError):
+                        # If we can't parse the table name, just execute the statement
+                        print(f"⚠️  Could not parse table name from: {statement[:50]}... proceeding anyway")
+                        pass
 
                 cursor.execute(statement)
                 executed += 1
