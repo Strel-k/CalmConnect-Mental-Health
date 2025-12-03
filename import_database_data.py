@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Clean up Railway PostgreSQL database and prepare for proper Django migrations
-Drops all tables created from SQLite dump so Django can create proper schema
+Export data from current database, reset, then re-import after migrations
 """
 
 import os
@@ -78,6 +77,120 @@ def convert_sqlite_to_postgres(sql_content):
         result = re.sub(pattern, replacement, result, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
     return result
+
+def export_current_data():
+    """Export current data before cleanup"""
+    print("📤 Exporting current data...")
+
+    # Get database URL from environment
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        print("❌ ERROR: DATABASE_URL environment variable not set!")
+        return
+
+    try:
+        # Parse DATABASE_URL (same parsing logic)
+        if not database_url.startswith('postgresql://'):
+            print("❌ ERROR: DATABASE_URL must be a PostgreSQL URL")
+            return
+
+        url = database_url[13:]
+        if '@' not in url:
+            print("❌ ERROR: DATABASE_URL missing '@' separator")
+            return
+
+        user_pass, host_db = url.split('@', 1)
+        if '/' not in host_db:
+            print("❌ ERROR: DATABASE_URL missing '/' separator for database name")
+            return
+
+        host_port, dbname = host_db.split('/', 1)
+
+        if ':' in user_pass:
+            user, password = user_pass.split(':', 1)
+        else:
+            user = user_pass
+            password = ''
+
+        if ':' in host_port:
+            host, port_str = host_port.split(':', 1)
+            port = int(port_str)
+        else:
+            host = host_port
+            port = 5432
+
+        # Connect to database
+        conn = psycopg2.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            dbname=dbname
+        )
+        conn.autocommit = True
+        cursor = conn.cursor()
+
+        print("✅ Connected to database successfully!")
+
+        # Export data from key tables
+        export_data = {}
+
+        tables_to_export = [
+            'custom_user',
+            'mentalhealth_counselor',
+            'mentalhealth_appointment',
+            'mentalhealth_dassresult',
+            'mentalhealth_report',
+            'mentalhealth_notification'
+        ]
+
+        for table in tables_to_export:
+            try:
+                cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                count = cursor.fetchone()[0]
+                print(f"📊 {table}: {count} records")
+
+                if count > 0:
+                    # Get column names
+                    cursor.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table}' ORDER BY ordinal_position")
+                    columns = [row[0] for row in cursor.fetchall()]
+
+                    # Get all data
+                    cursor.execute(f"SELECT * FROM {table}")
+                    rows = cursor.fetchall()
+
+                    export_data[table] = {
+                        'columns': columns,
+                        'data': rows
+                    }
+                    print(f"✅ Exported {count} records from {table}")
+                else:
+                    print(f"⏭️  {table} is empty, skipping")
+
+            except Exception as e:
+                print(f"⚠️  Error exporting {table}: {str(e)[:50]}")
+
+        # Save to file
+        import json
+        with open('exported_data.json', 'w', encoding='utf-8') as f:
+            # Convert to JSON-serializable format
+            json_data = {}
+            for table, table_data in export_data.items():
+                json_data[table] = {
+                    'columns': table_data['columns'],
+                    'data': [list(row) for row in table_data['data']]  # Convert tuples to lists
+                }
+            json.dump(json_data, f, indent=2, default=str)
+
+        print("💾 Data exported to exported_data.json")
+        cursor.close()
+        conn.close()
+
+        return export_data
+
+    except Exception as e:
+        print(f"❌ Export error: {e}")
+
 
 def cleanup_database():
     """Clean up Railway PostgreSQL database by dropping all tables"""
@@ -221,6 +334,22 @@ def cleanup_database():
         print(f"❌ Database error: {e}")
 
 if __name__ == '__main__':
-    print("🧹 CalmConnect Database Cleanup Tool")
-    print("=" * 40)
+    print("💾 CalmConnect Data Export & Cleanup Tool")
+    print("=" * 45)
+
+    # First export data
+    print("Step 1: Exporting current data...")
+    export_current_data()
+
+    print("\n" + "="*50)
+
+    # Then cleanup
+    print("Step 2: Cleaning up database...")
     cleanup_database()
+
+    print("\n" + "="*50)
+    print("✅ Process complete!")
+    print("📋 Next steps:")
+    print("1. Reset Railway database through dashboard")
+    print("2. Redeploy to run migrations")
+    print("3. Run data import script to restore your data")
