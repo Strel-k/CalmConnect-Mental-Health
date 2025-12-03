@@ -15,41 +15,70 @@ from django.contrib.auth import get_user_model
 from mentalhealth.models import CustomUser
 
 def create_superuser():
-    """Create a superuser account"""
+    """Create a custom superuser account"""
 
-    print("👤 Creating superuser account...")
+    print("👤 Creating custom superuser account...")
+    print("Please provide the following information:")
 
-    # Check if superuser already exists
+    # Get user input
+    username = input("Username: ").strip()
+    if not username:
+        print("❌ Username is required")
+        return
+
+    email = input("Email: ").strip()
+    if not email:
+        print("❌ Email is required")
+        return
+
+    password = input("Password: ").strip()
+    if not password:
+        print("❌ Password is required")
+        return
+
+    full_name = input("Full Name: ").strip()
+    student_id = input("Student ID (optional): ").strip() or f"ADMIN-{username.upper()}"
+    college = input("College (optional): ").strip() or "CBA"
+    program = input("Program (optional): ").strip() or "Administration"
+    year_level = input("Year Level (optional): ").strip() or "4"
+    age_input = input("Age (optional): ").strip()
+    age = int(age_input) if age_input.isdigit() else 25
+    gender = input("Gender (optional): ").strip() or "Prefer not to say"
+
+    # Check if user already exists
     try:
-        existing_superuser = CustomUser.objects.filter(is_superuser=True).first()
-        if existing_superuser:
-            print(f"✅ Superuser already exists: {existing_superuser.username}")
-            print(f"   Email: {existing_superuser.email}")
+        existing_user = CustomUser.objects.filter(username=username).first()
+        if existing_user:
+            print(f"❌ User with username '{username}' already exists")
+            return
+
+        existing_email = CustomUser.objects.filter(email=email).first()
+        if existing_email:
+            print(f"❌ User with email '{email}' already exists")
             return
     except Exception as e:
-        print(f"⚠️  Error checking existing superusers: {e}")
+        print(f"⚠️  Error checking existing users: {e}")
 
     # Create superuser
     try:
         superuser = CustomUser.objects.create_superuser(
-            username='admin',
-            email='admin@calmconnect.com',
-            password='admin123',
-            full_name='System Administrator',
-            student_id='ADMIN001',
-            college='CBA',
-            program='Administration',
-            year_level='4',
-            age=25,
-            gender='Prefer not to say'
+            username=username,
+            email=email,
+            password=password,
+            full_name=full_name,
+            student_id=student_id,
+            college=college,
+            program=program,
+            year_level=year_level,
+            age=age,
+            gender=gender
         )
 
-        print("✅ Superuser created successfully!")
+        print("\n✅ Superuser created successfully!")
         print(f"   Username: {superuser.username}")
         print(f"   Email: {superuser.email}")
-        print(f"   Password: admin123")
+        print(f"   Full Name: {superuser.full_name}")
         print("   ⚠️  Remember to change the password after first login!")
-
     except Exception as e:
         print(f"❌ Error creating superuser: {e}")
 
@@ -59,27 +88,27 @@ def create_superuser():
 
             # Create user manually
             user = CustomUser(
-                username='admin',
-                email='admin@calmconnect.com',
-                full_name='System Administrator',
-                student_id='ADMIN001',
-                college='CBA',
-                program='Administration',
-                year_level='4',
-                age=25,
-                gender='Prefer not to say',
+                username=username,
+                email=email,
+                full_name=full_name,
+                student_id=student_id,
+                college=college,
+                program=program,
+                year_level=year_level,
+                age=age,
+                gender=gender,
                 is_staff=True,
                 is_superuser=True,
                 is_active=True,
                 email_verified=True
             )
-            user.set_password('admin123')
+            user.set_password(password)
             user.save()
 
-            print("✅ Superuser created with alternative method!")
+            print("\n✅ Superuser created with alternative method!")
             print(f"   Username: {user.username}")
             print(f"   Email: {user.email}")
-            print(f"   Password: admin123")
+            print(f"   Full Name: {user.full_name}")
 
         except Exception as e2:
             print(f"❌ Alternative method also failed: {e2}")
