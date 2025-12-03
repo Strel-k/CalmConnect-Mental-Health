@@ -156,15 +156,48 @@ def cleanup_database():
         for table in table_names:
             print(f"   - {table}")
 
-        # Drop all tables
+        # Drop all tables with CASCADE to handle dependencies
         dropped = 0
+        errors = 0
+
+        # First, disable all constraints and triggers
+        try:
+            cursor.execute("""
+                SELECT 'ALTER TABLE ' || schemaname || '."' || tablename || '" DISABLE TRIGGER ALL;'
+                FROM pg_tables
+                WHERE schemaname = 'public'
+            """)
+            trigger_commands = cursor.fetchall()
+            for cmd in trigger_commands:
+                try:
+                    cursor.execute(cmd[0])
+                except:
+                    pass
+        except:
+            pass
+
+        # Drop all tables
         for table_name in table_names:
             try:
+                # Use CASCADE to drop dependent objects
                 cursor.execute(f'DROP TABLE IF EXISTS "{table_name}" CASCADE')
                 dropped += 1
                 print(f"✅ Dropped table: {table_name}")
             except Exception as e:
+                errors += 1
                 print(f"⚠️  Error dropping {table_name}: {str(e)[:50]}")
+
+        # Also drop any remaining sequences, indexes, etc.
+        try:
+            cursor.execute("""
+                DROP SCHEMA public CASCADE;
+                CREATE SCHEMA public;
+                GRANT ALL ON SCHEMA public TO postgres;
+                GRANT ALL ON SCHEMA public TO public;
+            """)
+            print("✅ Dropped and recreated public schema")
+        except Exception as e:
+            print(f"⚠️  Schema recreation failed: {str(e)[:50]}")
 
         print(f"\n🧹 Cleanup completed!")
         print(f"✅ Successfully dropped: {dropped} tables")
