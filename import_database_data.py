@@ -77,25 +77,49 @@ def import_database_data():
         # Parse DATABASE_URL
         if not database_url.startswith('postgresql://'):
             print("❌ ERROR: DATABASE_URL must be a PostgreSQL URL")
+            print(f"Got: {database_url[:50]}...")
             return
 
-        # Remove postgresql://
-        url = database_url[13:]
-        user_pass, host_db = url.split('@', 1)
-        host_port, dbname = host_db.split('/', 1)
+        try:
+            # Remove postgresql://
+            url = database_url[13:]
 
-        if ':' in user_pass:
-            user, password = user_pass.split(':', 1)
-        else:
-            user = user_pass
-            password = ''
+            # Split into user:pass@host:port/dbname
+            if '@' not in url:
+                print("❌ ERROR: DATABASE_URL missing '@' separator")
+                return
 
-        if ':' in host_port:
-            host, port = host_port.split(':', 1)
-            port = int(port)
-        else:
-            host = host_port
-            port = 5432
+            user_pass, host_db = url.split('@', 1)
+
+            if '/' not in host_db:
+                print("❌ ERROR: DATABASE_URL missing '/' separator for database name")
+                return
+
+            host_port, dbname = host_db.split('/', 1)
+
+            # Parse user and password
+            if ':' in user_pass:
+                user, password = user_pass.split(':', 1)
+            else:
+                user = user_pass
+                password = ''
+
+            # Parse host and port
+            if ':' in host_port:
+                host, port_str = host_port.split(':', 1)
+                try:
+                    port = int(port_str)
+                except ValueError:
+                    print(f"❌ ERROR: Invalid port number: {port_str}")
+                    return
+            else:
+                host = host_port
+                port = 5432
+
+        except Exception as parse_error:
+            print(f"❌ ERROR: Failed to parse DATABASE_URL: {parse_error}")
+            print("Expected format: postgresql://user:password@host:port/database")
+            return
 
         # Connect to database
         conn = psycopg2.connect(
