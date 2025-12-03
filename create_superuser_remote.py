@@ -68,48 +68,55 @@ def create_superuser_remote():
         email = input("Enter email for superuser [admin@calmconnect.edu.ph]: ").strip() or 'admin@calmconnect.edu.ph'
         password = input("Enter password for superuser [admin123!]: ").strip() or 'admin123!'
 
-        # Try to create superuser with minimal fields first
+        # Create superuser directly in database bypassing CustomUser model
+        from django.db import connection
+        import hashlib
+        from django.utils import timezone
+
         try:
-            # Create basic user first
-            user = CustomUser.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                is_staff=True,
-                is_superuser=True
-            )
+            # Generate password hash
+            from django.contrib.auth.hashers import make_password
+            hashed_password = make_password(password)
 
-            # Set additional fields if they exist
+            # Create user directly in auth_user table
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO auth_user (
+                        username, email, password, is_staff, is_superuser,
+                        is_active, date_joined, first_name, last_name
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (username) DO UPDATE SET
+                        email = EXCLUDED.email,
+                        password = EXCLUDED.password,
+                        is_staff = EXCLUDED.is_staff,
+                        is_superuser = EXCLUDED.is_superuser,
+                        is_active = EXCLUDED.is_active
+                """, [
+                    username, email, hashed_password, True, True,
+                    True, timezone.now(), 'Admin', 'Administrator'
+                ])
+
+            print("✅ Superuser created directly in database!")
+
+            # Try to create minimal CustomUser record if table exists
             try:
-                user.full_name = 'Administrator'
-                user.age = 0
-                user.gender = 'Prefer not to say'
-                user.college = 'CBA'
-                user.program = 'Administration'
-                user.year_level = '4'
-                user.student_id = 'admin001'
-                user.email_verified = True
-                user.save()
-            except Exception as field_error:
-                print(f"⚠️  Some additional fields couldn't be set: {field_error}")
-                print("Superuser created with basic fields only.")
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        INSERT INTO mentalhealth_customuser (
+                            user_ptr_id, full_name, age, gender, college,
+                            program, year_level, student_id, email_verified
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT DO NOTHING
+                    """, [
+                        None, 'Administrator', 0, 'Prefer not to say', 'CBA',
+                        'Administration', '4', 'admin001', True
+                    ])
+            except Exception:
+                print("⚠️  CustomUser table not fully available - using basic auth user only")
 
-        except Exception as create_error:
-            print(f"❌ Error creating superuser: {create_error}")
-            print("Trying alternative approach...")
-
-            # Alternative: Use Django management command
-            from django.core.management import call_command
-            try:
-                call_command('createsuperuser', '--username', username, '--email', email, '--noinput')
-                # Set password separately
-                user = CustomUser.objects.get(username=username)
-                user.set_password(password)
-                user.save()
-                print("✅ Superuser created using management command!")
-            except Exception as cmd_error:
-                print(f"❌ Management command also failed: {cmd_error}")
-                return
+        except Exception as db_error:
+            print(f"❌ Direct database creation failed: {db_error}")
+            return
 
         print("✅ Superuser created successfully!")
         print(f"   Username: {username}")
