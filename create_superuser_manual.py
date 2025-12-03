@@ -63,21 +63,32 @@ def create_superuser_manual():
 
         # Create auth_user table if it doesn't exist
         print("🔧 Creating auth_user table...")
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS auth_user (
-                id SERIAL PRIMARY KEY,
-                username VARCHAR(150) UNIQUE NOT NULL,
-                email VARCHAR(254) NOT NULL,
-                password VARCHAR(128) NOT NULL,
-                is_staff BOOLEAN NOT NULL DEFAULT FALSE,
-                is_superuser BOOLEAN NOT NULL DEFAULT FALSE,
-                is_active BOOLEAN NOT NULL DEFAULT TRUE,
-                date_joined TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-                first_name VARCHAR(150) NOT NULL DEFAULT '',
-                last_name VARCHAR(150) NOT NULL DEFAULT ''
-            )
-        """)
-        print("✅ Auth user table ready!")
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS auth_user (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(150) UNIQUE NOT NULL,
+                    email VARCHAR(254) NOT NULL,
+                    password VARCHAR(128) NOT NULL,
+                    is_staff BOOLEAN NOT NULL DEFAULT FALSE,
+                    is_superuser BOOLEAN NOT NULL DEFAULT FALSE,
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                    date_joined TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                    first_name VARCHAR(150) NOT NULL DEFAULT '',
+                    last_name VARCHAR(150) NOT NULL DEFAULT ''
+                )
+            """)
+            print("✅ Auth user table created!")
+        except Exception as table_error:
+            print(f"⚠️  Table creation failed: {table_error}")
+            print("Trying to check if table exists...")
+            try:
+                cursor.execute("SELECT 1 FROM auth_user LIMIT 1")
+                print("✅ Auth user table already exists!")
+            except Exception as check_error:
+                print(f"❌ Table check failed: {check_error}")
+                print("❌ Cannot proceed without auth_user table")
+                return
 
         # Check if superuser already exists
         cursor.execute("SELECT username, email FROM auth_user WHERE is_superuser = TRUE")
