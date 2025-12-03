@@ -146,57 +146,69 @@ def import_database_data():
             sql_content = f.read()
 
         print("🔄 Converting SQLite syntax to PostgreSQL...")
-        postgres_sql = convert_sqlite_to_postgres(sql_content)
+        try:
+            postgres_sql = convert_sqlite_to_postgres(sql_content)
+        except Exception as conv_error:
+            print(f"❌ ERROR during SQL conversion: {conv_error}")
+            return
 
         # Split into individual statements
-        statements = []
-        current_statement = []
-        in_string = False
-        string_char = None
+        try:
+            statements = []
+            current_statement = []
+            in_string = False
+            string_char = None
 
-        for char in postgres_sql:
-            if not in_string:
-                if char in ("'", '"'):
-                    in_string = True
-                    string_char = char
-                elif char == ';':
-                    if current_statement:
-                        statement = ''.join(current_statement).strip()
-                        if statement and not statement.startswith('--'):
-                            statements.append(statement + ';')
-                        current_statement = []
-                    continue
-            else:
-                if char == string_char:
-                    in_string = False
-                    string_char = None
+            for char in postgres_sql:
+                if not in_string:
+                    if char in ("'", '"'):
+                        in_string = True
+                        string_char = char
+                    elif char == ';':
+                        if current_statement:
+                            statement = ''.join(current_statement).strip()
+                            if statement and not statement.startswith('--'):
+                                statements.append(statement + ';')
+                            current_statement = []
+                        continue
+                else:
+                    if char == string_char:
+                        in_string = False
+                        string_char = None
 
-            current_statement.append(char)
+                current_statement.append(char)
+        except Exception as parse_error:
+            print(f"❌ ERROR during SQL statement parsing: {parse_error}")
+            return
 
         # Filter out problematic statements
-        valid_statements = []
-        for stmt in statements:
-            stmt = stmt.strip()
-            if not stmt:
-                continue
+        try:
+            valid_statements = []
+            for stmt in statements:
+                stmt = stmt.strip()
+                if not stmt:
+                    continue
 
-            # Skip certain statements that might cause issues
-            skip_patterns = [
-                'CREATE UNIQUE INDEX.*sqlite_sequence',
-                'INSERT INTO sqlite_sequence',
-                'PRAGMA',
-                'BEGIN TRANSACTION',
-                'COMMIT'
-            ]
+                # Skip certain statements that might cause issues
+                skip_patterns = [
+                    'CREATE UNIQUE INDEX.*sqlite_sequence',
+                    'INSERT INTO sqlite_sequence',
+                    'PRAGMA',
+                    'BEGIN TRANSACTION',
+                    'COMMIT'
+                ]
 
-            should_skip = False
-            for pattern in skip_patterns:
-                if pattern.lower() in stmt.lower():
-                    should_skip = True
-                    break
+                should_skip = False
+                for pattern in skip_patterns:
+                    if pattern.lower() in stmt.lower():
+                        should_skip = True
+                        break
 
-            if not should_skip:
-                valid_statements.append(stmt)
+                if not should_skip:
+                    valid_statements.append(stmt)
+        except Exception as filter_error:
+            print(f"❌ ERROR during statement filtering: {filter_error}")
+            return
 
         print(f"📝 Found {len(valid_statements)} SQL statements to execute")
 
