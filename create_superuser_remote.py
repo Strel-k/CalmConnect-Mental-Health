@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Script to create a superuser directly in Railway database
-Run this locally to create admin user in production database
+Script to run migrations and create a superuser directly in Railway database
+Run this locally to migrate database and create admin user in production database
 """
 
 import os
@@ -19,22 +19,31 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calmconnect_backend.settings')
 # Setup Django
 django.setup()
 
+from django.core.management import execute_from_command_line
 from mentalhealth.models import CustomUser
 
 def create_superuser_remote():
-    """Create superuser in remote Railway database"""
+    """Run migrations and create superuser in remote Railway database"""
 
     # Get database URL from environment
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
         print("❌ ERROR: DATABASE_URL environment variable not set!")
         print("Please set your Railway DATABASE_URL:")
-        print("export DATABASE_URL='postgresql://user:password@host:port/dbname'")
+        print("Windows: set DATABASE_URL=postgresql://user:password@host:port/dbname")
+        print("PowerShell: $env:DATABASE_URL = 'postgresql://user:password@host:port/dbname'")
         return
 
     print(f"🔗 Connecting to database: {database_url[:50]}...")
+    print("📦 Running database migrations first...")
 
     try:
+        # Run migrations first
+        print("Running: python manage.py migrate --run-syncdb")
+        execute_from_command_line(['manage.py', 'migrate', '--run-syncdb'])
+        print("✅ Migrations completed successfully!")
+
+        print("🔄 Creating superuser...")
         # Check if superuser already exists
         superusers = CustomUser.objects.filter(is_superuser=True)
         if superusers.exists():
