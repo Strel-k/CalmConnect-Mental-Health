@@ -81,8 +81,9 @@ def fix_database_tables():
         except Exception as e:
             print(f"❌ Failed to create auth_user: {e}")
 
-        # 2. Create mentalhealth_customuser table
+        # 2. Create mentalhealth_customuser table (try both possible names)
         try:
+            # First try the correct Django table name
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS mentalhealth_customuser (
                     user_ptr_id INTEGER PRIMARY KEY REFERENCES auth_user(id) ON DELETE CASCADE,
@@ -105,7 +106,32 @@ def fix_database_tables():
             print("✅ mentalhealth_customuser table ready!")
             tables_created += 1
         except Exception as e:
-            print(f"❌ Failed to create mentalhealth_customuser: {e}")
+            print(f"⚠️  mentalhealth_customuser failed: {e}")
+            # Try alternative table name that Django might be looking for
+            try:
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS custom_user (
+                        user_ptr_id INTEGER PRIMARY KEY REFERENCES auth_user(id) ON DELETE CASCADE,
+                        full_name VARCHAR(100) NOT NULL DEFAULT '',
+                        age INTEGER NOT NULL DEFAULT 0,
+                        gender VARCHAR(20) NOT NULL DEFAULT 'Prefer not to say',
+                        college VARCHAR(10) NOT NULL DEFAULT 'CBA',
+                        program VARCHAR(100) NOT NULL DEFAULT '',
+                        year_level VARCHAR(5) NOT NULL DEFAULT '1',
+                        student_id VARCHAR(20) NOT NULL DEFAULT '',
+                        email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+                        verification_token VARCHAR(64) DEFAULT NULL,
+                        password_reset_token VARCHAR(64) DEFAULT NULL,
+                        password_reset_expires TIMESTAMP WITH TIME ZONE NULL,
+                        profile_picture VARCHAR(100) DEFAULT NULL,
+                        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+                    )
+                """)
+                print("✅ custom_user table ready (alternative name)!")
+                tables_created += 1
+            except Exception as e2:
+                print(f"❌ Failed to create custom_user table: {e2}")
 
         # 3. Create django_session table (for admin sessions)
         try:
