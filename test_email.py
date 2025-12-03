@@ -10,6 +10,7 @@ import django
 from django.conf import settings
 from django.core.mail import send_mail, EmailMessage
 from django.core.management import execute_from_command_line
+from django.utils import timezone
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calmconnect_backend.settings')
@@ -96,44 +97,82 @@ def test_email_configuration():
 
     # Test basic email sending
     try:
-        print("📤 Sending test email...")
+        print("📤 Testing email delivery...")
 
-        # Test email to yourself first
-        test_subject = "CalmConnect Email Test"
-        test_message = """
+        # Test email addresses
+        test_recipients = [
+            settings.DEFAULT_FROM_EMAIL,  # Send to yourself
+            "test@example.com",  # Dummy address for logging
+        ]
+
+        test_subject = f"CalmConnect Email Test - {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        test_message = f"""
         Hello!
 
         This is a test email from CalmConnect.
 
-        If you received this, your email configuration is working correctly!
+        Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+        Configuration Details:
+        - SMTP Host: {settings.EMAIL_HOST}
+        - SMTP Port: {settings.EMAIL_PORT}
+        - From Email: {settings.DEFAULT_FROM_EMAIL}
+        - TLS: {settings.EMAIL_USE_TLS}
+        - SSL: {settings.EMAIL_USE_SSL}
+
+        If you received this email, your SMTP configuration is working correctly!
 
         Best regards,
         CalmConnect Team
         """
+
+        print(f"📧 Sending test email to: {settings.DEFAULT_FROM_EMAIL}")
+        print(f"📧 Subject: {test_subject}")
 
         # Send test email
         result = send_mail(
             subject=test_subject,
             message=test_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[settings.DEFAULT_FROM_EMAIL],  # Send to yourself
+            recipient_list=[settings.DEFAULT_FROM_EMAIL],
             fail_silently=False
         )
 
         if result == 1:
             print("✅ Test email sent successfully!")
-            print("   Check your inbox for the test email.")
+            print(f"   📧 To: {settings.DEFAULT_FROM_EMAIL}")
+            print(f"   📧 From: {settings.DEFAULT_FROM_EMAIL}")
+            print(f"   📧 Subject: {test_subject}")
+            print()
+            print("🔍 Verification Steps:")
+            print("   1. Check your email inbox (including spam/junk folder)")
+            print("   2. Look for the subject line above")
+            print("   3. If not received in 5-10 minutes, check your SMTP settings")
+            print()
+            print("💡 Can't check email now? The email was sent successfully.")
+            print("   Your SMTP credentials are working correctly!")
+            print()
+            print("📄 Email Content Preview:")
+            print("-" * 40)
+            print(test_message.strip())
+            print("-" * 40)
+
+            return True
         else:
-            print("❌ Email sending failed - no emails sent")
+            print("❌ Email sending failed - Django returned 0 (no emails sent)")
+            return False
 
     except Exception as e:
         print(f"❌ Email sending failed: {str(e)}")
+        print(f"   Error type: {type(e).__name__}")
         print()
         print("🔧 Troubleshooting Tips:")
         print("   1. Check your EMAIL_HOST_USER and EMAIL_HOST_PASSWORD")
         print("   2. For Gmail: Use App Passwords, not your regular password")
         print("   3. Verify EMAIL_PORT and EMAIL_USE_TLS settings")
         print("   4. Check if your SMTP provider requires special configuration")
+        print("   5. Try sending to a different email address")
+        print("   6. Check if your SMTP provider has sending limits")
         return False
 
     print()
