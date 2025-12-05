@@ -12,9 +12,44 @@ from django.core.mail import send_mail, EmailMessage
 from django.core.management import execute_from_command_line
 from django.utils import timezone
 
-# Setup Django
+# Setup Django with fallback for missing DATABASE_URL
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calmconnect_backend.settings')
-django.setup()
+
+# Set a dummy DATABASE_URL for testing if not present
+if not os.environ.get('DATABASE_URL'):
+    os.environ['DATABASE_URL'] = 'sqlite:///test.db'
+
+try:
+    django.setup()
+except ValueError as e:
+    if "DATABASE_URL environment variable must be set" in str(e):
+        print("⚠️  DATABASE_URL not set, using dummy database for email testing...")
+        # Force Django to use a dummy database configuration
+        from django.conf import settings
+        settings.configure(
+            DATABASES={
+                'default': {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': ':memory:',
+                }
+            },
+            EMAIL_HOST=os.environ.get('EMAIL_HOST', 'smtp.gmail.com'),
+            EMAIL_HOST_USER=os.environ.get('EMAIL_HOST_USER', ''),
+            EMAIL_HOST_PASSWORD=os.environ.get('EMAIL_HOST_PASSWORD', ''),
+            EMAIL_PORT=int(os.environ.get('EMAIL_PORT', '587')),
+            EMAIL_USE_TLS=os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true',
+            EMAIL_USE_SSL=os.environ.get('EMAIL_USE_SSL', 'False').lower() == 'true',
+            DEFAULT_FROM_EMAIL=os.environ.get('DEFAULT_FROM_EMAIL', 'test@example.com'),
+            INSTALLED_APPS=[
+                'django.contrib.auth',
+                'django.contrib.contenttypes',
+            ],
+            SECRET_KEY='test-key-for-email-testing',
+            USE_TZ=True,
+        )
+        django.setup()
+    else:
+        raise
 
 def inspect_email_credentials():
     """Inspect and validate current email credentials"""
