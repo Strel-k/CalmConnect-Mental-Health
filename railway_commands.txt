@@ -1,0 +1,30 @@
+# Railway Database Fix Commands
+# Run these commands in Railway's web terminal to fix the database
+
+# 1. Check current migration status
+python manage.py showmigrations mentalhealth
+
+# 2. Run all pending migrations
+python manage.py migrate
+
+# 3. If migrations fail, try force sync (creates tables without migrations)
+python manage.py migrate --run-syncdb
+
+# 4. Verify tables were created
+python manage.py dbshell -c "\dt mentalhealth_*"
+
+# 5. Test the application
+curl -I http://localhost:8000/
+
+# Alternative: Run our migration script
+python run_migrations.py
+
+# If all else fails, run this simple fix
+python -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calmconnect_backend.settings')
+django.setup()
+from django.core.management import execute_from_command_line
+execute_from_command_line(['manage.py', 'migrate', '--run-syncdb'])
+print('Database tables created!')
+"
