@@ -27,6 +27,9 @@ COPY . .
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
+# Run database migrations
+RUN python run_migrations.py
+
 # Expose port
 EXPOSE 8000
 
