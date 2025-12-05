@@ -116,7 +116,7 @@ def inspect_email_credentials():
 
     return len(issues) == 0
 
-def test_email_configuration():
+def test_email_configuration(recipient=None):
     """Test email configuration and send a test email"""
     print("🧪 Testing Email Configuration...")
     print("=" * 50)
@@ -127,6 +127,10 @@ def test_email_configuration():
     if not config_ok:
         print("❌ Configuration issues found. Please fix them before testing.")
         return False
+
+    # Use provided recipient or default
+    if recipient is None:
+        recipient = email_config.get('DEFAULT_FROM_EMAIL', 'test@example.com')
 
     # Test basic email sending
     try:
@@ -159,22 +163,22 @@ def test_email_configuration():
         CalmConnect Team
         """
 
-        print(f"📧 Sending test email to: {settings.DEFAULT_FROM_EMAIL}")
+        print(f"📧 Sending test email to: {recipient}")
         print(f"📧 Subject: {test_subject}")
 
         # Send test email
         result = send_mail(
             subject=test_subject,
             message=test_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[settings.DEFAULT_FROM_EMAIL],
+            from_email=email_config['DEFAULT_FROM_EMAIL'],
+            recipient_list=[recipient],
             fail_silently=False
         )
 
         if result == 1:
             print("✅ Test email sent successfully!")
-            print(f"   📧 To: {settings.DEFAULT_FROM_EMAIL}")
-            print(f"   📧 From: {settings.DEFAULT_FROM_EMAIL}")
+            print(f"   📧 To: {recipient}")
+            print(f"   📧 From: {email_config['DEFAULT_FROM_EMAIL']}")
             print(f"   📧 Subject: {test_subject}")
             print()
             print("🔍 Verification Steps:")
@@ -268,6 +272,34 @@ def check_railway_env_vars():
 
     print()
 
+def get_test_recipient():
+    """Get the email address to send the test to"""
+    print("\n📧 Test Email Recipient")
+    print("-" * 30)
+
+    # Default to the configured from email
+    default_recipient = email_config.get('DEFAULT_FROM_EMAIL', '')
+
+    # Check command line arguments
+    if len(sys.argv) > 1:
+        recipient = sys.argv[1]
+        print(f"📧 Using recipient from command line: {recipient}")
+        return recipient
+
+    # Prompt user for recipient
+    print(f"💡 Default recipient: {default_recipient}")
+    print("   (Leave blank to use default, or enter a different email address)")
+
+    recipient = input("📧 Enter test email recipient: ").strip()
+
+    if not recipient:
+        recipient = default_recipient
+        print(f"📧 Using default recipient: {recipient}")
+    else:
+        print(f"📧 Using custom recipient: {recipient}")
+
+    return recipient
+
 if __name__ == '__main__':
     print("🚀 CalmConnect Email Configuration Inspector")
     print("=" * 50)
@@ -275,8 +307,11 @@ if __name__ == '__main__':
     # Check environment first
     check_railway_env_vars()
 
+    # Get test recipient
+    test_recipient = get_test_recipient()
+
     # Then test configuration
-    success = test_email_configuration()
+    success = test_email_configuration(test_recipient)
 
     if 'gmail' in settings.EMAIL_HOST.lower() and not success:
         test_gmail_app_password()
