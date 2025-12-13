@@ -6752,34 +6752,50 @@ def create_superuser_endpoint(request):
     })
 @login_required
 def run_migrations(request):
-    """Run database migrations (temporary endpoint for Railway)"""
-    from django.core.management import call_command
+    """Create missing database tables (temporary endpoint for Railway)"""
+    from django.db import connection
     from django.http import JsonResponse
-    import io
-    import sys
-
-    # Capture output
-    old_stdout = sys.stdout
-    sys.stdout = buffer = io.StringIO()
 
     try:
-        # Run migrations with syncdb to avoid conflicts
-        call_command('migrate', '--run-syncdb', verbosity=2)
+        with connection.cursor() as cursor:
+            # Create the SecureDASSResult table directly
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS mentalhealth_securedassresult (
+                    dassresult_ptr_id bigint NOT NULL PRIMARY KEY REFERENCES mentalhealth_dassresult(id) ON DELETE CASCADE,
+                    encrypted_answers text,
+                    encrypted_depression_score text,
+                    encrypted_anxiety_score text,
+                    encrypted_stress_score text,
+                    data_hash varchar(64),
+                    consent_given boolean NOT NULL DEFAULT false,
+                    consent_timestamp timestamp with time zone,
+                    encryption_version varchar(10) NOT NULL DEFAULT 'v1',
+                    access_count integer NOT NULL DEFAULT 0,
+                    last_accessed timestamp with time zone
+                );
+            """)
 
-        # Get output
-        output = buffer.getvalue()
+            # Create the DASSDataRetentionPolicy table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS mentalhealth_dassdataretentionpolicy (
+                    id bigserial NOT NULL PRIMARY KEY,
+                    user_id bigint NOT NULL REFERENCES mentalhealth_customuser(id) ON DELETE CASCADE,
+                    policy_type varchar(20) NOT NULL DEFAULT 'standard',
+                    applied_date timestamp with time zone NOT NULL DEFAULT now(),
+                    retention_until timestamp with time zone,
+                    reason text,
+                    approved_by_id bigint REFERENCES mentalhealth_customuser(id) ON DELETE SET NULL,
+                    CONSTRAINT mentalhealth_dassdataret_user_policy_8b8b8b8b_uniq UNIQUE (user_id, policy_type)
+                );
+            """)
 
         return JsonResponse({
             'success': True,
-            'message': 'Database sync completed successfully',
-            'output': output
+            'message': 'Missing tables created successfully'
         })
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'error': str(e),
-            'output': buffer.getvalue()
+            'error': str(e)
         })
-    finally:
-        sys.stdout = old_stdout
 
