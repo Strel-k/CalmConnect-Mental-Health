@@ -36,5 +36,5 @@ EXPOSE 8000
 # Use entrypoint script
 ENTRYPOINT ["./entrypoint.sh"]
 
-# Run the application
-CMD python manage.py runserver 0.0.0.0:$PORT
+# Run the application with Daphne for WebSocket support
+CMD daphne -b 0.0.0.0 -p $PORT calmconnect_backend.asgi:application
