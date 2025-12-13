@@ -57,7 +57,7 @@ allowed_hosts = env_config(
 )
 
 # Ensure Railway domain is always included (in case env var doesn't include it)
-railway_domains = ['.up.railway.app', 'earnest-presence-production-5ca0.up.railway.app', 'calmn-connect.up.railway.app']
+railway_domains = ['.up.railway.app', 'earnest-presence-production-5ca0.up.railway.app', 'calmn-connect.up.railway.app', 'calmconnect.up.railway.app']
 for domain in railway_domains:
     if domain not in allowed_hosts:
         allowed_hosts.append(domain)
@@ -89,6 +89,7 @@ CSRF_TRUSTED_ORIGINS = [
 railway_csrf_domains = [
     'https://calmn-connect.up.railway.app',
     'https://earnest-presence-production-5ca0.up.railway.app',
+    'https://calmconnect.up.railway.app',
 ]
 for domain in railway_csrf_domains:
     if domain not in CSRF_TRUSTED_ORIGINS:
@@ -372,18 +373,31 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ASGI_APPLICATION = 'calmconnect_backend.asgi.application'
 
 # Channel Layers (for WebSocket support)
-REDIS_URL = env_config('REDIS_URL', default='redis://localhost:6379')
+REDIS_URL = env_config('REDIS_URL', default='')
 
-# Use Redis channel layer if REDIS_URL is configured (e.g., on Railway)
-if REDIS_URL != 'redis://localhost:6379':
-    CHANNEL_LAYERS = {
-        'default': {
-            'BACKEND': 'channels_redis.core.RedisChannelLayer',
-            'CONFIG': {
-                'hosts': [REDIS_URL],
+# Use Redis channel layer if REDIS_URL is configured and available
+if REDIS_URL and REDIS_URL != 'redis://localhost:6379':
+    try:
+        # Test Redis connection
+        import redis
+        r = redis.from_url(REDIS_URL)
+        r.ping()
+        CHANNEL_LAYERS = {
+            'default': {
+                'BACKEND': 'channels_redis.core.RedisChannelLayer',
+                'CONFIG': {
+                    'hosts': [REDIS_URL],
+                },
             },
-        },
-    }
+        }
+        print("Redis channel layer configured successfully")
+    except Exception as e:
+        print(f"Redis connection failed ({e}), falling back to in-memory channel layer")
+        CHANNEL_LAYERS = {
+            'default': {
+                'BACKEND': 'channels.layers.InMemoryChannelLayer',
+            },
+        }
 else:
     # Use in-memory channel layer by default to avoid Redis connection issues
     CHANNEL_LAYERS = {
@@ -391,6 +405,7 @@ else:
             'BACKEND': 'channels.layers.InMemoryChannelLayer',
         },
     }
+    print("Using in-memory channel layer")
 
 # Ensure ASGI is used for both HTTP and WebSocket
 # Comment out WSGI_APPLICATION to force ASGI usage
