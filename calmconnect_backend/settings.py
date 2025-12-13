@@ -374,12 +374,10 @@ ASGI_APPLICATION = 'calmconnect_backend.asgi.application'
 # Channel Layers (for WebSocket support)
 REDIS_URL = env_config('REDIS_URL', default='redis://localhost:6379')
 
+# Use in-memory channel layer by default to avoid Redis connection issues
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [REDIS_URL],
-        },
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }
 

@@ -118,6 +118,7 @@ def index(request):
         'scores': scores,
     })
 
+@csrf_exempt_if_railway
 @login_required
 @ratelimit(key='user', rate='3/h', block=True)  # 3 DASS submissions per hour per user
 def save_dass_results(request):
@@ -3121,6 +3122,7 @@ def student_required(view_func):
 # Set up logger
 logger = logging.getLogger('dass21_ai_feedback')
 
+@csrf_exempt
 @login_required
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -3232,6 +3234,7 @@ def generate_ai_tips(request):
         })
 
 
+@csrf_exempt
 @login_required
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -6586,6 +6589,7 @@ def followup_details(request, request_id):
         return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'}, status=500)
 
 
+@csrf_exempt
 @login_required
 @require_http_methods(["GET", "POST"])
 def user_settings_api(request):
@@ -6661,6 +6665,7 @@ def user_settings_api(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
+@csrf_exempt
 @login_required
 @require_POST
 def reset_settings_api(request):
