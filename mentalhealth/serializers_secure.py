@@ -52,7 +52,14 @@ class SecureDASSResultSerializer(serializers.ModelSerializer):
 
         # Convert to secure instance if it's a DASSResult
         if self.instance and isinstance(self.instance, DASSResult):
-            self.secure_instance = SecureDASSResult.objects.get(pk=self.instance.pk)
+            try:
+                self.secure_instance = SecureDASSResult.objects.get(pk=self.instance.pk)
+            except SecureDASSResult.DoesNotExist:
+                # Table doesn't exist yet, use regular DASSResult
+                self.secure_instance = None
+            except Exception:
+                # Handle any other database errors
+                self.secure_instance = None
 
     def get_answers(self, obj):
         """Get decrypted answers with access control"""
@@ -234,13 +241,29 @@ class SecureDASSResultListSerializer(serializers.ModelSerializer):
 
     def get_has_encrypted_data(self, obj):
         """Check if record has encrypted data"""
-        secure_obj = SecureDASSResult.objects.get(pk=obj.pk)
-        return bool(secure_obj.encrypted_answers)
+        try:
+            secure_obj = SecureDASSResult.objects.get(pk=obj.pk)
+            return bool(secure_obj.encrypted_answers)
+        except SecureDASSResult.DoesNotExist:
+            return False
+        except Exception:
+            return False
 
     def get_consent_status(self, obj):
         """Get consent status"""
-        secure_obj = SecureDASSResult.objects.get(pk=obj.pk)
-        return {
-            'given': secure_obj.consent_given,
-            'timestamp': secure_obj.consent_timestamp
-        }
+        try:
+            secure_obj = SecureDASSResult.objects.get(pk=obj.pk)
+            return {
+                'given': secure_obj.consent_given,
+                'timestamp': secure_obj.consent_timestamp
+            }
+        except SecureDASSResult.DoesNotExist:
+            return {
+                'given': False,
+                'timestamp': None
+            }
+        except Exception:
+            return {
+                'given': False,
+                'timestamp': None
+            }

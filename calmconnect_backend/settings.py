@@ -201,6 +201,14 @@ def parse_database_url(url):
     if not url:
         return None
 
+    # Handle SQLite URLs
+    if url.startswith('sqlite:///'):
+        db_path = url[10:]  # Remove 'sqlite:///'
+        return {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': db_path,
+        }
+
     # Expected format: postgresql://user:password@host:port/dbname
     if url.startswith('postgresql://'):
         # Remove postgresql://

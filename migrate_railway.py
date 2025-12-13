@@ -1,64 +1,79 @@
 #!/usr/bin/env python
 """
-Railway Migration Helper
-Run this script on Railway if automatic migrations fail.
-Usage: python migrate_railway.py
+Railway Database Migration Script
+Runs Django migrations on Railway PostgreSQL database.
+This script can be run directly on Railway to apply pending migrations.
 """
 
 import os
-import subprocess
 import sys
-
-def run_command(cmd, description):
-    """Run a command and return success status"""
-    print(f"🔄 {description}...")
-    try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        if result.returncode == 0:
-            print(f"✅ {description} completed successfully")
-            if result.stdout.strip():
-                print(f"Output: {result.stdout.strip()}")
-            return True
-        else:
-            print(f"❌ {description} failed")
-            print(f"Error: {result.stderr.strip()}")
-            return False
-    except Exception as e:
-        print(f"❌ {description} failed with exception: {e}")
-        return False
+import django
+from pathlib import Path
 
 def main():
-    print("🚂 Railway Migration Helper")
-    print("=" * 40)
+    # Add the project root to Python path
+    project_root = Path(__file__).parent
+    sys.path.insert(0, str(project_root))
 
-    # Check if we're in Railway environment
-    if not (os.environ.get('RAILWAY_PROJECT_ID') or os.environ.get('RAILWAY_ENVIRONMENT')):
-        print("⚠️  Warning: Not running on Railway. This script is designed for Railway deployment.")
-        response = input("Continue anyway? (y/N): ").lower().strip()
-        if response != 'y':
-            print("Aborted.")
-            return
+    # Set Django settings module
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calmconnect_backend.settings')
 
-    # Run migrations
-    success = run_command(
-        "python manage.py migrate --verbosity=1",
-        "Running Django migrations"
-    )
+    print("🚀 Starting Railway Database Migration...")
 
-    if success:
-        print("\n🎉 Database migrations completed successfully!")
-        print("Your Railway app should now work without database errors.")
+    try:
+        # Setup Django
+        django.setup()
+        print("✅ Django setup complete")
 
-        # Show migration status
+        # Import Django management commands
+        from django.core.management import execute_from_command_line
+        from django.db import connection
+
+        print("🔍 Checking database connection...")
+        # Test database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        print("✅ Database connection successful")
+
+        print("📦 Running Django migrations...")
+        print("=" * 50)
+
+        # Run migrations with verbosity
+        execute_from_command_line(['manage.py', 'migrate', '--verbosity=2'])
+
+        print("=" * 50)
+        print("✅ All migrations completed successfully!")
+
+        # Show current migration status
         print("\n📊 Current migration status:")
-        run_command("python manage.py showmigrations mentalhealth", "Checking migration status")
+        execute_from_command_line(['manage.py', 'showmigrations', 'mentalhealth'])
 
-    else:
-        print("\n❌ Migration failed. Please check the Railway logs for more details.")
-        print("You may need to:")
-        print("1. Check your DATABASE_URL environment variable")
-        print("2. Verify database connectivity")
-        print("3. Contact Railway support if issues persist")
+        # Verify the securedassresult table exists
+        print("\n🔍 Verifying SecureDASSResult table...")
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM information_schema.tables
+                    WHERE table_name = 'mentalhealth_securedassresult'
+                );
+            """)
+            table_exists = cursor.fetchone()[0]
+
+            if table_exists:
+                print("✅ mentalhealth_securedassresult table exists")
+            else:
+                print("❌ mentalhealth_securedassresult table NOT found")
+
+        print("\n🎉 Database migration completed successfully!")
+        print("Your Railway app should now work without the ProgrammingError.")
+
+    except Exception as e:
+        print(f"❌ Migration failed: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
