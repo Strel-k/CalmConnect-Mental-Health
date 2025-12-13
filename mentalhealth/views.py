@@ -6763,15 +6763,15 @@ def run_migrations(request):
     sys.stdout = buffer = io.StringIO()
 
     try:
-        # Run migrations
-        call_command('migrate', verbosity=2)
+        # Run migrations with syncdb to avoid conflicts
+        call_command('migrate', '--run-syncdb', verbosity=2)
 
         # Get output
         output = buffer.getvalue()
 
         return JsonResponse({
             'success': True,
-            'message': 'Migrations completed successfully',
+            'message': 'Database sync completed successfully',
             'output': output
         })
     except Exception as e:
