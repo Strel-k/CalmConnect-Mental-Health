@@ -35,13 +35,9 @@ try:
         cursor.execute("SELECT 1")
     print("✅ Database connection successful")
 
-    print("📦 Creating database schema from models...")
-    execute_from_command_line(['manage.py', 'migrate', '--run-syncdb'])
-    print("✅ Database schema created")
-
-    print("🔄 Faking all migrations...")
-    execute_from_command_line(['manage.py', 'migrate', '--fake'])
-    print("✅ All migrations faked successfully!")
+    print("📦 Running database migrations...")
+    execute_from_command_line(['manage.py', 'migrate'])
+    print("✅ Database migrations completed successfully!")
 
     # Show current migration status
     print("\n📊 Current migration status:")

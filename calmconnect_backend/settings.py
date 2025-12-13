@@ -374,12 +374,23 @@ ASGI_APPLICATION = 'calmconnect_backend.asgi.application'
 # Channel Layers (for WebSocket support)
 REDIS_URL = env_config('REDIS_URL', default='redis://localhost:6379')
 
-# Use in-memory channel layer by default to avoid Redis connection issues
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-    },
-}
+# Use Redis channel layer if REDIS_URL is configured (e.g., on Railway)
+if REDIS_URL != 'redis://localhost:6379':
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [REDIS_URL],
+            },
+        },
+    }
+else:
+    # Use in-memory channel layer by default to avoid Redis connection issues
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
 
 # Ensure ASGI is used for both HTTP and WebSocket
 # Comment out WSGI_APPLICATION to force ASGI usage

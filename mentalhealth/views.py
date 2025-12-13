@@ -118,7 +118,7 @@ def index(request):
         'scores': scores,
     })
 
-@csrf_exempt_if_railway
+@csrf_exempt
 @login_required
 @ratelimit(key='user', rate='3/h', block=True)  # 3 DASS submissions per hour per user
 def save_dass_results(request):
