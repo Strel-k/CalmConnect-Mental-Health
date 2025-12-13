@@ -11,10 +11,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='appointment',
-            name='notes',
-            field=models.TextField(blank=True, null=True),
+        migrations.RunSQL(
+            "ALTER TABLE mentalhealth_appointment ADD COLUMN IF NOT EXISTS "
+            "notes TEXT NULL;",
+            reverse_sql="ALTER TABLE mentalhealth_appointment DROP COLUMN notes;",
         ),
         migrations.CreateModel(
             name='Report',
