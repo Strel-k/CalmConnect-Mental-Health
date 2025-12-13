@@ -27,11 +27,14 @@ COPY . .
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Run database migrations
-RUN python run_migrations.py
+# Make entrypoint executable
+RUN chmod +x entrypoint.sh
 
 # Expose port
 EXPOSE 8000
+
+# Use entrypoint script
+ENTRYPOINT ["./entrypoint.sh"]
 
 # Run the application
 CMD python manage.py runserver 0.0.0.0:$PORT
