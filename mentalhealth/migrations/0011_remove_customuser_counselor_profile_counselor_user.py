@@ -2,7 +2,7 @@
 
 import django.db.models.deletion
 from django.conf import settings
-from django.db import migrations, models
+from django.db import migrations
 
 
 class Migration(migrations.Migration):
@@ -16,9 +16,11 @@ class Migration(migrations.Migration):
             model_name='customuser',
             name='counselor_profile',
         ),
-        migrations.AddField(
-            model_name='counselor',
-            name='user',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='counselor_profile', to=settings.AUTH_USER_MODEL),
+        migrations.RunSQL(
+            "ALTER TABLE mentalhealth_counselor ADD COLUMN IF NOT EXISTS "
+            "user_id INTEGER REFERENCES mentalhealth_customuser(id) "
+            "ON DELETE CASCADE NULL;",
+            reverse_sql="ALTER TABLE mentalhealth_counselor DROP COLUMN "
+            "user_id;",
         ),
     ]
