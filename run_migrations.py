@@ -69,17 +69,13 @@ try:
         """)
     print("✅ Missing tables created")
 
-    print("📦 Running Django migrations...")
-    
-    try:
-        # Run migrations
-        execute_from_command_line(['manage.py', 'migrate', '--verbosity=2'])
-        print("✅ All migrations completed successfully!")
-    except Exception as e:
-        print(f"❌ Normal migration failed: {e}")
-        print("🔄 Attempting to fake migrations for mentalhealth app...")
-        execute_from_command_line(['manage.py', 'migrate', '--fake', 'mentalhealth'])
-        print("✅ Migrations faked successfully!")
+    print("📦 Creating database schema from models...")
+    execute_from_command_line(['manage.py', 'migrate', '--run-syncdb'])
+    print("✅ Database schema created")
+
+    print("🔄 Faking all migrations...")
+    execute_from_command_line(['manage.py', 'migrate', '--fake'])
+    print("✅ All migrations faked successfully!")
 
     # Show current migration status
     print("\n📊 Current migration status:")
