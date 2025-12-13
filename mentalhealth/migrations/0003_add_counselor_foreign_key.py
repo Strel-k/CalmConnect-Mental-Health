@@ -1,5 +1,5 @@
-from django.db import migrations, models
-import django.db.models.deletion
+from django.db import migrations
+
 
 class Migration(migrations.Migration):
     dependencies = [
@@ -7,14 +7,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='appointment',
-            name='counselor',
-            field=models.ForeignKey(
-                to='mentalhealth.Counselor',
-                on_delete=django.db.models.deletion.CASCADE,
-                null=True,  # Temporary, we'll remove this later
-                blank=True
-            ),
+        migrations.RunSQL(
+            "ALTER TABLE mentalhealth_appointment ADD COLUMN IF NOT EXISTS "
+            "counselor_id INTEGER REFERENCES mentalhealth_counselor(id) "
+            "ON DELETE CASCADE NULL;",
+            reverse_sql="ALTER TABLE mentalhealth_appointment DROP COLUMN "
+            "counselor_id;",
         ),
     ]
