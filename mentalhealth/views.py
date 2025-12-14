@@ -3159,13 +3159,16 @@ logger = logging.getLogger('dass21_ai_feedback')
 @api_view(['POST'])
 # @login_required
 # @permission_classes([IsAuthenticated])
-@ratelimit_429(key='user', rate='50/m', block=True)  # Increased to 50 requests per minute per user, returns 429
+@ratelimit_429(key='ip', rate='50/m', block=True)  # Increased to 50 requests per minute per IP, returns 429
 def generate_ai_tips(request):
     """
     Generate AI-powered personalized mental health tips based on DASS21 scores.
     Expects JSON: { 'depression': int, 'anxiety': int, 'stress': int, 'depression_severity': str, 'anxiety_severity': str, 'stress_severity': str, 'answers': dict }
     Strictly sanitizes data and enforces student-only access.
     """
+    if not request.user.is_authenticated:
+        return Response({'success': False, 'error': 'Authentication required'}, status=401)
+
     user = request.user
     data = request.data
 
@@ -3268,16 +3271,19 @@ def generate_ai_tips(request):
 
 
 @csrf_exempt
-@login_required
+# @login_required
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@ratelimit_429(key='user', rate='50/m', block=True)  # Increased to 50 requests per minute per user, returns 429
+# @permission_classes([IsAuthenticated])
+@ratelimit_429(key='ip', rate='50/m', block=True)  # Increased to 50 requests per minute per IP, returns 429
 def ai_feedback(request):
     """
-    Accepts DASS21 scores and returns personalized AI-generated feedback using 
+    Accepts DASS21 scores and returns personalized AI-generated feedback using
     OpenAI's API. Expects JSON: { 'depression': int, 'anxiety': int, 'stress': int, 'answers': dict, ... }
     Strictly sanitizes data and enforces student-only access.
     """
+    if not request.user.is_authenticated:
+        return Response({'success': False, 'error': 'Authentication required'}, status=401)
+
     user = request.user
     data = request.data
     depression = data.get('depression')

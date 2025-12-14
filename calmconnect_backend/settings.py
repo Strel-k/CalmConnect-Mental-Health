@@ -90,6 +90,7 @@ railway_csrf_domains = [
     'https://calmn-connect.up.railway.app',
     'https://earnest-presence-production-5ca0.up.railway.app',
     'https://calmconnect.up.railway.app',
+    'https://calm-connect.up.railway.app',
 ]
 for domain in railway_csrf_domains:
     if domain not in CSRF_TRUSTED_ORIGINS:
