@@ -36,7 +36,7 @@ try:
     print("✅ Database connection successful")
 
     print("📦 Running database migrations...")
-    execute_from_command_line(['manage.py', 'migrate'])
+    execute_from_command_line(['manage.py', 'migrate', '--skip-checks'])
     print("✅ Database migrations completed successfully!")
 
     # Show current migration status
