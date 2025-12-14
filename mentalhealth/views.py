@@ -67,10 +67,10 @@ from .decorators import verified_required
 try:
     from ratelimit.decorators import ratelimit
     from ratelimit.exceptions import Ratelimited
-    from django.http import HttpResponseForbidden
+    from django.http import HttpResponseTooManyRequests
     RATELIMIT_AVAILABLE = True
 
-    def ratelimit_429(key=None, rate=None, block=True):
+    def ratelimit_429(key=None, rate=None, block=False):
         """Rate limit decorator that returns 429 instead of 403"""
         def decorator(view_func):
             ratelimited_view = ratelimit(key=key, rate=rate, block=block)(view_func)
@@ -78,18 +78,18 @@ try:
                 try:
                     return ratelimited_view(*args, **kwargs)
                 except Ratelimited:
-                    return HttpResponseForbidden('Rate limit exceeded', status=429)
+                    return HttpResponseTooManyRequests('Rate limit exceeded', status=429)
             return wrapper
         return decorator
 
 except ImportError:
     # Fallback decorator if ratelimit is not available
-    def ratelimit(key=None, rate=None, block=True):
+    def ratelimit(key=None, rate=None, block=False):
         def decorator(view_func):
             return view_func
         return decorator
 
-    def ratelimit_429(key=None, rate=None, block=True):
+    def ratelimit_429(key=None, rate=None, block=False):
         def decorator(view_func):
             return view_func
         return decorator
