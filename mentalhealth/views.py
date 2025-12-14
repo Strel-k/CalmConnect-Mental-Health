@@ -66,13 +66,34 @@ from .decorators import verified_required
 # Import ratelimit with fallback
 try:
     from ratelimit.decorators import ratelimit
+    from ratelimit.exceptions import Ratelimited
+    from django.http import HttpResponseForbidden
     RATELIMIT_AVAILABLE = True
+
+    def ratelimit_429(key=None, rate=None, block=True):
+        """Rate limit decorator that returns 429 instead of 403"""
+        def decorator(view_func):
+            ratelimited_view = ratelimit(key=key, rate=rate, block=block)(view_func)
+            def wrapper(*args, **kwargs):
+                try:
+                    return ratelimited_view(*args, **kwargs)
+                except Ratelimited:
+                    return HttpResponseForbidden('Rate limit exceeded', status=429)
+            return wrapper
+        return decorator
+
 except ImportError:
     # Fallback decorator if ratelimit is not available
     def ratelimit(key=None, rate=None, block=True):
         def decorator(view_func):
             return view_func
         return decorator
+
+    def ratelimit_429(key=None, rate=None, block=True):
+        def decorator(view_func):
+            return view_func
+        return decorator
+
     RATELIMIT_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
@@ -3138,7 +3159,7 @@ logger = logging.getLogger('dass21_ai_feedback')
 @api_view(['POST'])
 # @login_required
 # @permission_classes([IsAuthenticated])
-# @ratelimit(key='user', rate='20/m', block=True)  # 20 requests per minute per user
+@ratelimit_429(key='user', rate='50/m', block=True)  # Increased to 50 requests per minute per user, returns 429
 def generate_ai_tips(request):
     """
     Generate AI-powered personalized mental health tips based on DASS21 scores.
@@ -3250,7 +3271,7 @@ def generate_ai_tips(request):
 @login_required
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='20/m', block=True)  # 20 requests per minute per user
+@ratelimit_429(key='user', rate='50/m', block=True)  # Increased to 50 requests per minute per user, returns 429
 def ai_feedback(request):
     """
     Accepts DASS21 scores and returns personalized AI-generated feedback using 
