@@ -2,7 +2,7 @@
 set -e
 
 echo "Running database migrations..."
-python run_migrations.py
+# python run_migrations.py
 
 echo "Starting Django server..."
 exec "$@"
