@@ -3135,9 +3135,9 @@ def student_required(view_func):
 logger = logging.getLogger('dass21_ai_feedback')
 
 @csrf_exempt
-@login_required
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @login_required
+# @permission_classes([IsAuthenticated])
 # @ratelimit(key='user', rate='20/m', block=True)  # 20 requests per minute per user
 def generate_ai_tips(request):
     """
