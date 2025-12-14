@@ -59,7 +59,7 @@ from .models import SessionMessage
 from .models import SessionParticipant
 from .models import UserSettings
 from .models_secure import SecureDASSResult
-from .serializers import AppointmentSerializer, UserSettingsSerializer
+from .serializers import AppointmentSerializer
 from .serializers_secure import SecureDASSResultSerializer
 from .decorators import verified_required
 

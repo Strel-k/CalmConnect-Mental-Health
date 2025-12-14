@@ -205,7 +205,6 @@ urlpatterns = [
 
     # Settings API URLs
     path('api/settings/', views.user_settings_api, name='user_settings_api'),
-    path('api/settings/reset/', views.reset_settings_api, name='reset_settings_api'),
 
     # Temporary migration endpoint for Railway
     path('run-migrations/', views.run_migrations, name='run_migrations'),
