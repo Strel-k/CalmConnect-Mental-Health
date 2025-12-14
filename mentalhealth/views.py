@@ -59,7 +59,7 @@ from .models import SessionMessage
 from .models import SessionParticipant
 from .models import UserSettings
 from .models_secure import SecureDASSResult
-from .serializers import AppointmentSerializer
+from .serializers import AppointmentSerializer, UserSettingsSerializer
 from .serializers_secure import SecureDASSResultSerializer
 from .decorators import verified_required
 
@@ -3138,7 +3138,7 @@ logger = logging.getLogger('dass21_ai_feedback')
 @login_required
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='5/m', block=True)  # 5 requests per minute per user
+@ratelimit(key='user', rate='20/m', block=True)  # 20 requests per minute per user
 def generate_ai_tips(request):
     """
     Generate AI-powered personalized mental health tips based on DASS21 scores.
@@ -3250,7 +3250,7 @@ def generate_ai_tips(request):
 @login_required
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='5/m', block=True)  # 5 requests per minute per user
+@ratelimit(key='user', rate='20/m', block=True)  # 20 requests per minute per user
 def ai_feedback(request):
     """
     Accepts DASS21 scores and returns personalized AI-generated feedback using 
@@ -6633,115 +6633,6 @@ def followup_details(request, request_id):
         return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'}, status=500)
 
 
-@csrf_exempt
-@login_required
-@require_http_methods(["GET", "POST"])
-def user_settings_api(request):
-    """API endpoint for user settings management"""
-    try:
-        # Get or create user settings
-        settings_obj, created = UserSettings.objects.get_or_create(
-            user=request.user,
-            defaults={
-                'notification_preferences': UserSettings().default_notification_preferences
-            }
-        )
-
-        if request.method == 'GET':
-            # Return current settings
-            return JsonResponse({
-                'success': True,
-                'settings': {
-                    'dark_mode': settings_obj.dark_mode,
-                    'font_size': settings_obj.font_size,
-                    'notification_preferences': settings_obj.notification_preferences,
-                    'language': settings_obj.language,
-                    'high_contrast': settings_obj.high_contrast,
-                    'screen_reader': settings_obj.screen_reader,
-                    'reduced_motion': settings_obj.reduced_motion,
-                    'analytics_tracking': settings_obj.analytics_tracking,
-                    'profile_visibility': settings_obj.profile_visibility,
-                }
-            })
-
-        elif request.method == 'POST':
-            # Update settings
-            data = json.loads(request.body)
-
-            # Update theme settings
-            if 'dark_mode' in data:
-                settings_obj.dark_mode = bool(data['dark_mode'])
-            if 'font_size' in data:
-                settings_obj.font_size = data['font_size']
-
-            # Update notification preferences
-            if 'notification_preferences' in data:
-                settings_obj.notification_preferences = data['notification_preferences']
-
-            # Update language
-            if 'language' in data:
-                settings_obj.language = data['language']
-
-            # Update accessibility options
-            if 'high_contrast' in data:
-                settings_obj.high_contrast = bool(data['high_contrast'])
-            if 'screen_reader' in data:
-                settings_obj.screen_reader = bool(data['screen_reader'])
-            if 'reduced_motion' in data:
-                settings_obj.reduced_motion = bool(data['reduced_motion'])
-
-            # Update privacy settings
-            if 'analytics_tracking' in data:
-                settings_obj.analytics_tracking = bool(data['analytics_tracking'])
-            if 'profile_visibility' in data:
-                settings_obj.profile_visibility = data['profile_visibility']
-
-            settings_obj.save()
-
-            return JsonResponse({
-                'success': True,
-                'message': 'Settings saved successfully'
-            })
-
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-@csrf_exempt
-@login_required
-@require_POST
-def reset_settings_api(request):
-    """Reset user settings to defaults"""
-    try:
-        settings_obj, created = UserSettings.objects.get_or_create(
-            user=request.user,
-            defaults={
-                'notification_preferences': UserSettings().default_notification_preferences
-            }
-        )
-
-        # Reset all settings to defaults
-        settings_obj.dark_mode = False
-        settings_obj.font_size = 'medium'
-        settings_obj.notification_preferences = settings_obj.default_notification_preferences
-        settings_obj.language = 'en'
-        settings_obj.high_contrast = False
-        settings_obj.screen_reader = False
-        settings_obj.reduced_motion = False
-        settings_obj.analytics_tracking = True
-        settings_obj.profile_visibility = 'counselors_only'
-
-        settings_obj.save()
-
-        return JsonResponse({
-            'success': True,
-            'message': 'Settings reset to defaults successfully'
-        })
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 # TEMPORARY: Create superuser endpoint (remove after use)
