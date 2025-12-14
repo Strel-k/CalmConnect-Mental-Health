@@ -1,311 +1,293 @@
-// Rate Limiting Client-Side Implementation for CalmConnect
-// This file provides examples of implementing rate limiting, throttling, and retry logic
-// for the generatePersonalizedTips and fetchAIFeedback functions
+// Client-side rate limiting solution for CalmConnect API calls
+// This file provides rate limiting, retry logic, and exponential backoff
+// to prevent 403 Forbidden errors from server-side rate limiting
 
-// Option 1: Using Bottleneck library (recommended for complex scenarios)
-// Install with: npm install bottleneck
+// Install bottleneck: npm install bottleneck
 
-class APIRateLimiter {
-    constructor() {
-        // Initialize bottleneck limiter
-        this.limiter = new Bottleneck({
-            minTime: 200, // Minimum 200ms between requests
-            maxConcurrent: 1, // Only 1 concurrent request
-            reservoir: 45, // 45 requests
-            reservoirRefreshAmount: 45,
-            reservoirRefreshInterval: 60 * 1000, // Refreshes every minute
-        });
+const Bottleneck = require('bottleneck');
 
-        // Configure retry logic
-        this.limiter.on("failed", async (error, jobInfo) => {
-            const { retryCount } = jobInfo;
-            console.warn(`Request failed (attempt ${retryCount + 1}):`, error);
+// Rate limiter configuration
+// Adjust these values based on your API limits
+const rateLimiter = new Bottleneck({
+  maxConcurrent: 1, // Only 1 concurrent request
+  minTime: 200, // Minimum 200ms between requests
+  reservoir: 45, // 45 requests per minute (leaving buffer below 50/min limit)
+  reservoirRefreshAmount: 45,
+  reservoirRefreshInterval: 60 * 1000, // Refresh every minute
+  trackDoneStatus: true
+});
 
-            if (error.status === 429 || error.status === 403) {
-                // Rate limited - exponential backoff
-                const delay = Math.min(1000 * Math.pow(2, retryCount), 30000); // Max 30 seconds
-                console.log(`Rate limited. Retrying in ${delay}ms...`);
-                return delay;
-            }
+// Retry configuration
+const MAX_RETRIES = 3;
+const BASE_DELAY = 1000; // 1 second base delay
+const MAX_DELAY = 30000; // 30 seconds max delay
 
-            // Don't retry for other errors
-            return false;
-        });
-
-        this.limiter.on("retry", (error, jobInfo) => {
-            console.log(`Retrying request after failure...`);
-        });
-    }
-
-    async makeRequest(url, options = {}) {
-        return this.limiter.schedule(async () => {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
-                body: JSON.stringify(options.body)
-            });
-
-            if (!response.ok) {
-                const error = new Error(`HTTP error! status: ${response.status}`);
-                error.status = response.status;
-                throw error;
-            }
-
-            return response.json();
-        });
-    }
+/**
+ * Sleep utility function
+ * @param {number} ms - Milliseconds to sleep
+ */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Option 2: Manual throttling implementation (no external dependencies)
+/**
+ * Calculate exponential backoff delay
+ * @param {number} attempt - Current attempt number (0-based)
+ * @returns {number} Delay in milliseconds
+ */
+function calculateBackoffDelay(attempt) {
+  const delay = BASE_DELAY * Math.pow(2, attempt);
+  // Add jitter to prevent thundering herd
+  const jitter = Math.random() * 0.1 * delay;
+  return Math.min(delay + jitter, MAX_DELAY);
+}
 
+/**
+ * Check if error is rate limit related
+ * @param {Response} response - Fetch response object
+ * @returns {boolean} True if rate limited
+ */
+function isRateLimited(response) {
+  return response.status === 403 || response.status === 429;
+}
+
+/**
+ * Make API request with rate limiting and retry logic
+ * @param {string} url - API endpoint URL
+ * @param {object} options - Fetch options
+ * @returns {Promise<Response>} Fetch response
+ */
+async function makeRateLimitedRequest(url, options = {}) {
+  return rateLimiter.schedule(async () => {
+    let lastError;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(`Making request to ${url} (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
+
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+          }
+        });
+
+        // If successful or not a rate limit error, return response
+        if (!isRateLimited(response)) {
+          return response;
+        }
+
+        // Rate limited - check if we should retry
+        if (attempt < MAX_RETRIES) {
+          const delay = calculateBackoffDelay(attempt);
+          console.warn(`Rate limited (status: ${response.status}). Retrying in ${delay}ms...`);
+          await sleep(delay);
+          continue;
+        } else {
+          // Max retries reached
+          console.error(`Max retries reached for ${url}. Final status: ${response.status}`);
+          return response;
+        }
+
+      } catch (error) {
+        lastError = error;
+        console.error(`Request failed (attempt ${attempt + 1}):`, error);
+
+        // For network errors, retry if not max attempts
+        if (attempt < MAX_RETRIES) {
+          const delay = calculateBackoffDelay(attempt);
+          console.warn(`Network error. Retrying in ${delay}ms...`);
+          await sleep(delay);
+          continue;
+        }
+      }
+    }
+
+    // If we get here, all retries failed
+    throw lastError || new Error('Max retries exceeded');
+  });
+}
+
+/**
+ * Generate personalized tips with rate limiting and retry logic
+ * @param {object} data - Request data
+ * @returns {Promise<object>} Response data
+ */
+async function generatePersonalizedTips(data) {
+  try {
+    const response = await makeRateLimitedRequest('/api/generate-tips/', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
+    }
+
+    const result = await response.json();
+    console.log('Personalized tips generated successfully');
+    return result;
+
+  } catch (error) {
+    console.error('Error fetching enhanced AI tips:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch AI feedback with rate limiting and retry logic
+ * @param {object} data - Request data
+ * @returns {Promise<object>} Response data
+ */
+async function fetchAIFeedback(data) {
+  try {
+    const response = await makeRateLimitedRequest('/api/ai-feedback/', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
+    }
+
+    const result = await response.json();
+    console.log('AI feedback fetched successfully');
+    return result;
+
+  } catch (error) {
+    console.error('Error fetching AI feedback:', error);
+    throw error;
+  }
+}
+
+// Alternative implementation without Bottleneck (manual throttling)
+/**
+ * Manual rate limiter class (alternative to Bottleneck)
+ */
 class ManualRateLimiter {
-    constructor() {
-        this.requests = [];
-        this.maxRequestsPerMinute = 45;
-        this.minInterval = 200; // Minimum 200ms between requests
-        this.lastRequestTime = 0;
+  constructor(requestsPerMinute = 45, minInterval = 200) {
+    this.requestsPerMinute = requestsPerMinute;
+    this.minInterval = minInterval;
+    this.requests = [];
+    this.lastRequestTime = 0;
+  }
+
+  async throttle() {
+    const now = Date.now();
+
+    // Remove old requests outside the time window
+    const oneMinuteAgo = now - 60000;
+    this.requests = this.requests.filter(time => time > oneMinuteAgo);
+
+    // Check if we're at the limit
+    if (this.requests.length >= this.requestsPerMinute) {
+      const oldestRequest = Math.min(...this.requests);
+      const waitTime = 60000 - (now - oldestRequest);
+      if (waitTime > 0) {
+        console.log(`Rate limit reached. Waiting ${waitTime}ms...`);
+        await sleep(waitTime);
+      }
     }
 
-    async throttle() {
-        const now = Date.now();
-
-        // Clean old requests (older than 1 minute)
-        this.requests = this.requests.filter(time => now - time < 60000);
-
-        // Check if we're within rate limits
-        if (this.requests.length >= this.maxRequestsPerMinute) {
-            const oldestRequest = Math.min(...this.requests);
-            const waitTime = 60000 - (now - oldestRequest);
-            if (waitTime > 0) {
-                console.log(`Rate limit reached. Waiting ${waitTime}ms...`);
-                await this.delay(waitTime);
-            }
-        }
-
-        // Ensure minimum interval between requests
-        const timeSinceLastRequest = now - this.lastRequestTime;
-        if (timeSinceLastRequest < this.minInterval) {
-            const waitTime = this.minInterval - timeSinceLastRequest;
-            await this.delay(waitTime);
-        }
-
-        this.requests.push(now);
-        this.lastRequestTime = Date.now();
+    // Ensure minimum interval between requests
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    if (timeSinceLastRequest < this.minInterval) {
+      const waitTime = this.minInterval - timeSinceLastRequest;
+      await sleep(waitTime);
     }
 
-    async delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    async makeRequest(url, options = {}, retryCount = 0) {
-        await this.throttle();
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
-                body: JSON.stringify(options.body)
-            });
-
-            if (!response.ok) {
-                if ((response.status === 429 || response.status === 403) && retryCount < 3) {
-                    // Rate limited - exponential backoff
-                    const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
-                    console.log(`Rate limited. Retrying in ${delay}ms (attempt ${retryCount + 1}/3)...`);
-                    await this.delay(delay);
-                    return this.makeRequest(url, options, retryCount + 1);
-                }
-
-                const error = new Error(`HTTP error! status: ${response.status}`);
-                error.status = response.status;
-                throw error;
-            }
-
-            return response.json();
-        } catch (error) {
-            if (retryCount < 3 && (error.status === 429 || error.status === 403)) {
-                const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
-                console.log(`Request failed. Retrying in ${delay}ms (attempt ${retryCount + 1}/3)...`);
-                await this.delay(delay);
-                return this.makeRequest(url, options, retryCount + 1);
-            }
-            throw error;
-        }
-    }
+    this.requests.push(now);
+    this.lastRequestTime = Date.now();
+  }
 }
 
-// Global rate limiter instances
-const bottleneckLimiter = new APIRateLimiter();
+// Manual rate limiter instance
 const manualLimiter = new ManualRateLimiter();
 
-// Updated generatePersonalizedTips function with rate limiting
-async function generatePersonalizedTips(depression, anxiety, stress, depressionSeverity, anxietySeverity, stressSeverity, answers) {
+/**
+ * Make request with manual rate limiting (alternative to Bottleneck)
+ * @param {string} url - API endpoint URL
+ * @param {object} options - Fetch options
+ * @returns {Promise<Response>} Fetch response
+ */
+async function makeManualRateLimitedRequest(url, options = {}) {
+  await manualLimiter.throttle();
+
+  let lastError;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-        console.log('Generating personalized tips...');
+      console.log(`Making request to ${url} (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
 
-        const response = await manualLimiter.makeRequest('https://calm-connect.up.railway.app/api/generate-tips/', {
-            body: {
-                depression,
-                anxiety,
-                stress,
-                depression_severity: depressionSeverity,
-                anxiety_severity: anxietySeverity,
-                stress_severity: stressSeverity,
-                answers
-            }
-        });
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      });
 
-        console.log('Tips generated successfully:', response);
+      if (!isRateLimited(response)) {
         return response;
+      }
+
+      if (attempt < MAX_RETRIES) {
+        const delay = calculateBackoffDelay(attempt);
+        console.warn(`Rate limited (status: ${response.status}). Retrying in ${delay}ms...`);
+        await sleep(delay);
+        continue;
+      } else {
+        console.error(`Max retries reached for ${url}. Final status: ${response.status}`);
+        return response;
+      }
 
     } catch (error) {
-        console.error('Error fetching enhanced AI tips:', error);
+      lastError = error;
+      console.error(`Request failed (attempt ${attempt + 1}):`, error);
 
-        // Show user-friendly error message
-        if (error.status === 429) {
-            showErrorMessage('Rate limit exceeded. Please wait a moment before trying again.');
-        } else if (error.status === 403) {
-            showErrorMessage('Access denied. Please check your authentication.');
-        } else {
-            showErrorMessage('Failed to generate tips. Please try again later.');
-        }
-
-        throw error;
+      if (attempt < MAX_RETRIES) {
+        const delay = calculateBackoffDelay(attempt);
+        console.warn(`Network error. Retrying in ${delay}ms...`);
+        await sleep(delay);
+        continue;
+      }
     }
+  }
+
+  throw lastError || new Error('Max retries exceeded');
 }
 
-// Updated fetchAIFeedback function with rate limiting
-async function fetchAIFeedback(depression, anxiety, stress, depressionSeverity, anxietySeverity, stressSeverity, answers) {
-    try {
-        console.log('Fetching AI feedback...');
+// Export functions for use in your application
+module.exports = {
+  generatePersonalizedTips,
+  fetchAIFeedback,
+  makeRateLimitedRequest,
+  makeManualRateLimitedRequest,
+  ManualRateLimiter
+};
 
-        const response = await manualLimiter.makeRequest('https://calm-connect.up.railway.app/api/ai-feedback/', {
-            body: {
-                depression,
-                anxiety,
-                stress,
-                depression_severity: depressionSeverity,
-                anxiety_severity: anxietySeverity,
-                stress_severity: stressSeverity,
-                answers
-            }
-        });
-
-        console.log('AI feedback received:', response);
-        return response;
-
-    } catch (error) {
-        console.error('Error fetching AI feedback:', error);
-
-        // Show user-friendly error message
-        if (error.status === 429) {
-            showErrorMessage('Rate limit exceeded. Please wait a moment before trying again.');
-        } else if (error.status === 403) {
-            showErrorMessage('Access denied. Please check your authentication.');
-        } else {
-            showErrorMessage('Failed to get AI feedback. Please try again later.');
-        }
-
-        throw error;
-    }
-}
-
-// Alternative implementation using Bottleneck (if you prefer the library approach)
-// Uncomment the lines below and comment out the manualLimiter calls above
-
+// Usage examples:
 /*
-async function generatePersonalizedTips(depression, anxiety, stress, depressionSeverity, anxietySeverity, stressSeverity, answers) {
-    try {
-        console.log('Generating personalized tips...');
+// In your existing code, replace direct fetch calls with:
 
-        const response = await bottleneckLimiter.makeRequest('https://calm-connect.up.railway.app/api/generate-tips/', {
-            body: {
-                depression,
-                anxiety,
-                stress,
-                depression_severity: depressionSeverity,
-                anxiety_severity: anxietySeverity,
-                stress_severity: stressSeverity,
-                answers
-            }
-        });
+// Instead of:
+const tipsResponse = await fetch('/api/generate-tips/', {
+  method: 'POST',
+  body: JSON.stringify(data)
+});
 
-        console.log('Tips generated successfully:', response);
-        return response;
+// Use:
+const tipsResult = await generatePersonalizedTips(data);
 
-    } catch (error) {
-        console.error('Error fetching enhanced AI tips:', error);
-        showErrorMessage('Failed to generate tips. Please try again later.');
-        throw error;
-    }
-}
+// Instead of:
+const feedbackResponse = await fetch('/api/ai-feedback/', {
+  method: 'POST',
+  body: JSON.stringify(data)
+});
 
-async function fetchAIFeedback(depression, anxiety, stress, depressionSeverity, anxietySeverity, stressSeverity, answers) {
-    try {
-        console.log('Fetching AI feedback...');
-
-        const response = await bottleneckLimiter.makeRequest('https://calm-connect.up.railway.app/api/ai-feedback/', {
-            body: {
-                depression,
-                anxiety,
-                stress,
-                depression_severity: depressionSeverity,
-                anxiety_severity: anxietySeverity,
-                stress_severity: stressSeverity,
-                answers
-            }
-        });
-
-        console.log('AI feedback received:', response);
-        return response;
-
-    } catch (error) {
-        console.error('Error fetching AI feedback:', error);
-        showErrorMessage('Failed to get AI feedback. Please try again later.');
-        throw error;
-    }
-}
+// Use:
+const feedbackResult = await fetchAIFeedback(data);
 */
-
-// Helper function to show error messages (implement according to your UI framework)
-function showErrorMessage(message) {
-    // Example implementation - adjust based on your UI
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.textContent = message;
-    errorDiv.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #ff4444;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
-        z-index: 1000;
-        max-width: 300px;
-    `;
-
-    document.body.appendChild(errorDiv);
-
-    setTimeout(() => {
-        if (errorDiv.parentNode) {
-            errorDiv.parentNode.removeChild(errorDiv);
-        }
-    }, 5000);
-}
-
-// Export for use in other modules (if using modules)
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        APIRateLimiter,
-        ManualRateLimiter,
-        generatePersonalizedTips,
-        fetchAIFeedback
-    };
-}
