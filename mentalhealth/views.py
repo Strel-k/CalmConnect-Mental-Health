@@ -3138,7 +3138,7 @@ logger = logging.getLogger('dass21_ai_feedback')
 @login_required
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='20/m', block=True)  # 20 requests per minute per user
+# @ratelimit(key='user', rate='20/m', block=True)  # 20 requests per minute per user
 def generate_ai_tips(request):
     """
     Generate AI-powered personalized mental health tips based on DASS21 scores.
