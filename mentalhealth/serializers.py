@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Appointment, DASSResult
+from .models import Appointment, DASSResult, UserSettings
 
 
 class DASSResultSerializer(serializers.ModelSerializer):
@@ -84,4 +84,20 @@ class AppointmentSerializer(serializers.ModelSerializer):
             instance.save()
             return instance
         return super().update(instance, validated_data)
+
+
+class UserSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSettings
+        fields = [
+            'dark_mode',
+            'font_size',
+            'notification_preferences',
+            'language',
+            'high_contrast',
+            'screen_reader',
+            'reduced_motion',
+            'analytics_tracking',
+            'profile_visibility',
+        ]
 

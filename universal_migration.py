@@ -25,13 +25,13 @@ try:
         if value:
             os.environ[key] = str(value)
 except ImportError:
-    print("⚠️  python-decouple not available, trying python-dotenv...")
+    print("[WARN] python-decouple not available, trying python-dotenv...")
     try:
         from dotenv import load_dotenv
         load_dotenv(BASE_DIR / '.env')
-        print("✅ Environment variables loaded using python-dotenv")
+        print("[OK] Environment variables loaded using python-dotenv")
     except ImportError:
-        print("⚠️  Neither python-decouple nor python-dotenv available")
+        print("[WARN] Neither python-decouple nor python-dotenv available")
 
 # Configure Django settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calmconnect_backend.settings')
