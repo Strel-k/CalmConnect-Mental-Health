@@ -1729,9 +1729,18 @@ def add_counselor(request):
         setup_token = get_random_string(64)
         default_password = get_random_string(12)
 
+        # Generate username from email
+        username = data['email'].split('@')[0]
+
+        # Check if username already exists
+        if CustomUser.objects.filter(username=username).exists():
+            return JsonResponse({
+                'success': False,
+                'error': f'A user with username "{username}" already exists. Please use a different email.'
+            }, status=400)
+
         try:
             # First create the user account (inactive by default)
-            username = data['email'].split('@')[0]
             user = CustomUser.objects.create_user(
                 username=username,
                 email=data['email'],
