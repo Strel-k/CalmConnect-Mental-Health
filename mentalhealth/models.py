@@ -191,6 +191,10 @@ class Counselor(models.Model):
     is_active = models.BooleanField(default=True)
     bio = models.TextField(blank=True)
     image = models.ImageField(upload_to='counselors/', blank=True, null=True)
+    # Keep `available_times` for compatibility with older DB schemas
+    # (some deployments still have the column and require a non-null value).
+    # Re-introduce with a safe default to avoid integrity errors on insert.
+    available_times = models.JSONField(default=list)
     available_days = models.JSONField(default=list)
     available_start_time = models.TimeField(null=True, blank=True)
     available_end_time = models.TimeField(null=True, blank=True)
