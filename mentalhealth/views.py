@@ -1639,6 +1639,10 @@ def add_counselor(request):
             if request.POST:
                 data = request.POST.copy()
                 files = request.FILES
+                # Convert form data lists to single values
+                for key, value in data.items():
+                    if isinstance(value, list) and len(value) == 1:
+                        data[key] = value[0]
                 logger.info(f"Parsed as form data: {dict(data)}")
             else:
                 logger.error(f"No valid data found. Body: {request.body[:200]}, POST: {dict(request.POST)}")
