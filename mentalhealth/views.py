@@ -1715,7 +1715,7 @@ def add_counselor(request):
             counselor = Counselor.objects.create(
                 name=data['name'],
                 email=data['email'],
-                unit=data['college'],
+                college=data['college'],
                 rank=data['rank'],
                 is_active=True,
                 user=user
@@ -1904,7 +1904,7 @@ def update_counselor(request, counselor_id):
             'id': counselor.id,
             'name': counselor.name,
             'email': counselor.email,
-            'college': counselor.college,
+            'unit': counselor.unit,
             'rank': counselor.rank,
             'image_url': image_url,
         }

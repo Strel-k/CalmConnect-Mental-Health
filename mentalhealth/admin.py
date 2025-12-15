@@ -52,6 +52,24 @@ class CounselorAdmin(admin.ModelAdmin):
         }),
     )
 
+    add_fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'email', 'college', 'rank', 'is_active')
+        }),
+        ('Profile', {
+            'fields': ('bio', 'image'),
+            'classes': ('collapse',)
+        }),
+        ('Availability', {
+            'fields': ('available_days', 'available_start_time', 'available_end_time', 'day_schedules'),
+            'classes': ('collapse',)
+        }),
+        ('User Account', {
+            'fields': ('user',),
+            'classes': ('collapse',)
+        }),
+    )
+
     def linked_user(self, obj):
         return obj.user.username if obj.user else "Not linked"
     linked_user.short_description = 'User Account'
