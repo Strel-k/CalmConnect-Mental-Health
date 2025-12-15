@@ -46,6 +46,29 @@ EMAIL_USE_SSL = env_config('EMAIL_USE_SSL', default=False, cast=bool)
 DEFAULT_FROM_EMAIL = env_config('DEFAULT_FROM_EMAIL', default='noreply@calmconnect.edu.ph')
 SERVER_EMAIL = env_config('SERVER_EMAIL', default='server@calmconnect.edu.ph')
 
+# --- Optional: Anymail / SendGrid configuration ---
+# If `SENDGRID_API_KEY` is provided in environment, use the Anymail SendGrid
+# backend (HTTP API) which works reliably from PaaS providers that block
+# outbound SMTP ports. If not provided, Django will use the SMTP settings
+# configured above.
+SENDGRID_API_KEY = env_config('SENDGRID_API_KEY', default='')
+if SENDGRID_API_KEY:
+    # Enable anymail only when the key is set to avoid requiring the package
+    # in development environments that don't need it.
+    try:
+        INSTALLED_APPS.append('anymail')
+    except Exception:
+        pass
+    EMAIL_BACKEND = 'anymail.backends.sendgrid.EmailBackend'
+    ANYMAIL = {
+        'SENDGRID_API_KEY': SENDGRID_API_KEY,
+    }
+    # Allow overriding DEFAULT_FROM_EMAIL via env
+    DEFAULT_FROM_EMAIL = env_config('DEFAULT_FROM_EMAIL', default=DEFAULT_FROM_EMAIL)
+else:
+    # Default to SMTP backend when no API key is configured
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
 # --- SECURITY: Production settings ---
 # Set to False in production
 DEBUG = env_config('DJANGO_DEBUG', default=True, cast=bool)
