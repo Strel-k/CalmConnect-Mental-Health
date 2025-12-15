@@ -33,8 +33,25 @@ class CustomUserAdmin(UserAdmin):
     
 @admin.register(Counselor)
 class CounselorAdmin(admin.ModelAdmin):
-    list_display = ('name', 'unit', 'rank', 'is_active', 'linked_user')
-    
+    list_display = ('name', 'college', 'rank', 'is_active', 'linked_user')
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'email', 'college', 'rank')
+        }),
+        ('Status', {
+            'fields': ('is_active', 'bio', 'image')
+        }),
+        ('Availability', {
+            'fields': ('available_days', 'available_start_time', 'available_end_time', 'day_schedules'),
+            'classes': ('collapse',)
+        }),
+        ('User Account', {
+            'fields': ('user',),
+            'classes': ('collapse',)
+        }),
+    )
+
     def linked_user(self, obj):
         return obj.user.username if obj.user else "Not linked"
     linked_user.short_description = 'User Account'

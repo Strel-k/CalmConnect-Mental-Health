@@ -186,7 +186,7 @@ class RelaxationLog(models.Model):
 class Counselor(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(blank=True, null=True)
-    unit = models.CharField(max_length=100, choices=CustomUser.COLLEGE_CHOICES)
+    college = models.CharField(max_length=100, choices=CustomUser.COLLEGE_CHOICES)
     rank = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
     bio = models.TextField(blank=True)

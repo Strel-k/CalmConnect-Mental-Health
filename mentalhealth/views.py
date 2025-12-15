@@ -1652,7 +1652,7 @@ def add_counselor(request):
                 }, status=400)
 
         # Validate required fields
-        required_fields = ['name', 'email', 'unit', 'rank']
+        required_fields = ['name', 'email', 'college', 'rank']
         missing_fields = [field for field in required_fields if not data.get(field)]
 
         if missing_fields:
@@ -1661,13 +1661,13 @@ def add_counselor(request):
                 'error': f'Missing required fields: {", ".join(missing_fields)}'
             }, status=400)
 
-        # Validate unit to be one of the valid college codes
-        if data.get('unit'):
+        # Validate college to be one of the valid college codes
+        if data.get('college'):
             from .models import CustomUser
             valid_college_codes = [code for code, name in CustomUser.COLLEGE_CHOICES]
 
             # Check if it's a valid college code
-            if data['unit'] not in valid_college_codes:
+            if data['college'] not in valid_college_codes:
                 return JsonResponse({
                     'success': False,
                     'error': f'Invalid college code. Must be one of: {", ".join(valid_college_codes)}'
@@ -1706,7 +1706,7 @@ def add_counselor(request):
                 student_id=f"staff-{get_random_string(8)}",
                 age=0,
                 gender='Prefer not to say',
-                college=data['unit'],  # Set college to match the unit (college code)
+                college=data['college'],  # Set college to match the college code
                 program='Staff',
                 year_level='4'
             )
@@ -1715,7 +1715,7 @@ def add_counselor(request):
             counselor = Counselor.objects.create(
                 name=data['name'],
                 email=data['email'],
-                unit=data['unit'],
+                unit=data['college'],
                 rank=data['rank'],
                 is_active=True,
                 user=user
@@ -1827,12 +1827,12 @@ def update_counselor(request, counselor_id):
             else:
                 image_url = request.build_absolute_uri(settings.STATIC_URL + 'img/default.jpg')
 
-            # Return the unit as-is since it's now college codes
+            # Return the college code
             response_data = {
                 'id': counselor.id,
                 'name': counselor.name,
                 'email': counselor.email,
-                'unit': counselor.unit,  # Return the department name directly
+                'college': counselor.college,  # Return the college code
                 'rank': counselor.rank,
                 'image_url': image_url,
             }
@@ -1855,13 +1855,13 @@ def update_counselor(request, counselor_id):
                     'error': 'Invalid JSON data'
                 }, status=400)
 
-        # Validate unit to be one of the valid college codes
-        if data.get('unit'):
+        # Validate college to be one of the valid college codes
+        if data.get('college'):
             from .models import CustomUser
             valid_college_codes = [code for code, name in CustomUser.COLLEGE_CHOICES]
 
             # Check if it's a valid college code
-            if data['unit'] not in valid_college_codes:
+            if data['college'] not in valid_college_codes:
                 return JsonResponse({
                     'success': False,
                     'error': f'Invalid college code. Must be one of: {", ".join(valid_college_codes)}'
@@ -1870,7 +1870,7 @@ def update_counselor(request, counselor_id):
         # Update fields
         counselor.name = data.get('name', counselor.name)
         counselor.email = data.get('email', counselor.email)
-        counselor.unit = data.get('unit', counselor.unit)
+        counselor.college = data.get('college', counselor.college)
         counselor.rank = data.get('rank', counselor.rank)
 
         # Update associated user if it exists
@@ -1878,9 +1878,9 @@ def update_counselor(request, counselor_id):
             # Update user email if counselor email changed
             if data.get('email') and data['email'] != counselor.user.email:
                 counselor.user.email = data['email']
-            # Update user college if counselor unit changed
-            if data.get('unit') and data['unit'] != counselor.user.college:
-                counselor.user.college = data['unit']
+            # Update user college if counselor college changed
+            if data.get('college') and data['college'] != counselor.user.college:
+                counselor.user.college = data['college']
             counselor.user.save()
 
         # Handle image upload if present
@@ -1904,7 +1904,7 @@ def update_counselor(request, counselor_id):
             'id': counselor.id,
             'name': counselor.name,
             'email': counselor.email,
-            'unit': counselor.unit,
+            'college': counselor.college,
             'rank': counselor.rank,
             'image_url': image_url,
         }
@@ -6354,7 +6354,7 @@ def accept_followup(request, request_id):
                     try:
                         counselor_data = {
                             'name': counselor.name or 'Unknown Counselor',
-                            'unit': counselor.unit or 'N/A',
+                            'college': counselor.college or 'N/A',
                             'rank': counselor.rank or 'N/A',
                             'image_url': counselor.image.url if hasattr(counselor, 'image') and counselor.image else None
                         }
@@ -6593,7 +6593,7 @@ def followup_details(request, request_id):
             try:
                 counselor_data = {
                     'name': counselor.name or 'Unknown Counselor',
-                    'unit': counselor.unit or 'N/A',
+                    'college': counselor.college or 'N/A',
                     'rank': counselor.rank or 'N/A',
                     'image_url': counselor.image.url if hasattr(counselor, 'image') and counselor.image else None
                 }
