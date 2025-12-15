@@ -1862,6 +1862,15 @@ def update_counselor(request, counselor_id):
     if not request.user.is_authenticated or not (request.user.is_staff or request.user.is_superuser):
         return JsonResponse({'error': 'Permission denied'}, status=403)
 
+    # Handle malformed counselor_id from frontend (e.g., ":1" instead of "1")
+    if isinstance(counselor_id, str) and counselor_id.startswith(':'):
+        counselor_id = counselor_id[1:]
+
+    try:
+        counselor_id = int(counselor_id)
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'Invalid counselor ID'}, status=400)
+
     try:
         counselor = Counselor.objects.get(id=counselor_id)
 
