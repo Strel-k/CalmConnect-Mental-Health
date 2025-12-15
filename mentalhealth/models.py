@@ -188,6 +188,8 @@ class Counselor(models.Model):
     email = models.EmailField(blank=True, null=True)
     college = models.CharField(max_length=100, choices=CustomUser.COLLEGE_CHOICES)
     rank = models.CharField(max_length=100)
+    # Unit/department (e.g., Guidance Services, Career Development)
+    unit = models.CharField(max_length=255, blank=True, default='')
     is_active = models.BooleanField(default=True)
     bio = models.TextField(blank=True)
     image = models.ImageField(upload_to='counselors/', blank=True, null=True)

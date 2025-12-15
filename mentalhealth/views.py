@@ -1669,6 +1669,7 @@ def add_counselor(request):
                 'name': counselor.name,
                 'email': counselor.email,
                 'college': counselor.college,
+                'unit': getattr(counselor, 'unit', ''),
                 'rank': counselor.rank,
                 'image_url': image_url,
                 'user_id': counselor.user.id if counselor.user else None,
@@ -1795,12 +1796,15 @@ def add_counselor(request):
             logger.info(f"CustomUser created with ID {user.id}")
             
             logger.info(f"Creating Counselor for user {user.id}")
+            # Capture unit if provided
+            unit_value = data.get('unit') or ''
             # Then create the counselor
             counselor = Counselor.objects.create(
                 name=data['name'],
                 email=data['email'],
                 college=data['college'],
                 rank=data['rank'],
+                unit=unit_value,
                 is_active=True,
                 user=user
             )
@@ -1872,6 +1876,7 @@ def add_counselor(request):
                     'name': counselor.name,
                     'email': counselor.email,
                     'college': counselor.college,
+                    'unit': getattr(counselor, 'unit', ''),
                     'rank': counselor.rank,
                     'image_url': image_url,
                     'college': user.college,
@@ -1983,6 +1988,8 @@ def update_counselor(request, counselor_id):
         counselor.email = data.get('email', counselor.email)
         counselor.college = data.get('college', counselor.college)
         counselor.rank = data.get('rank', counselor.rank)
+        # Preserve or update unit/department
+        counselor.unit = data.get('unit', getattr(counselor, 'unit', ''))
 
         # Update associated user if it exists
         if counselor.user:
@@ -2016,6 +2023,7 @@ def update_counselor(request, counselor_id):
             'name': counselor.name,
             'email': counselor.email,
             'college': counselor.college,
+            'unit': getattr(counselor, 'unit', ''),
             'rank': counselor.rank,
             'image_url': image_url,
         }
