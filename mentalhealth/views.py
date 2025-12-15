@@ -75,6 +75,24 @@ from .serializers import AppointmentSerializer
 from .serializers_secure import SecureDASSResultSerializer
 from .decorators import verified_required
 
+@staff_member_required
+@require_POST
+def send_test_email(request):
+    """Admin-only endpoint to test email delivery from the running environment.
+
+    POST only. Returns JSON with `email_sent` and optional `error` information.
+    """
+    try:
+        subject = request.POST.get('subject', 'CalmConnect test email')
+        body = request.POST.get('body', 'This is a test email from CalmConnect.')
+        to = [request.POST.get('to', request.user.email or settings.SERVER_EMAIL)]
+
+        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, to)
+        return JsonResponse({'success': True, 'email_sent': True})
+    except Exception as e:
+        logger.exception('Test email failed')
+        return JsonResponse({'success': False, 'email_sent': False, 'error': str(e)}, status=500)
+
 # Import ratelimit with fallback
 try:
     from ratelimit.decorators import ratelimit

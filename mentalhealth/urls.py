@@ -122,6 +122,7 @@ urlpatterns = [
          name='archive_counselor'),
     path('api/ai-feedback/', views.ai_feedback, name='ai_feedback'),
     path('api/generate-tips/', views.generate_ai_tips, name='generate_ai_tips'),
+     path('api/send-test-email/', views.send_test_email, name='send_test_email'),
 
     # Archive API endpoints
     path('api/archive/stats/', counselor_required(views.archive_stats), name='archive_stats'),
