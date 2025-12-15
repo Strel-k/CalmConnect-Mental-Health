@@ -29,8 +29,20 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 def csrf_exempt_if_railway(view_func):
     """Exempt view from CSRF if running on Railway"""
     import os
-    if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_PROJECT_ID'):
-        return csrf_exempt(view_func)
+    # Railway may expose several environment variables. Accept any key that
+    # contains 'RAILWAY' to be resilient to different Railway setups.
+    try:
+        for k in os.environ.keys():
+            if 'RAILWAY' in k.upper():
+                # Log the detection if logging is configured
+                try:
+                    logger.info(f"Detected Railway environment variable '{k}', applying CSRF exemption for view {view_func.__name__}")
+                except Exception:
+                    pass
+                return csrf_exempt(view_func)
+    except Exception:
+        # If environment access fails for any reason, do not exempt by default
+        pass
     return view_func
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -1655,14 +1667,16 @@ def add_counselor(request):
         logger.info(f"Request POST: {dict(request.POST)}")
         logger.info(f"Request FILES: {list(request.FILES.keys()) if request.FILES else 'None'}")
 
-        # Handle both form data and JSON requests - try JSON first, then form data
+        # Comprehensive data parsing with detailed error reporting
+        logger.info(f"add_counselor called by {request.user.username}, content_type: {request.content_type}, body_length: {len(request.body)}")
+
         data = {}
         files = None
         try:
             data = json.loads(request.body)
-            logger.info(f"Parsed as JSON data: {data}")
-        except json.JSONDecodeError:
-            # Try form data
+            logger.info(f"Parsed as JSON: {data}")
+        except json.JSONDecodeError as e:
+            logger.info(f"JSON decode failed: {e}, trying form data")
             if request.POST:
                 data = request.POST.copy()
                 files = request.FILES
@@ -1670,13 +1684,14 @@ def add_counselor(request):
                 for key, value in data.items():
                     if isinstance(value, list) and len(value) == 1:
                         data[key] = value[0]
-                logger.info(f"Parsed as form data: {dict(data)}")
+                logger.info(f"Parsed as form data: {data}")
             else:
-                logger.error(f"No valid data found. Body: {request.body[:200]}, POST: {dict(request.POST)}")
                 return JsonResponse({
                     'success': False,
-                    'error': 'No valid data provided'
+                    'error': f'No valid data provided. Content-type: {request.content_type}, body length: {len(request.body)}, body preview: {request.body[:200].decode() if request.body else "empty"}'
                 }, status=400)
+
+        logger.info(f"Final data to process: {data}")
 
         # Validate required fields
         required_fields = ['name', 'email']
@@ -1689,6 +1704,8 @@ def add_counselor(request):
                 'error': f'Missing required fields: {", ".join(missing_fields)}'
             }, status=400)
 
+        logger.info(f"Required fields present. Name: {data.get('name')}, Email: {data.get('email')}")
+
         # Set default rank if not provided
         if not data.get('rank'):
             data['rank'] = 'Counselor'
@@ -1698,17 +1715,11 @@ def add_counselor(request):
             data['college'] = 'CBA'  # Default to College of Business Administration
             logger.info(f"Setting default college to CBA for counselor: {data.get('name')}")
 
-        # Validate college to be one of the valid college codes
-        if data.get('college'):
-            from .models import CustomUser
-            valid_college_codes = [code for code, name in CustomUser.COLLEGE_CHOICES]
-
-            # Check if it's a valid college code
-            if data['college'] not in valid_college_codes:
-                return JsonResponse({
-                    'success': False,
-                    'error': f'Invalid college code. Must be one of: {", ".join(valid_college_codes)}'
-                }, status=400)
+        # Set default college if not provided or invalid
+        from .models import CustomUser
+        valid_college_codes = [code for code, name in CustomUser.COLLEGE_CHOICES]
+        if not data.get('college') or data['college'] not in valid_college_codes:
+            data['college'] = 'CBA'
 
         # Check if email already exists
         if Counselor.objects.filter(email=data['email']).exists():
@@ -1729,15 +1740,13 @@ def add_counselor(request):
         setup_token = get_random_string(64)
         default_password = get_random_string(12)
 
-        # Generate username from email
-        username = data['email'].split('@')[0]
-
-        # Check if username already exists
-        if CustomUser.objects.filter(username=username).exists():
-            return JsonResponse({
-                'success': False,
-                'error': f'A user with username "{username}" already exists. Please use a different email.'
-            }, status=400)
+        # Generate unique username from email
+        username_base = data['email'].split('@')[0]
+        username = username_base
+        counter = 1
+        while CustomUser.objects.filter(username=username).exists():
+            username = f"{username_base}_{counter}"
+            counter += 1
 
         try:
             # First create the user account (inactive by default)
@@ -1838,7 +1847,7 @@ def add_counselor(request):
         except IntegrityError as e:
             return JsonResponse({
                 'success': False,
-                'error': 'Database integrity error occurred'
+                'error': f'Database integrity error: {str(e)}'
             }, status=400)
         except Exception as e:
             # Clean up if anything fails
