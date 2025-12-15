@@ -1871,7 +1871,7 @@ def add_counselor(request):
                     'id': counselor.id,
                     'name': counselor.name,
                     'email': counselor.email,
-                    'unit': counselor.unit,
+                    'college': counselor.college,
                     'rank': counselor.rank,
                     'image_url': image_url,
                     'college': user.college,
@@ -2015,7 +2015,7 @@ def update_counselor(request, counselor_id):
             'id': counselor.id,
             'name': counselor.name,
             'email': counselor.email,
-            'unit': counselor.unit,
+            'college': counselor.college,
             'rank': counselor.rank,
             'image_url': image_url,
         }
