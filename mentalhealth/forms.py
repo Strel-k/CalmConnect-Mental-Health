@@ -174,11 +174,11 @@ class CounselorProfileForm(forms.ModelForm):
         ("Counselor", "Counselor"),
     ]
 
-    # Use COLLEGE_CHOICES from CustomUser model for unit field
-    unit = forms.ChoiceField(
+    # Use COLLEGE_CHOICES from CustomUser model for college field
+    college = forms.ChoiceField(
         choices=CustomUser.COLLEGE_CHOICES,
         required=True,
-        label="Unit/Department"
+        label="College"
     )
 
     rank = forms.ChoiceField(
@@ -203,7 +203,7 @@ class CounselorProfileForm(forms.ModelForm):
 
     class Meta:
         model = Counselor
-        fields = ['unit', 'rank', 'bio', 'image']
+        fields = ['college', 'rank', 'bio', 'image']
 
 class AppointmentForm(forms.ModelForm):
     def __init__(self, counselor, *args, **kwargs):

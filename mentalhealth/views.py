@@ -1617,11 +1617,38 @@ def admin_personnel(request):
     })
 
 @csrf_exempt_if_railway
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 def add_counselor(request):
     # Manual authentication check for AJAX compatibility
     if not request.user.is_authenticated or not (request.user.is_staff or request.user.is_superuser):
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    if request.method == 'GET':
+        # List counselors
+        counselors = Counselor.objects.filter(is_active=True).select_related('user').order_by('name')
+        counselors_data = []
+        for counselor in counselors:
+            image_url = counselor.image.url if counselor.image else None
+            if image_url:
+                image_url = request.build_absolute_uri(image_url)
+            else:
+                image_url = request.build_absolute_uri(settings.STATIC_URL + 'img/default.jpg')
+
+            counselors_data.append({
+                'id': counselor.id,
+                'name': counselor.name,
+                'email': counselor.email,
+                'college': counselor.college,
+                'rank': counselor.rank,
+                'image_url': image_url,
+                'user_id': counselor.user.id if counselor.user else None,
+            })
+
+        return JsonResponse({
+            'success': True,
+            'counselors': counselors_data
+        })
+
     try:
         logger.info(f"add_counselor called by {request.user.username}, content_type: {request.content_type}, method: {request.method}")
         logger.info(f"Request body length: {len(request.body) if request.body else 0}")
@@ -1652,14 +1679,24 @@ def add_counselor(request):
                 }, status=400)
 
         # Validate required fields
-        required_fields = ['name', 'email', 'college', 'rank']
+        required_fields = ['name', 'email']
         missing_fields = [field for field in required_fields if not data.get(field)]
 
         if missing_fields:
+            logger.error(f"Missing required fields: {missing_fields}, received data: {data}")
             return JsonResponse({
                 'success': False,
                 'error': f'Missing required fields: {", ".join(missing_fields)}'
             }, status=400)
+
+        # Set default rank if not provided
+        if not data.get('rank'):
+            data['rank'] = 'Counselor'
+
+        # Set default college if not provided
+        if not data.get('college'):
+            data['college'] = 'CBA'  # Default to College of Business Administration
+            logger.info(f"Setting default college to CBA for counselor: {data.get('name')}")
 
         # Validate college to be one of the valid college codes
         if data.get('college'):
@@ -1675,12 +1712,14 @@ def add_counselor(request):
 
         # Check if email already exists
         if Counselor.objects.filter(email=data['email']).exists():
+            logger.error(f"Counselor with email {data['email']} already exists")
             return JsonResponse({
                 'success': False,
                 'error': 'A counselor with this email already exists'
             }, status=400)
 
         if CustomUser.objects.filter(email=data['email']).exists():
+            logger.error(f"User with email {data['email']} already exists")
             return JsonResponse({
                 'success': False,
                 'error': 'A user with this email already exists'
@@ -1794,10 +1833,17 @@ def add_counselor(request):
             }, status=400)
         except Exception as e:
             # Clean up if anything fails
+            logger.error(f"Unexpected error in add_counselor: {str(e)}", exc_info=True)
             if 'user' in locals():
-                user.delete()
+                try:
+                    user.delete()
+                except:
+                    pass
             if 'counselor' in locals() and counselor.id:
-                counselor.delete()
+                try:
+                    counselor.delete()
+                except:
+                    pass
             return JsonResponse({
                 'success': False,
                 'error': str(e)
@@ -1862,6 +1908,7 @@ def update_counselor(request, counselor_id):
 
             # Check if it's a valid college code
             if data['college'] not in valid_college_codes:
+                logger.error(f"Invalid college code '{data['college']}'. Valid codes: {valid_college_codes}")
                 return JsonResponse({
                     'success': False,
                     'error': f'Invalid college code. Must be one of: {", ".join(valid_college_codes)}'
