@@ -1813,14 +1813,22 @@ def add_counselor(request):
             The CalmConnect Team
             """
             
-            send_mail(
-                'Complete Your CalmConnect Counselor Account Setup',
-                plain_message,
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                html_message=html_message,
-                fail_silently=False,
-            )
+            # Attempt to send setup email. Do NOT let email failure abort
+            # the whole operation — record outcome and continue.
+            email_sent = False
+            try:
+                send_mail(
+                    'Complete Your CalmConnect Counselor Account Setup',
+                    plain_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    html_message=html_message,
+                    fail_silently=False,
+                )
+                email_sent = True
+            except Exception as email_error:
+                logger.warning(f"Failed to send counselor setup email to {user.email}: {email_error}")
+                email_sent = False
 
             # Build image URL
             image_url = counselor.image.url if counselor.image else None
@@ -1841,7 +1849,8 @@ def add_counselor(request):
                     'college': user.college,
                     'college_display': user.get_college_display()
                 },
-                'message': 'Counselor added successfully. Setup email sent.'
+                'email_sent': email_sent,
+                'message': 'Counselor added successfully.' + ('' if email_sent else ' Setup email failed to send.')
             })
 
         except IntegrityError as e:
