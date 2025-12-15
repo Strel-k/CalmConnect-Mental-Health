@@ -686,10 +686,10 @@
                             <td>{{ counselor.name }}</td>
                             <td>{{ counselor.email }}</td>
                             <td>{{ counselor.unit }}</td>
-                            <td>{{ counselor.user.get_college_display }}</td>
+                            <td>{{ counselor.get_college_display }}</td>
                             <td>{{ counselor.rank }}</td>
                             <td>
-                                <button onclick="openEditModal({{ counselor.id }}, '{{ counselor.name }}', '{{ counselor.email }}', '{{ counselor.unit }}', '{{ counselor.rank }}', '{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static "mentalhealth/img/default.jpg" %}{% endif %}')" class="action-btn edit-btn">
+                                <button onclick="openEditModal({{ counselor.id }}, '{{ counselor.name }}', '{{ counselor.email }}', '{{ counselor.unit }}', '{{ counselor.college }}', '{{ counselor.rank }}', '{% if counselor.image %}{{ counselor.image.url }}{% else %}{% static "mentalhealth/img/default.jpg" %}{% endif %}')" class="action-btn edit-btn">
                                     <i class="bx bx-edit"></i> Edit
                                 </button>
                                 <button onclick="archiveCounselor('{{ counselor.id }}', '{{ counselor.name }}')" class="action-btn archive-btn">
@@ -739,6 +739,22 @@
                             <option value="Guidance Services Unit">Guidance Services Unit</option>
                             <option value="Information Management & Publication">Information Management & Publication</option>
                             <option value="Student Organizations Unit">Student Organizations Unit</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="counselorCollege">College</label>
+                        <select id="counselorCollege" name="college" required>
+                            <option value="">Select College</option>
+                            <option value="CASS">College of Arts and Social Sciences</option>
+                            <option value="CEN">College of Engineering</option>
+                            <option value="CBA">College of Business Administration</option>
+                            <option value="COF">College of Fisheries</option>
+                            <option value="CAG">College of Agriculture</option>
+                            <option value="CHSI">College of Home Science and Industry</option>
+                            <option value="CED">College of Education</option>
+                            <option value="COS">College of Sciences</option>
+                            <option value="CVSM">College of Veterinary Science and Medicine</option>
                         </select>
                     </div>
 
@@ -839,7 +855,7 @@
             document.getElementById('counselorModal').style.display = 'block';
         }
 
-        function openEditModal(id, name, email, unit, rank, imageUrl) {
+        function openEditModal(id, name, email, unit, college, rank, imageUrl) {
             // Clear alerts first
             document.getElementById('alertContainer').innerHTML = '';
 
@@ -887,6 +903,11 @@
                 console.error('No matching unit option found for:', unit);
                 unitSelect.value = unitSelect.options[0].value;
             }
+
+            // Set college dropdown
+            const collegeSelect = document.getElementById('counselorCollege');
+            console.log('Setting college value:', college);
+            collegeSelect.value = college || '';
 
             document.getElementById('counselorRank').value = rank;
 
