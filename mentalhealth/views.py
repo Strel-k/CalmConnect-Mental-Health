@@ -1661,20 +1661,16 @@ def add_counselor(request):
                 'error': f'Missing required fields: {", ".join(missing_fields)}'
             }, status=400)
 
-        # Validate unit to be one of the valid department names
+        # Validate unit to be one of the valid college codes
         if data.get('unit'):
-            valid_department_names = [
-                'Career Guidance & Employment Services Unit',
-                'Guidance Services Unit',
-                'Information Management & Publication',
-                'Student Organizations Unit'
-            ]
+            from .models import CustomUser
+            valid_college_codes = [code for code, name in CustomUser.COLLEGE_CHOICES]
 
-            # Check if it's a valid department name
-            if data['unit'] not in valid_department_names:
+            # Check if it's a valid college code
+            if data['unit'] not in valid_college_codes:
                 return JsonResponse({
                     'success': False,
-                    'error': f'Invalid department name. Must be one of: {", ".join(valid_department_names)}'
+                    'error': f'Invalid college code. Must be one of: {", ".join(valid_college_codes)}'
                 }, status=400)
 
         # Check if email already exists
@@ -1710,7 +1706,7 @@ def add_counselor(request):
                 student_id=f"staff-{get_random_string(8)}",
                 age=0,
                 gender='Prefer not to say',
-                college='CBA',  # Default college for counselors
+                college=data['unit'],  # Set college to match the unit (college code)
                 program='Staff',
                 year_level='4'
             )
@@ -1831,7 +1827,7 @@ def update_counselor(request, counselor_id):
             else:
                 image_url = request.build_absolute_uri(settings.STATIC_URL + 'img/default.jpg')
 
-            # Return the unit as-is since it's now department names
+            # Return the unit as-is since it's now college codes
             response_data = {
                 'id': counselor.id,
                 'name': counselor.name,
@@ -1859,20 +1855,16 @@ def update_counselor(request, counselor_id):
                     'error': 'Invalid JSON data'
                 }, status=400)
 
-        # Validate unit to be one of the valid department names
+        # Validate unit to be one of the valid college codes
         if data.get('unit'):
-            valid_department_names = [
-                'Career Guidance & Employment Services Unit',
-                'Guidance Services Unit',
-                'Information Management & Publication',
-                'Student Organizations Unit'
-            ]
+            from .models import CustomUser
+            valid_college_codes = [code for code, name in CustomUser.COLLEGE_CHOICES]
 
-            # Check if it's a valid department name
-            if data['unit'] not in valid_department_names:
+            # Check if it's a valid college code
+            if data['unit'] not in valid_college_codes:
                 return JsonResponse({
                     'success': False,
-                    'error': f'Invalid department name. Must be one of: {", ".join(valid_department_names)}'
+                    'error': f'Invalid college code. Must be one of: {", ".join(valid_college_codes)}'
                 }, status=400)
 
         # Update fields
@@ -1886,6 +1878,9 @@ def update_counselor(request, counselor_id):
             # Update user email if counselor email changed
             if data.get('email') and data['email'] != counselor.user.email:
                 counselor.user.email = data['email']
+            # Update user college if counselor unit changed
+            if data.get('unit') and data['unit'] != counselor.user.college:
+                counselor.user.college = data['unit']
             counselor.user.save()
 
         # Handle image upload if present
