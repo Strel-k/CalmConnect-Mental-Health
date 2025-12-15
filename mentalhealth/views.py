@@ -1740,6 +1740,7 @@ def add_counselor(request):
             data['college'] = 'CBA'
 
         # Check if email already exists
+        logger.info(f"Checking if email {data.get('email')} already exists in Counselor...")
         if Counselor.objects.filter(email=data['email']).exists():
             logger.error(f"Counselor with email {data['email']} already exists")
             return JsonResponse({
@@ -1747,6 +1748,8 @@ def add_counselor(request):
                 'error': 'A counselor with this email already exists'
             }, status=400)
 
+        logger.info(f"Email {data.get('email')} is available (not in Counselor)")
+        logger.info("Checking if email already exists in CustomUser...")
         if CustomUser.objects.filter(email=data['email']).exists():
             logger.error(f"User with email {data['email']} already exists")
             return JsonResponse({
@@ -1754,6 +1757,8 @@ def add_counselor(request):
                 'error': 'A user with this email already exists'
             }, status=400)
 
+        logger.info(f"Email {data.get('email')} is available (not in CustomUser)")
+        logger.info("Generating setup token and password...")
         # Generate a secure random password and setup token
         setup_token = get_random_string(64)
         default_password = get_random_string(12)
@@ -1765,8 +1770,10 @@ def add_counselor(request):
         while CustomUser.objects.filter(username=username).exists():
             username = f"{username_base}_{counter}"
             counter += 1
+        logger.info(f"Generated unique username: {username}")
 
         try:
+            logger.info(f"Creating CustomUser with username={username}, email={data.get('email')}")
             # First create the user account (inactive by default)
             user = CustomUser.objects.create_user(
                 username=username,
@@ -1785,7 +1792,9 @@ def add_counselor(request):
                 program='Staff',
                 year_level='4'
             )
+            logger.info(f"CustomUser created with ID {user.id}")
             
+            logger.info(f"Creating Counselor for user {user.id}")
             # Then create the counselor
             counselor = Counselor.objects.create(
                 name=data['name'],
@@ -1795,6 +1804,7 @@ def add_counselor(request):
                 is_active=True,
                 user=user
             )
+            logger.info(f"Counselor created with ID {counselor.id}")
             
             # Handle image upload if present
             if files and 'image' in files:
