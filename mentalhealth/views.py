@@ -1616,24 +1616,35 @@ def admin_personnel(request):
         'active_counselors': counselors.count()
     })
 
-@staff_member_required
+@csrf_exempt_if_railway
 @require_http_methods(["POST"])
 def add_counselor(request):
-    if not request.user.is_staff:
-        return Response({'success': False, 'error': 'Permission denied'}, status=403)
+    # Manual authentication check for AJAX compatibility
+    if not request.user.is_authenticated or not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     try:
-        # Handle both form data and JSON requests
-        if request.content_type == 'multipart/form-data':
-            data = request.POST.copy()  # Make a mutable copy
-            files = request.FILES
-        else:
-            try:
-                data = json.loads(request.body)
-                files = None
-            except json.JSONDecodeError:
+        logger.info(f"add_counselor called by {request.user.username}, content_type: {request.content_type}, method: {request.method}")
+        logger.info(f"Request body length: {len(request.body) if request.body else 0}")
+        logger.info(f"Request POST: {dict(request.POST)}")
+        logger.info(f"Request FILES: {list(request.FILES.keys()) if request.FILES else 'None'}")
+
+        # Handle both form data and JSON requests - try JSON first, then form data
+        data = {}
+        files = None
+        try:
+            data = json.loads(request.body)
+            logger.info(f"Parsed as JSON data: {data}")
+        except json.JSONDecodeError:
+            # Try form data
+            if request.POST:
+                data = request.POST.copy()
+                files = request.FILES
+                logger.info(f"Parsed as form data: {dict(data)}")
+            else:
+                logger.error(f"No valid data found. Body: {request.body[:200]}, POST: {dict(request.POST)}")
                 return JsonResponse({
                     'success': False,
-                    'error': 'Invalid JSON data'
+                    'error': 'No valid data provided'
                 }, status=400)
 
         # Validate required fields
@@ -1798,6 +1809,7 @@ def add_counselor(request):
             'error': str(e)
         }, status=400)
 
+@csrf_exempt_if_railway
 @require_http_methods(["GET", "POST", "PATCH"])
 def update_counselor(request, counselor_id):
     # Manual authentication check for AJAX compatibility
@@ -1915,9 +1927,12 @@ def update_counselor(request, counselor_id):
             'error': str(e)
         }, status=400)
 
-@staff_member_required
+@csrf_exempt_if_railway
 @require_http_methods(["POST"])
 def archive_counselor(request, counselor_id):
+    # Manual authentication check for AJAX compatibility
+    if not request.user.is_authenticated or not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     try:
         counselor = Counselor.objects.get(id=counselor_id)
         counselor.is_active = False
