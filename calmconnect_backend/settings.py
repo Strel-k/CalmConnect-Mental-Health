@@ -36,38 +36,22 @@ if not SECRET_KEY:
     else:
         raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production!")
 
-# --- PRIORITY: SendGrid configuration (Anymail HTTP API) ---
-# SendGrid is the primary email backend. Railway blocks outbound SMTP,
-# so we use SendGrid's HTTP API (port 443) which is always available.
-SENDGRID_API_KEY = env_config('SENDGRID_API_KEY', default='')
+# --- PRIORITY: Resend configuration (HTTP API) ---
+# Resend is the primary email backend. Railway blocks outbound SMTP,
+# so we use Resend's HTTP API (port 443) which is always available.
+RESEND_API_KEY = env_config('RESEND_API_KEY', default='')
 DEFAULT_FROM_EMAIL = env_config('DEFAULT_FROM_EMAIL', default='noreply@calmconnect.edu.ph')
 SERVER_EMAIL = env_config('SERVER_EMAIL', default='server@calmconnect.edu.ph')
 
-if SENDGRID_API_KEY:
-    # Use SendGrid HTTP API backend
-    try:
-        INSTALLED_APPS.append('anymail')
-    except Exception:
-        pass
-    EMAIL_BACKEND = 'anymail.backends.sendgrid.EmailBackend'
-    ANYMAIL = {
-        'SENDGRID_API_KEY': SENDGRID_API_KEY,
-    }
-    print("✓ SendGrid (HTTP API) configured as email backend")
+if RESEND_API_KEY:
+    # Use custom Resend backend
+    EMAIL_BACKEND = 'mentalhealth.backends.ResendEmailBackend'
+    print("✓ Resend (HTTP API) configured as email backend")
 else:
     # Fallback: use in-memory backend (no email sent, but no errors)
-    # This prevents crashes when SENDGRID_API_KEY is missing
+    # This prevents crashes when RESEND_API_KEY is missing
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
-    print("⚠ WARNING: SENDGRID_API_KEY not set. Using in-memory backend (emails not sent).")
-
-# --- DEPRECATED: SMTP settings (not used when SENDGRID_API_KEY is set) ---
-# Kept for reference, but Railway blocks outbound SMTP ports (25, 465, 587)
-# EMAIL_HOST = env_config('EMAIL_HOST', default='smtp.gmail.com')
-# EMAIL_HOST_USER = env_config('EMAIL_HOST_USER', default='')
-# EMAIL_HOST_PASSWORD = env_config('EMAIL_HOST_PASSWORD', default='')
-# EMAIL_PORT = env_config('EMAIL_PORT', default=587, cast=int)
-# EMAIL_USE_TLS = env_config('EMAIL_USE_TLS', default=True, cast=bool)
-# EMAIL_USE_SSL = env_config('EMAIL_USE_SSL', default=False, cast=bool)
+    print("⚠ WARNING: RESEND_API_KEY not set. Using in-memory backend (emails not sent).")
 
 # --- SECURITY: Production settings ---
 # Set to False in production
