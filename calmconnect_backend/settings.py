@@ -36,25 +36,15 @@ if not SECRET_KEY:
     else:
         raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production!")
 
-# Email settings - use environment variables
-EMAIL_HOST = env_config('EMAIL_HOST', default='sandbox.smtp.mailtrap.io')
-EMAIL_HOST_USER = env_config('EMAIL_HOST_USER', default='d2ded003c8e726')
-EMAIL_HOST_PASSWORD = env_config('EMAIL_HOST_PASSWORD', default='7a1e018014057e')
-EMAIL_PORT = env_config('EMAIL_PORT', default=2525, cast=int)
-EMAIL_USE_TLS = env_config('EMAIL_USE_TLS', default=True, cast=bool)
-EMAIL_USE_SSL = env_config('EMAIL_USE_SSL', default=False, cast=bool)
+# --- PRIORITY: SendGrid configuration (Anymail HTTP API) ---
+# SendGrid is the primary email backend. Railway blocks outbound SMTP,
+# so we use SendGrid's HTTP API (port 443) which is always available.
+SENDGRID_API_KEY = env_config('SENDGRID_API_KEY', default='')
 DEFAULT_FROM_EMAIL = env_config('DEFAULT_FROM_EMAIL', default='noreply@calmconnect.edu.ph')
 SERVER_EMAIL = env_config('SERVER_EMAIL', default='server@calmconnect.edu.ph')
 
-# --- Optional: Anymail / SendGrid configuration ---
-# If `SENDGRID_API_KEY` is provided in environment, use the Anymail SendGrid
-# backend (HTTP API) which works reliably from PaaS providers that block
-# outbound SMTP ports. If not provided, Django will use the SMTP settings
-# configured above.
-SENDGRID_API_KEY = env_config('SENDGRID_API_KEY', default='')
 if SENDGRID_API_KEY:
-    # Enable anymail only when the key is set to avoid requiring the package
-    # in development environments that don't need it.
+    # Use SendGrid HTTP API backend
     try:
         INSTALLED_APPS.append('anymail')
     except Exception:
@@ -63,11 +53,21 @@ if SENDGRID_API_KEY:
     ANYMAIL = {
         'SENDGRID_API_KEY': SENDGRID_API_KEY,
     }
-    # Allow overriding DEFAULT_FROM_EMAIL via env
-    DEFAULT_FROM_EMAIL = env_config('DEFAULT_FROM_EMAIL', default=DEFAULT_FROM_EMAIL)
+    print("✓ SendGrid (HTTP API) configured as email backend")
 else:
-    # Default to SMTP backend when no API key is configured
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    # Fallback: use in-memory backend (no email sent, but no errors)
+    # This prevents crashes when SENDGRID_API_KEY is missing
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    print("⚠ WARNING: SENDGRID_API_KEY not set. Using in-memory backend (emails not sent).")
+
+# --- DEPRECATED: SMTP settings (not used when SENDGRID_API_KEY is set) ---
+# Kept for reference, but Railway blocks outbound SMTP ports (25, 465, 587)
+# EMAIL_HOST = env_config('EMAIL_HOST', default='smtp.gmail.com')
+# EMAIL_HOST_USER = env_config('EMAIL_HOST_USER', default='')
+# EMAIL_HOST_PASSWORD = env_config('EMAIL_HOST_PASSWORD', default='')
+# EMAIL_PORT = env_config('EMAIL_PORT', default=587, cast=int)
+# EMAIL_USE_TLS = env_config('EMAIL_USE_TLS', default=True, cast=bool)
+# EMAIL_USE_SSL = env_config('EMAIL_USE_SSL', default=False, cast=bool)
 
 # --- SECURITY: Production settings ---
 # Set to False in production
