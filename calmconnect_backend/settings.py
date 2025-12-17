@@ -36,22 +36,23 @@ if not SECRET_KEY:
     else:
         raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production!")
 
-# --- PRIORITY: Resend configuration (HTTP API) ---
-# Resend is the primary email backend. Railway blocks outbound SMTP,
-# so we use Resend's HTTP API (port 443) which is always available.
-RESEND_API_KEY = env_config('RESEND_API_KEY', default='')
-DEFAULT_FROM_EMAIL = env_config('DEFAULT_FROM_EMAIL', default='noreply@calmconnect.edu.ph')
-SERVER_EMAIL = env_config('SERVER_EMAIL', default='server@calmconnect.edu.ph')
+# --- PRIORITY: Gmail API configuration ---
+# Gmail API backend. Railway blocks outbound SMTP,
+# so we use Gmail's HTTP API (port 443) via OAuth2 service account.
+GMAIL_API_CREDENTIALS = env_config('GMAIL_API_CREDENTIALS', default='')
+GMAIL_FROM_EMAIL = env_config('GMAIL_FROM_EMAIL', default='cdesu.osa@gmail.com')
+DEFAULT_FROM_EMAIL = env_config('DEFAULT_FROM_EMAIL', default=GMAIL_FROM_EMAIL)
+SERVER_EMAIL = env_config('SERVER_EMAIL', default=GMAIL_FROM_EMAIL)
 
-if RESEND_API_KEY:
-    # Use custom Resend backend
-    EMAIL_BACKEND = 'mentalhealth.backends.ResendEmailBackend'
-    print("✓ Resend (HTTP API) configured as email backend")
+if GMAIL_API_CREDENTIALS:
+    # Use Gmail API backend
+    EMAIL_BACKEND = 'mentalhealth.backends.GmailAPIEmailBackend'
+    print("✓ Gmail API configured as email backend")
 else:
     # Fallback: use in-memory backend (no email sent, but no errors)
-    # This prevents crashes when RESEND_API_KEY is missing
+    # This prevents crashes when GMAIL_API_CREDENTIALS is missing
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
-    print("⚠ WARNING: RESEND_API_KEY not set. Using in-memory backend (emails not sent).")
+    print("⚠ WARNING: GMAIL_API_CREDENTIALS not set. Using in-memory backend (emails not sent).")
 
 # --- SECURITY: Production settings ---
 # Set to False in production
