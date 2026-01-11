@@ -60,13 +60,13 @@ DEBUG = env_config('DJANGO_DEBUG', default=True, cast=bool)
 # Get ALLOWED_HOSTS from environment or use default
 allowed_hosts = env_config(
     'DJANGO_ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,testserver,.up.railway.app,earnest-presence-production-5ca0.up.railway.app',
+    default='localhost,127.0.0.1,testserver,.onrender.com', '72.62.193.150'
     cast=Csv()
 )
 
-# Ensure Railway domain is always included (in case env var doesn't include it)
-railway_domains = ['.up.railway.app', 'earnest-presence-production-5ca0.up.railway.app', 'calmn-connect.up.railway.app', 'calmconnect.up.railway.app']
-for domain in railway_domains:
+# Ensure Render domain is always included (in case env var doesn't include it)
+render_domains = ['.onrender.com']
+for domain in render_domains:
     if domain not in allowed_hosts:
         allowed_hosts.append(domain)
 
@@ -83,26 +83,18 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CSRF trusted origins - include Railway domains
+# CSRF trusted origins - include Render domains
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://localhost:8000',
     'http://127.0.0.1',
     'http://127.0.0.1:8000',
-    'https://calmn-connect.up.railway.app',
-    'https://earnest-presence-production-5ca0.up.railway.app',
 ]
 
-# Add Railway domains dynamically if not already included
-railway_csrf_domains = [
-    'https://calmn-connect.up.railway.app',
-    'https://earnest-presence-production-5ca0.up.railway.app',
-    'https://calmconnect.up.railway.app',
-    'https://calm-connect.up.railway.app',
-]
-for domain in railway_csrf_domains:
-    if domain not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS.append(domain)
+# Add Render domain dynamically
+render_domain = env_config('RENDER_EXTERNAL_URL', default='')
+if render_domain:
+    CSRF_TRUSTED_ORIGINS.append(render_domain)
 
 # --- SECURITY: HTTPS and cookies ---
 # Enable security settings in production
@@ -170,8 +162,8 @@ MIDDLEWARE = [
 ]
 
 # CSRF protection is enabled for all environments
-# Railway domains are added to CSRF_TRUSTED_ORIGINS above
-print("CSRF protection enabled with Railway domains in trusted origins")
+# Render domains are added to CSRF_TRUSTED_ORIGINS above
+print("CSRF protection enabled with Render domains in trusted origins")
 
 ROOT_URLCONF = 'calmconnect_backend.urls'
 
@@ -286,15 +278,13 @@ else:
         (len(sys.argv) > 2 and sys.argv[2] in build_commands)
     )
 
-    # Also check for Railway build environment or CI
+    # Also check for Render build environment or CI
     is_build_env = (
-        os.environ.get('RAILWAY_ENVIRONMENT') or
+        os.environ.get('RENDER') or  # Render sets this during build
+        os.environ.get('RENDER_GIT_BRANCH') or  # Render build variable
         os.environ.get('CI') or
         os.environ.get('BUILD_ENV') or
-        os.environ.get('DOCKER_BUILD') or
-        os.environ.get('RAILWAY_PROJECT_ID') or
-        os.environ.get('RAILWAY_STATIC_URL') or  # Railway sets this during build
-        os.environ.get('SOURCE_COMMIT')  # Railway sets this during build
+        os.environ.get('DOCKER_BUILD')
     )
 
     if is_collectstatic or is_build_command or is_build_env:
