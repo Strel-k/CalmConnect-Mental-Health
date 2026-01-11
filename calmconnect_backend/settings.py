@@ -64,6 +64,7 @@ allowed_hosts = env_config(
     cast=Csv()
 )
 
+
 # Ensure Render domain is always included (in case env var doesn't include it)
 render_domains = ['.onrender.com']
 for domain in render_domains:
@@ -89,6 +90,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1',
     'http://127.0.0.1:8000',
+    'http://72.62.193.150',
+    'http://72.62.193.150:8000',
 ]
 
 # Add Render domain dynamically
