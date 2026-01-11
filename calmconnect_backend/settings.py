@@ -60,7 +60,7 @@ DEBUG = env_config('DJANGO_DEBUG', default=True, cast=bool)
 # Get ALLOWED_HOSTS from environment or use default
 allowed_hosts = env_config(
     'DJANGO_ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,testserver,.onrender.com', '72.62.193.150'
+    default='localhost,127.0.0.1,testserver,.onrender.com,72.62.193.150',
     cast=Csv()
 )
 
